@@ -849,3 +849,241 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 .replay-ft-badge.draw { color: var(--warn); }
 .replay-ft-badge.loss { color: var(--danger); }
 .replay-ft-score { font-size: 48px; font-weight: 900; margin-bottom: 4px; }
+
+/* ── MOBILE RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* ── Base ── */
+  body { font-size: 13px; }
+
+  /* ── Main Menu ── */
+  .logo-badge { font-size: 48px; }
+  .main-menu h1 { font-size: 30px; letter-spacing: 2px; }
+  .subtitle { font-size: 13px; }
+  .menu-buttons { width: 200px; }
+  .menu-buttons .btn { font-size: 13px; padding: 12px; }
+  .menu-footer { position: static; margin-top: 8px; }
+
+  /* ── Hub Topbar ── */
+  .hub-topbar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .hub-info { flex-wrap: wrap; gap: 6px 14px; }
+  .hub-stat { font-size: 12px; }
+  .hub-club strong { font-size: 14px; }
+
+  /* ── Hub Body — stack left/right ── */
+  .hub-body { flex-direction: column; padding: 12px; gap: 12px; }
+  .hub-right { flex: unset; }
+
+  /* ── Hub Nav ── */
+  .hub-nav { padding: 8px 10px; gap: 5px; }
+  .hub-nav button { padding: 8px 10px; font-size: 12px; min-height: 36px; }
+
+  /* ── Screen Header ── */
+  .screen-header { padding: 10px 12px; gap: 10px; }
+  .screen-header h2 { font-size: 15px; letter-spacing: 1px; }
+
+  /* ── Team Select ── */
+  .ts-body { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+  .teams-grid {
+    width: 100%; max-height: 200px; border-right: none;
+    border-bottom: 1px solid var(--border); grid-template-columns: 1fr 1fr 1fr;
+  }
+  .team-detail { padding: 16px; }
+  .td-stats { grid-template-columns: repeat(3, 1fr); }
+  .ts-header { padding: 10px 14px 0; gap: 8px; }
+
+  /* ── Squad table — hide stat columns on mobile ── */
+  .squad-screen .squad-table th:nth-child(3),
+  .squad-screen .squad-table td:nth-child(3),
+  .squad-screen .squad-table th:nth-child(4),
+  .squad-screen .squad-table td:nth-child(4),
+  .squad-screen .squad-table th:nth-child(6),
+  .squad-screen .squad-table td:nth-child(6),
+  .squad-screen .squad-table th:nth-child(7),
+  .squad-screen .squad-table td:nth-child(7),
+  .squad-screen .squad-table th:nth-child(8),
+  .squad-screen .squad-table td:nth-child(8),
+  .squad-screen .squad-table th:nth-child(9),
+  .squad-screen .squad-table td:nth-child(9),
+  .squad-screen .squad-table th:nth-child(10),
+  .squad-screen .squad-table td:nth-child(10),
+  .squad-screen .squad-table th:nth-child(11),
+  .squad-screen .squad-table td:nth-child(11),
+  .squad-screen .squad-table th:nth-child(12),
+  .squad-screen .squad-table td:nth-child(12),
+  .squad-screen .squad-table th:nth-child(13),
+  .squad-screen .squad-table td:nth-child(13),
+  .squad-screen .squad-table th:nth-child(14),
+  .squad-screen .squad-table td:nth-child(14) { display: none; }
+
+  /* ── Transfers table — hide stat columns ── */
+  .transfers-screen .squad-table th:nth-child(4),
+  .transfers-screen .squad-table td:nth-child(4),
+  .transfers-screen .squad-table th:nth-child(6),
+  .transfers-screen .squad-table td:nth-child(6),
+  .transfers-screen .squad-table th:nth-child(7),
+  .transfers-screen .squad-table td:nth-child(7),
+  .transfers-screen .squad-table th:nth-child(8),
+  .transfers-screen .squad-table td:nth-child(8),
+  .transfers-screen .squad-table th:nth-child(9),
+  .transfers-screen .squad-table td:nth-child(9),
+  .transfers-screen .squad-table th:nth-child(10),
+  .transfers-screen .squad-table td:nth-child(10) { display: none; }
+
+  /* ── League table — hide GF/GA on mobile (keep GD+Pts) ── */
+  .league-table { font-size: 12px; }
+  .league-table th, .league-table td { padding: 6px 7px; }
+  /* #(1) Club(2) P(3) W(4) D(5) L(6) GF(7) GA(8) GD(9) Pts(10) */
+  .league-table th:nth-child(7), .league-table td:nth-child(7),
+  .league-table th:nth-child(8), .league-table td:nth-child(8) { display: none; }
+
+  /* ── History table — horizontal scroll ── */
+  .history-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .history-table { min-width: 480px; }
+
+  /* ── Fixtures ── */
+  .fixtures-list { padding: 10px 12px; }
+  .fixture-row { gap: 8px; padding: 8px 10px; font-size: 12px; }
+  .fw-opp { font-size: 12px; }
+  .fw-num { width: 28px; }
+
+  /* ── Transfers ── */
+  .transfer-filters { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .budget-bar { padding: 10px 12px; font-size: 12px; }
+  .transfer-tabs { padding: 8px 0 2px; gap: 6px; }
+  .transfer-tab-btn { padding: 6px 14px; font-size: 12px; }
+
+  /* ── Tactics — stack layout ── */
+  .tactics-body { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+  .tactics-controls {
+    width: 100%; flex-direction: row; flex-wrap: wrap;
+    padding: 12px 14px; gap: 10px;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .control-group { flex: 1; min-width: 130px; }
+  .tactics-right {
+    width: 100%; border-left: none; border-top: 1px solid var(--border);
+    padding: 16px 14px;
+  }
+  .pitch { min-height: 360px; }
+  .pitch-container { padding: 14px; }
+  .set-pieces-grid { grid-template-columns: 1fr 1fr; }
+
+  /* ── Match Preview ── */
+  .preview-matchup { gap: 12px; padding: 20px 12px; flex-wrap: wrap; justify-content: center; }
+  .preview-team { padding: 12px 14px; }
+  .pt-name { font-size: 15px; }
+  .preview-vs { font-size: 20px; }
+  .preview-tactics { padding: 20px 14px; gap: 10px; }
+  .tactics-summary { flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .preview-actions { flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+  /* ── Match Result ── */
+  .result-header { padding: 20px 12px; }
+  .result-score-big { font-size: 36px; }
+  .result-scoreline { gap: 10px; font-size: 14px; }
+  .result-actions { flex-wrap: wrap; padding: 12px; gap: 8px; }
+  .match-events { padding: 12px 14px; }
+
+  /* ── Match Replay ── */
+  .replay-matchup { padding: 14px 12px; }
+  .replay-team-name { font-size: 14px; }
+  .replay-score { font-size: 32px; }
+  .replay-ft-score { font-size: 36px; }
+  .replay-events { padding: 10px 12px; }
+  .replay-progress-wrap { padding: 8px 12px; }
+
+  /* ── Stats Screen ── */
+  .stats-cols { flex-direction: column; gap: 20px; }
+
+  /* ── End of Season ── */
+  .season-summary { padding: 14px; gap: 14px; }
+  .promo-relegate { flex-direction: column; gap: 10px; }
+  .pr-section { min-width: unset; }
+  .season-tables { flex-direction: column; gap: 14px; }
+  .end-awards { gap: 8px; }
+  .award-card { min-width: unset; padding: 12px; }
+
+  /* ── Career Screen ── */
+  .career-body { padding: 14px; gap: 18px; }
+  .hof-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+  .hof-card { padding: 12px 8px; }
+  .hof-count { font-size: 22px; }
+
+  /* ── Press Conference ── */
+  .press-conf-screen { padding: 24px 14px; }
+  .pc-card { padding: 20px 14px; }
+  .pc-question { font-size: 15px; }
+  .pc-teams { font-size: 17px; gap: 10px; }
+  .pc-option { padding: 12px 12px; gap: 10px; }
+
+  /* ── Europa / CL ── */
+  .europa-header { padding: 12px 14px; }
+  .europa-body { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+  .europa-groups { grid-template-columns: 1fr; gap: 10px; }
+  .europa-matchup { font-size: 15px; gap: 12px; }
+  .europa-next-match { padding: 16px; }
+  .bracket-pairs { gap: 8px; }
+  .bracket-pair { min-width: unset; flex: 1; min-width: 140px; }
+
+  /* ── Matchup Card (hub) ── */
+  .matchup-compare { width: 120px; }
+  .comp-label { font-size: 9px; letter-spacing: 0.5px; }
+  .comp-val { font-size: 11px; }
+
+  /* ── Modal ── */
+  .modal-box { min-width: unset; padding: 20px 14px; }
+  .modal-stats-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .modal-actions { flex-wrap: wrap; gap: 8px; }
+  .modal-actions .btn { min-width: unset; flex: 1; }
+
+  /* ── Toast ── */
+  .toast { white-space: normal; text-align: center; max-width: 90vw; padding: 10px 18px; }
+
+  /* ── Notifications ── */
+  .notification-injury, .notification-unhappy { margin: 0 10px 6px; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  .logo-badge { font-size: 40px; }
+  .main-menu h1 { font-size: 24px; letter-spacing: 1px; }
+  .menu-buttons { width: 180px; }
+
+  /* Hub topbar — simplify on tiny screens */
+  .hub-club strong { font-size: 12px; }
+  .hub-league { display: none; }
+  .hub-info .hub-stat:last-child { display: none; }
+
+  .pos-number { font-size: 38px; }
+  .result-score-big { font-size: 28px; }
+  .replay-score { font-size: 28px; }
+  .replay-ft-score { font-size: 32px; }
+
+  /* Matchup card — tighter */
+  .matchup-name { font-size: 10px; }
+  .matchup-compare { width: 100px; }
+  .matchup-team { padding: 12px 8px; }
+
+  /* Pitch — smaller */
+  .pitch { min-height: 300px; }
+  .pp-name { font-size: 9px; }
+  .pp-ovr { font-size: 9px; }
+  .pp-badge { padding: 3px 6px; font-size: 9px; }
+
+  /* Press conf teams — stack */
+  .pc-teams { flex-direction: column; gap: 2px; text-align: center; font-size: 16px; }
+  .pc-teams .pc-vs { display: none; }
+
+  /* HoF grid — 3 columns */
+  .hof-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Set pieces — single col */
+  .set-pieces-grid { grid-template-columns: 1fr; }
+
+  /* Team detail stats — 2 col */
+  .td-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* Transfers — hide club name too (too narrow at 480px) */
+  .transfers-screen .squad-table th:nth-child(3),
+  .transfers-screen .squad-table td:nth-child(3) { display: none; }
+}
