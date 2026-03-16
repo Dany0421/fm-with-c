@@ -4,7 +4,7 @@ let currentScreen = 'main-menu';
 let gameState = null;
 let transferFilters = { position: '', maxValue: null, minOverall: 60 };
 let selectedFormation = '4-4-2';
-let transferTab = 'market'; // 'market' | 'loans'
+let transferTab = 'market'; // 'market' | 'free' | 'loans'
 
 // ─── MODAL SYSTEM ─────────────────────────────────────────────────────────────
 function showModal({ title, body, confirm, cancel, onConfirm, onCancel, danger = false }) {
@@ -983,9 +983,10 @@ function renderTransfers(app) {
       </div>
       <div class="transfer-tabs">
         <button class="transfer-tab-btn ${transferTab==='market'?'active':''}" onclick="transferTab='market';showScreen('transfers')">Transfers</button>
+        <button class="transfer-tab-btn ${transferTab==='free'?'active':''}" onclick="transferTab='free';showScreen('transfers')">Free Agents</button>
         <button class="transfer-tab-btn ${transferTab==='loans'?'active':''}" onclick="transferTab='loans';showScreen('transfers')">Loans</button>
       </div>
-      ${transferTab === 'market' ? renderTransferMarketTab(windowOpen) : renderLoansTab(windowOpen)}
+      ${transferTab === 'market' ? renderTransferMarketTab(windowOpen) : transferTab === 'free' ? renderFreeAgentsTab(windowOpen) : renderLoansTab(windowOpen)}
     </div>
   `;
 }
@@ -1004,6 +1005,10 @@ function renderTransferMarketTab(windowOpen) {
       </select>
       <select onchange="transferFilters.minOverall=+this.value;showScreen('transfers')">
         ${[55,60,65,70,75,80].map(v=>`<option ${transferFilters.minOverall===v?'selected':''} value="${v}">${v}+ OVR</option>`).join('')}
+      </select>
+      <select onchange="transferFilters.maxValue=this.value?+this.value:null;showScreen('transfers')">
+        <option value="">Any Price</option>
+        ${[500000,1000000,2000000,5000000,10000000,25000000,50000000].map(v=>`<option ${transferFilters.maxValue===v?'selected':''} value="${v}">${formatMoney(v)} max</option>`).join('')}
       </select>
     </div>
     <table class="squad-table">
@@ -1046,6 +1051,42 @@ function renderLoansTab(windowOpen) {
           <td>${formatMoney(Math.round(calculateTransferValue(p) * 0.15))}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
             ${windowOpen?`onclick="event.stopPropagation();loanConfirm(${p.id},'${p.teamId}')"`:''}>${windowOpen ? 'Loan' : 'Closed'}</button></td>
+        </tr>
+      `).join('')}
+    </table>
+  `;
+}
+
+function renderFreeAgentsTab(windowOpen) {
+  const posFilter = transferFilters.position || '';
+  const ovrFilter = transferFilters.minOverall || 55;
+  const agents = getFreeAgents({ position: posFilter || undefined, minOverall: ovrFilter });
+  return `
+    <div style="padding:10px 0 6px;color:var(--muted);font-size:12px">
+      Free agents cost nothing to sign — just wages. Available any time the window is open.
+      ${!windowOpen ? '<br><strong style="color:var(--danger)">Transfer window is closed.</strong>' : ''}
+    </div>
+    <div class="transfer-filters">
+      <select onchange="transferFilters.position=this.value;showScreen('transfers')">
+        <option value="">All Positions</option>
+        ${['GK','CB','RB','LB','CDM','CM','CAM','RW','LW','ST'].map(p=>`<option ${posFilter===p?'selected':''}>${p}</option>`).join('')}
+      </select>
+      <select onchange="transferFilters.minOverall=+this.value;showScreen('transfers')">
+        ${[55,60,65,70,75].map(v=>`<option ${ovrFilter===v?'selected':''} value="${v}">${v}+ OVR</option>`).join('')}
+      </select>
+    </div>
+    <table class="squad-table">
+      <tr><th>POS</th><th>Name</th><th>Nat</th><th>Age</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th></th></tr>
+      ${agents.map(p => `
+        <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
+          <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
+          <td>${p.name}</td>
+          <td class="muted">${p.nation || '—'}</td>
+          <td>${p.age}</td>
+          <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
+          <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
+          <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
+            ${windowOpen?`onclick="event.stopPropagation();buyConfirm(${p.id},'')"`:''}>Sign</button></td>
         </tr>
       `).join('')}
     </table>

@@ -13,7 +13,7 @@ function generateSquad(arr) {
 const LIGA_PORTUGAL_TEAMS = [
     {
         id: 'ben', name: 'Benfica', short: 'BEN', color: '#CC0000', colorAlt: '#FFFFFF',
-        prestige: 86, budget: Math.round(Math.pow(Math.max(0,86-40),2)*30000),
+        prestige: 86, budget: Math.round(Math.pow(Math.max(0,86-40),2)*45000),
         stadium: 'Estadio da Luz', capacity: 64642,
         squad: generateSquad([
             ['Trubin',          'GK',  22, 84, 'UKR'],
@@ -39,7 +39,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'fcp', name: 'Porto', short: 'FCP', color: '#003DA5', colorAlt: '#FFFFFF',
-        prestige: 85, budget: Math.round(Math.pow(Math.max(0,85-40),2)*30000),
+        prestige: 85, budget: Math.round(Math.pow(Math.max(0,85-40),2)*45000),
         stadium: 'Estadio do Dragao', capacity: 50033,
         squad: generateSquad([
             ['Diogo Costa',   'GK',  24, 85, 'POR'],
@@ -64,7 +64,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'scp', name: 'Sporting CP', short: 'SCP', color: '#00952B', colorAlt: '#FFD700',
-        prestige: 84, budget: Math.round(Math.pow(Math.max(0,84-40),2)*30000),
+        prestige: 84, budget: Math.round(Math.pow(Math.max(0,84-40),2)*45000),
         stadium: 'Jose Alvalade', capacity: 50095,
         squad: generateSquad([
             ['Israel',          'GK',  35, 78, 'POR'],
@@ -89,7 +89,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'brg', name: 'SC Braga', short: 'BRG', color: '#C62039', colorAlt: '#FFFFFF',
-        prestige: 73, budget: Math.round(Math.pow(Math.max(0,73-40),2)*30000),
+        prestige: 73, budget: Math.round(Math.pow(Math.max(0,73-40),2)*45000),
         stadium: 'Municipal de Braga', capacity: 30286,
         squad: generateSquad([
             ['Matheus',       'GK',  27, 79, 'BRA'],
@@ -114,7 +114,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'vit', name: 'Vitoria SC', short: 'VIT', color: '#003DA5', colorAlt: '#FFFFFF',
-        prestige: 67, budget: Math.round(Math.pow(Math.max(0,67-40),2)*30000),
+        prestige: 67, budget: Math.round(Math.pow(Math.max(0,67-40),2)*45000),
         stadium: 'Estadio D. Afonso Henriques', capacity: 30029,
         squad: generateSquad([
             ['Varela',          'GK',  29, 76, 'POR'],
@@ -139,7 +139,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'fam', name: 'Famalicao', short: 'FAM', color: '#003DA5', colorAlt: '#FFFFFF',
-        prestige: 61, budget: Math.round(Math.pow(Math.max(0,61-40),2)*30000),
+        prestige: 61, budget: Math.round(Math.pow(Math.max(0,61-40),2)*45000),
         stadium: 'Estadio Municipal de Famalicao', capacity: 5500,
         squad: generateSquad([
             ['Luiz Júnior',    'GK',  28, 65, 'BRA'],
@@ -165,7 +165,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'bav', name: 'Boavista', short: 'BAV', color: '#000000', colorAlt: '#FFFFFF',
-        prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*30000),
+        prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*45000),
         stadium: 'Estadio do Bessa', capacity: 28263,
         squad: generateSquad([
             ['Bracali',        'GK',  38, 66, 'BRA'],
@@ -191,7 +191,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'est', name: 'Estoril', short: 'EST', color: '#FFEE00', colorAlt: '#003DA5',
-        prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000),
+        prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000),
         stadium: 'Estadio Antonio Coimbra da Mota', capacity: 5500,
         squad: generateSquad([
             ['Dani Figueira',  'GK',  30, 63, 'POR'],
@@ -217,7 +217,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'mor', name: 'Moreirense', short: 'MOR', color: '#00952B', colorAlt: '#FFFFFF',
-        prestige: 58, budget: Math.round(Math.pow(Math.max(0,58-40),2)*30000),
+        prestige: 58, budget: Math.round(Math.pow(Math.max(0,58-40),2)*45000),
         stadium: 'Estadio Comendador Joaquim de Almeida Freitas', capacity: 6008,
         squad: generateSquad([
             ['Pasinato',       'GK',  34, 63, 'BRA'],
@@ -243,7 +243,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'gil', name: 'Gil Vicente', short: 'GIL', color: '#003DA5', colorAlt: '#000000',
-        prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000),
+        prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000),
         stadium: 'Estadio Cidade de Barcelos', capacity: 12574,
         squad: generateSquad([
             ['Denis',          'GK',  31, 63, 'BRA'],
@@ -269,7 +269,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'aro', name: 'Arouca', short: 'ARO', color: '#FFEE00', colorAlt: '#003DA5',
-        prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000),
+        prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000),
         stadium: 'Estadio Municipal de Arouca', capacity: 3800,
         squad: generateSquad([
             ['Rui Tavares',    'GK',  30, 62, 'POR'],
@@ -295,7 +295,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'cpa', name: 'Casa Pia', short: 'CPA', color: '#003DA5', colorAlt: '#FFFFFF',
-        prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000),
+        prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000),
         stadium: 'Estadio do Restelo', capacity: 19856,
         squad: generateSquad([
             ['Celton Biai',    'GK',  29, 63, 'GNB'],
@@ -321,7 +321,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'chv', name: 'Chaves', short: 'CHV', color: '#003DA5', colorAlt: '#FFFF00',
-        prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*30000),
+        prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*45000),
         stadium: 'Estadio Municipal Eng. Manuel Branco Teixeira', capacity: 8000,
         squad: generateSquad([
             ['Cláudio Peinado','GK', 31, 62, 'ESP'],
@@ -347,7 +347,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'viz', name: 'Vizela', short: 'VIZ', color: '#CC0000', colorAlt: '#FFFFFF',
-        prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*30000),
+        prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*45000),
         stadium: 'Estadio do FC Vizela', capacity: 7000,
         squad: generateSquad([
             ['Buntic',         'GK',  28, 62, 'CRO'],
@@ -373,7 +373,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'rva', name: 'Rio Ave', short: 'RVA', color: '#006400', colorAlt: '#FFFFFF',
-        prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000),
+        prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000),
         stadium: 'Estadio dos Arcos', capacity: 12815,
         squad: generateSquad([
             ['Jhonatan',       'GK',  28, 63, 'BRA'],
@@ -399,7 +399,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'far', name: 'Farense', short: 'FAR', color: '#CC0000', colorAlt: '#FFFFFF',
-        prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*30000),
+        prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*45000),
         stadium: 'Estadio de Sao Luis', capacity: 9000,
         squad: generateSquad([
             ['Rafael Defendi', 'GK',  34, 62, 'BRA'],
@@ -425,7 +425,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'sea', name: 'Estrela Amadora', short: 'SEA', color: '#CC0000', colorAlt: '#FFFFFF',
-        prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000),
+        prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000),
         stadium: 'Estadio Jose Gomes', capacity: 9000,
         squad: generateSquad([
             ['Caio',           'GK',  27, 61, 'BRA'],
@@ -451,7 +451,7 @@ const LIGA_PORTUGAL_TEAMS = [
     },
     {
         id: 'por2', name: 'Portimonense', short: 'POR', color: '#003DA5', colorAlt: '#FFFFFF',
-        prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000),
+        prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000),
         stadium: 'Estadio Municipal de Portimao', capacity: 9000,
         squad: generateSquad([
             ['Samuel Portugal','GK', 30, 62, 'POR'],

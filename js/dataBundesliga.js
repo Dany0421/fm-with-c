@@ -1,7 +1,7 @@
 // dataBundesliga.js — Bundesliga + Bundesliga 2
 
 const BUNDESLIGA_TEAMS = [
-    { id: 'bay', name: 'Bayern Munich',         short: 'BAY', color: '#DC052D', colorAlt: '#FFFFFF', prestige: 97, budget: Math.round(Math.pow(Math.max(0,97-40),2)*30000), stadium: 'Allianz Arena',              capacity: 75024, squad: [
+    { id: 'bay', name: 'Bayern Munich',         short: 'BAY', color: '#DC052D', colorAlt: '#FFFFFF', prestige: 97, budget: Math.round(Math.pow(Math.max(0,97-40),2)*45000), stadium: 'Allianz Arena',              capacity: 75024, squad: [
         makePlayer(pid(), 'Manuel Neuer',           'GK', 38, 88, 'GER'),
         makePlayer(pid(), 'Sven Ulreich',           'GK', 35, 75, 'GER'),
         makePlayer(pid(), 'Joshua Kimmich',         'RB', 29, 88, 'GER'),
@@ -22,7 +22,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Ryan Gravenberch',       'CM', 22, 79, 'NED'),
         makePlayer(pid(), 'Mathys Tel',             'RW', 19, 77, 'FRA'),
     ]},
-    { id: 'bvb', name: 'Borussia Dortmund',     short: 'BVB', color: '#FDE100', colorAlt: '#000000', prestige: 86, budget: Math.round(Math.pow(Math.max(0,86-40),2)*30000), stadium: 'Signal Iduna Park',          capacity: 81365, squad: [
+    { id: 'bvb', name: 'Borussia Dortmund',     short: 'BVB', color: '#FDE100', colorAlt: '#000000', prestige: 86, budget: Math.round(Math.pow(Math.max(0,86-40),2)*45000), stadium: 'Signal Iduna Park',          capacity: 81365, squad: [
         makePlayer(pid(), 'Gregor Kobel',           'GK', 26, 84, 'SUI'),
         makePlayer(pid(), 'Alexander Meyer',        'GK', 32, 73, 'GER'),
         makePlayer(pid(), 'Julian Ryerson',         'RB', 26, 77, 'USA'),
@@ -43,7 +43,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Jadon Sancho',           'RW', 24, 81, 'ENG'),
         makePlayer(pid(), 'Marcel Sabitzer',        'CM', 30, 79, 'AUT'),
     ]},
-    { id: 'b04', name: 'Bayer Leverkusen',      short: 'B04', color: '#E32221', colorAlt: '#000000', prestige: 85, budget: Math.round(Math.pow(Math.max(0,85-40),2)*30000), stadium: 'BayArena',                   capacity: 30210, squad: [
+    { id: 'b04', name: 'Bayer Leverkusen',      short: 'B04', color: '#E32221', colorAlt: '#000000', prestige: 85, budget: Math.round(Math.pow(Math.max(0,85-40),2)*45000), stadium: 'BayArena',                   capacity: 30210, squad: [
         makePlayer(pid(), 'Lukas Hradecky',         'GK', 34, 83, 'FIN'),
         makePlayer(pid(), 'Mark Flekken',           'GK', 30, 78, 'GER'),
         makePlayer(pid(), 'Jeremie Frimpong',       'RB', 23, 83, 'NED'),
@@ -64,7 +64,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Martin Terrier',         'LW', 27, 80, 'FRA'),
         makePlayer(pid(), 'Odilon Kossounou',       'CB', 23, 78, 'CIV'),
     ]},
-    { id: 'rbl', name: 'RB Leipzig',            short: 'RBL', color: '#CC0000', colorAlt: '#003DA5', prestige: 83, budget: Math.round(Math.pow(Math.max(0,83-40),2)*30000), stadium: 'Red Bull Arena',             capacity: 47069, squad: [
+    { id: 'rbl', name: 'RB Leipzig',            short: 'RBL', color: '#CC0000', colorAlt: '#003DA5', prestige: 83, budget: Math.round(Math.pow(Math.max(0,83-40),2)*45000), stadium: 'Red Bull Arena',             capacity: 47069, squad: [
         makePlayer(pid(), 'Peter Gulacsi',          'GK', 33, 83, 'HUN'),
         makePlayer(pid(), 'Janis Blaswich',         'GK', 29, 75, 'GER'),
         makePlayer(pid(), 'Mohamed Simakan',        'RB', 23, 80, 'FRA'),
@@ -84,7 +84,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Benjamin Henrichs',      'RB', 27, 78, 'GER'),
         makePlayer(pid(), 'Amadou Haidara',         'CM', 26, 79, 'MLI'),
     ]},
-    { id: 'sge', name: 'Eintracht Frankfurt',   short: 'SGE', color: '#E1000F', colorAlt: '#000000', prestige: 75, budget: Math.round(Math.pow(Math.max(0,75-40),2)*30000), stadium: 'Deutsche Bank Park',         capacity: 51500, squad: [
+    { id: 'sge', name: 'Eintracht Frankfurt',   short: 'SGE', color: '#E1000F', colorAlt: '#000000', prestige: 75, budget: Math.round(Math.pow(Math.max(0,75-40),2)*45000), stadium: 'Deutsche Bank Park',         capacity: 51500, squad: [
         makePlayer(pid(), 'Kevin Trapp',            'GK', 33, 82, 'GER'),
         makePlayer(pid(), 'Kelle Roos',             'GK', 30, 72, 'NED'),
         makePlayer(pid(), 'Tuta',                   'CB', 25, 79, 'BRA'),
@@ -104,7 +104,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Lucas Alario',           'ST', 32, 74, 'ARG'),
         makePlayer(pid(), 'Niels Nkounkou',         'LB', 23, 74, 'FRA'),
     ]},
-    { id: 'vfb', name: 'VfB Stuttgart',         short: 'VFB', color: '#E12216', colorAlt: '#FFFFFF', prestige: 74, budget: Math.round(Math.pow(Math.max(0,74-40),2)*30000), stadium: 'Mercedes-Benz Arena',        capacity: 60449, squad: [
+    { id: 'vfb', name: 'VfB Stuttgart',         short: 'VFB', color: '#E12216', colorAlt: '#FFFFFF', prestige: 74, budget: Math.round(Math.pow(Math.max(0,74-40),2)*45000), stadium: 'Mercedes-Benz Arena',        capacity: 60449, squad: [
         makePlayer(pid(), 'Alexander Nubel',        'GK', 27, 79, 'GER'),
         makePlayer(pid(), 'Florian Muller',         'GK', 26, 74, 'GER'),
         makePlayer(pid(), 'Hiroki Ito',             'LB', 24, 77, 'JPN'),
@@ -124,7 +124,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Fabian Rieder',          'CM', 22, 74, 'SUI'),
         makePlayer(pid(), 'Luca Pfeiffer',          'ST', 26, 72, 'GER'),
     ]},
-    { id: 'bsc', name: 'Union Berlin',          short: 'BSC', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 72, budget: Math.round(Math.pow(Math.max(0,72-40),2)*30000), stadium: 'An der Alten Forsterei',     capacity: 22012, squad: [
+    { id: 'bsc', name: 'Union Berlin',          short: 'BSC', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 72, budget: Math.round(Math.pow(Math.max(0,72-40),2)*45000), stadium: 'An der Alten Forsterei',     capacity: 22012, squad: [
         makePlayer(pid(), 'Frederik Ronnow',        'GK', 31, 78, 'DEN'),
         makePlayer(pid(), 'Lennart Grill',          'GK', 25, 68, 'GER'),
         makePlayer(pid(), 'Julian Ryerson',         'RB', 27, 73, 'NOR'),
@@ -144,7 +144,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Milos Pantovic',         'CM', 27, 72, 'SRB'),
         makePlayer(pid(), 'Morten Thorsby',         'CM', 27, 72, 'NOR'),
     ]},
-    { id: 'scf', name: 'SC Freiburg',           short: 'SCF', color: '#CC0000', colorAlt: '#000000', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*30000), stadium: 'Europa-Park Stadion',        capacity: 34700, squad: [
+    { id: 'scf', name: 'SC Freiburg',           short: 'SCF', color: '#CC0000', colorAlt: '#000000', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*45000), stadium: 'Europa-Park Stadion',        capacity: 34700, squad: [
         makePlayer(pid(), 'Mark Flekken',           'GK', 30, 78, 'NED'),
         makePlayer(pid(), 'Benjamin Uphoff',        'GK', 29, 70, 'GER'),
         makePlayer(pid(), 'Kiliann Sildillia',      'RB', 21, 74, 'FRA'),
@@ -164,7 +164,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Jordy Makengo',          'CM', 22, 72, 'FRA'),
         makePlayer(pid(), 'Noah Weisshaupt',        'RW', 22, 73, 'GER'),
     ]},
-    { id: 'wob', name: 'Wolfsburg',             short: 'WOB', color: '#65B32E', colorAlt: '#000000', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*30000), stadium: 'Volkswagen Arena',           capacity: 30000, squad: [
+    { id: 'wob', name: 'Wolfsburg',             short: 'WOB', color: '#65B32E', colorAlt: '#000000', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*45000), stadium: 'Volkswagen Arena',           capacity: 30000, squad: [
         makePlayer(pid(), 'Koen Casteels',          'GK', 32, 82, 'BEL'),
         makePlayer(pid(), 'Kamil Grabara',          'GK', 26, 75, 'POL'),
         makePlayer(pid(), 'Kevin Mbabu',            'RB', 28, 76, 'SUI'),
@@ -184,7 +184,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Dodi Lukebakio',         'RW', 27, 78, 'BEL'),
         makePlayer(pid(), 'Kamil Jozwiak',          'RW', 27, 74, 'POL'),
     ]},
-    { id: 'bmg', name: 'B. Monchengladbach',    short: 'BMG', color: '#000000', colorAlt: '#FFFFFF', prestige: 70, budget: Math.round(Math.pow(Math.max(0,70-40),2)*30000), stadium: 'Borussia-Park',              capacity: 54042, squad: [
+    { id: 'bmg', name: 'B. Monchengladbach',    short: 'BMG', color: '#000000', colorAlt: '#FFFFFF', prestige: 70, budget: Math.round(Math.pow(Math.max(0,70-40),2)*45000), stadium: 'Borussia-Park',              capacity: 54042, squad: [
         makePlayer(pid(), 'Jonas Omlin',            'GK', 30, 78, 'SUI'),
         makePlayer(pid(), 'Jan Olschowsky',         'GK', 22, 68, 'GER'),
         makePlayer(pid(), 'Stefan Lainer',          'RB', 31, 77, 'AUT'),
@@ -204,7 +204,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Luca Netz',              'LB', 21, 74, 'GER'),
         makePlayer(pid(), 'Lars Stindl',            'CAM',35, 77, 'GER'),
     ]},
-    { id: 'tsg', name: 'Hoffenheim',            short: 'TSG', color: '#1369AC', colorAlt: '#FFFFFF', prestige: 69, budget: Math.round(Math.pow(Math.max(0,69-40),2)*30000), stadium: 'PreZero Arena',              capacity: 30150, squad: [
+    { id: 'tsg', name: 'Hoffenheim',            short: 'TSG', color: '#1369AC', colorAlt: '#FFFFFF', prestige: 69, budget: Math.round(Math.pow(Math.max(0,69-40),2)*45000), stadium: 'PreZero Arena',              capacity: 30150, squad: [
         makePlayer(pid(), 'Oliver Baumann',         'GK', 33, 78, 'GER'),
         makePlayer(pid(), 'Luca Philipp',           'GK', 24, 67, 'GER'),
         makePlayer(pid(), 'Pavel Kaderabek',        'RB', 31, 75, 'CZE'),
@@ -224,7 +224,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Grischa Promel',         'CM', 29, 74, 'GER'),
         makePlayer(pid(), 'Angelo Stiller',         'CDM',23, 74, 'GER'),
     ]},
-    { id: 'svw', name: 'Werder Bremen',         short: 'SVW', color: '#009F4D', colorAlt: '#FFFFFF', prestige: 68, budget: Math.round(Math.pow(Math.max(0,68-40),2)*30000), stadium: 'Weser-Stadion',              capacity: 42100, squad: [
+    { id: 'svw', name: 'Werder Bremen',         short: 'SVW', color: '#009F4D', colorAlt: '#FFFFFF', prestige: 68, budget: Math.round(Math.pow(Math.max(0,68-40),2)*45000), stadium: 'Weser-Stadion',              capacity: 42100, squad: [
         makePlayer(pid(), 'Jiri Pavlenka',          'GK', 31, 77, 'CZE'),
         makePlayer(pid(), 'Michael Zetterer',       'GK', 28, 70, 'GER'),
         makePlayer(pid(), 'Mitchell Weiser',        'RB', 29, 73, 'GER'),
@@ -244,7 +244,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Jens Stage',             'CM', 27, 72, 'DEN'),
         makePlayer(pid(), 'Christian Groß',         'CDM',34, 73, 'GER'),
     ]},
-    { id: 'm05', name: 'Mainz',                 short: 'M05', color: '#C8102E', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*30000), stadium: 'Mewa Arena',                 capacity: 34034, squad: [
+    { id: 'm05', name: 'Mainz',                 short: 'M05', color: '#C8102E', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*45000), stadium: 'Mewa Arena',                 capacity: 34034, squad: [
         makePlayer(pid(), 'Robin Zentner',          'GK', 29, 76, 'GER'),
         makePlayer(pid(), 'Finn Dahmen',            'GK', 26, 69, 'GER'),
         makePlayer(pid(), 'Stefan Bell',            'CB', 32, 76, 'GER'),
@@ -264,7 +264,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Marcus Ingvartsen',      'ST', 27, 72, 'DEN'),
         makePlayer(pid(), 'Lee Jae-sung',           'CM', 31, 74, 'KOR'),
     ]},
-    { id: 'koe', name: 'Koln',                  short: 'KOE', color: '#E10710', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*30000), stadium: 'RheinEnergieStadion',        capacity: 50000, squad: [
+    { id: 'koe', name: 'Koln',                  short: 'KOE', color: '#E10710', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*45000), stadium: 'RheinEnergieStadion',        capacity: 50000, squad: [
         makePlayer(pid(), 'Marvin Schwabe',         'GK', 28, 76, 'GER'),
         makePlayer(pid(), 'Thomas Kessler',         'GK', 37, 68, 'GER'),
         makePlayer(pid(), 'Benno Schmitz',          'RB', 29, 73, 'GER'),
@@ -284,7 +284,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Sargis Adamyan',         'LW', 30, 71, 'ARM'),
         makePlayer(pid(), 'Kingsley Schindler',     'RW', 29, 71, 'GER'),
     ]},
-    { id: 'boc', name: 'Bochum',                short: 'BOC', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*30000), stadium: 'Vonovia Ruhrstadion',        capacity: 27599, squad: [
+    { id: 'boc', name: 'Bochum',                short: 'BOC', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*45000), stadium: 'Vonovia Ruhrstadion',        capacity: 27599, squad: [
         makePlayer(pid(), 'Manuel Riemann',         'GK', 33, 74, 'GER'),
         makePlayer(pid(), 'Michael Esser',          'GK', 36, 67, 'GER'),
         makePlayer(pid(), 'Cristian Gamboa',        'RB', 34, 71, 'CRC'),
@@ -304,7 +304,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Christopher Antwi-Adjei','RW', 29, 71, 'GHA'),
         makePlayer(pid(), 'Soma Novothny',          'ST', 27, 69, 'HUN'),
     ]},
-    { id: 'fca', name: 'Augsburg',              short: 'FCA', color: '#BA3535', colorAlt: '#007A33', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*30000), stadium: 'WWK Arena',                  capacity: 30660, squad: [
+    { id: 'fca', name: 'Augsburg',              short: 'FCA', color: '#BA3535', colorAlt: '#007A33', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*45000), stadium: 'WWK Arena',                  capacity: 30660, squad: [
         makePlayer(pid(), 'Rafal Gikiewicz',        'GK', 36, 74, 'POL'),
         makePlayer(pid(), 'Tomas Koubek',           'GK', 31, 70, 'CZE'),
         makePlayer(pid(), 'Robert Gumny',           'RB', 25, 72, 'POL'),
@@ -324,7 +324,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Alfred Finnbogason',     'ST', 33, 72, 'ISL'),
         makePlayer(pid(), 'Michael Gregoritsch',    'ST', 29, 74, 'AUT'),
     ]},
-    { id: 'fcH', name: 'Heidenheim',            short: 'FCH', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000), stadium: 'Voith Arena',                capacity: 15000, squad: [
+    { id: 'fcH', name: 'Heidenheim',            short: 'FCH', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000), stadium: 'Voith Arena',                capacity: 15000, squad: [
         makePlayer(pid(), 'Kevin Muller',           'GK', 31, 72, 'GER'),
         makePlayer(pid(), 'Vitus Eichler',          'GK', 25, 64, 'GER'),
         makePlayer(pid(), 'Patrick Mainka',         'CB', 28, 71, 'GER'),
@@ -344,7 +344,7 @@ const BUNDESLIGA_TEAMS = [
         makePlayer(pid(), 'Stefan Schimmer',        'ST', 30, 69, 'GER'),
         makePlayer(pid(), 'Kevin Sessa',            'CM', 27, 69, 'GER'),
     ]},
-    { id: 'd98', name: 'Darmstadt',             short: 'D98', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'Jonathan Heimes-Stadion',    capacity: 17000, squad: [
+    { id: 'd98', name: 'Darmstadt',             short: 'D98', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'Jonathan Heimes-Stadion',    capacity: 17000, squad: [
         makePlayer(pid(), 'Marcel Schuhen',         'GK', 30, 70, 'GER'),
         makePlayer(pid(), 'Florian Stritzel',       'GK', 26, 64, 'GER'),
         makePlayer(pid(), 'Patric Pfeiffer',        'CB', 24, 68, 'GER'),
@@ -367,7 +367,7 @@ const BUNDESLIGA_TEAMS = [
 ];
 
 const BUNDESLIGA2_TEAMS = [
-    { id: 'hsv',  name: 'Hamburg SV',           short: 'HSV', color: '#009EE0', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*30000), stadium: 'Volksparkstadion',          capacity: 57000, squad: [
+    { id: 'hsv',  name: 'Hamburg SV',           short: 'HSV', color: '#009EE0', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*45000), stadium: 'Volksparkstadion',          capacity: 57000, squad: [
         makePlayer(pid(), 'Daniel Heuer Fernandes', 'GK', 27, 74, 'GER'),
         makePlayer(pid(), 'Sven Schumann',          'GK', 26, 66, 'GER'),
         makePlayer(pid(), 'Josha Vagnoman',         'RB', 23, 73, 'GER'),
@@ -386,7 +386,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Bakery Jatta',           'RW', 25, 70, 'GAM'),
         makePlayer(pid(), 'Davie Selke',            'ST', 28, 71, 'GER'),
     ]},
-    { id: 's04',  name: 'Schalke',              short: 'S04', color: '#004B9A', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*30000), stadium: 'Veltins-Arena',             capacity: 62271, squad: [
+    { id: 's04',  name: 'Schalke',              short: 'S04', color: '#004B9A', colorAlt: '#FFFFFF', prestige: 65, budget: Math.round(Math.pow(Math.max(0,65-40),2)*45000), stadium: 'Veltins-Arena',             capacity: 62271, squad: [
         makePlayer(pid(), 'Ralf Fahrmann',          'GK', 34, 73, 'GER'),
         makePlayer(pid(), 'Alexander Schwolow',     'GK', 31, 72, 'GER'),
         makePlayer(pid(), 'Henning Matriciani',     'RB', 23, 71, 'GER'),
@@ -405,7 +405,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Kenan Karaman',          'ST', 29, 73, 'GER'),
         makePlayer(pid(), 'Justin Heekeren',        'GK', 23, 70, 'GER'),
     ]},
-    { id: 'hbt',  name: 'Hertha Berlin',        short: 'HBT', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 64, budget: Math.round(Math.pow(Math.max(0,64-40),2)*30000), stadium: 'Olympiastadion',            capacity: 74475, squad: [
+    { id: 'hbt',  name: 'Hertha Berlin',        short: 'HBT', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 64, budget: Math.round(Math.pow(Math.max(0,64-40),2)*45000), stadium: 'Olympiastadion',            capacity: 74475, squad: [
         makePlayer(pid(), 'Oliver Christensen',     'GK', 23, 72, 'DEN'),
         makePlayer(pid(), 'Marcel Lotka',           'GK', 21, 68, 'GER'),
         makePlayer(pid(), 'Jonjoe Kenny',           'RB', 26, 72, 'ENG'),
@@ -424,7 +424,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Davie Selke',            'ST', 28, 72, 'GER'),
         makePlayer(pid(), 'Kevin-Prince Boateng',   'CM', 36, 71, 'GHA'),
     ]},
-    { id: 'stp',  name: 'FC St. Pauli',         short: 'STP', color: '#964B00', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*30000), stadium: 'Millerntor-Stadion',        capacity: 29546, squad: [
+    { id: 'stp',  name: 'FC St. Pauli',         short: 'STP', color: '#964B00', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*45000), stadium: 'Millerntor-Stadion',        capacity: 29546, squad: [
         makePlayer(pid(), 'Nikola Vasilj',          'GK', 27, 71, 'BIH'),
         makePlayer(pid(), 'Dennis Smarsch',         'GK', 25, 65, 'GER'),
         makePlayer(pid(), 'Manolis Saliakas',       'RB', 26, 69, 'GRE'),
@@ -443,7 +443,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Simon Makienok',         'ST', 33, 70, 'DEN'),
         makePlayer(pid(), 'David Otto',             'CM', 22, 67, 'GER'),
     ]},
-    { id: 'f95',  name: 'Fortuna Dusseldorf',   short: 'F95', color: '#E10710', colorAlt: '#FFFFFF', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*30000), stadium: 'Merkur Spiel-Arena',        capacity: 54600, squad: [
+    { id: 'f95',  name: 'Fortuna Dusseldorf',   short: 'F95', color: '#E10710', colorAlt: '#FFFFFF', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*45000), stadium: 'Merkur Spiel-Arena',        capacity: 54600, squad: [
         makePlayer(pid(), 'Florian Kastenmeier',    'GK', 26, 70, 'GER'),
         makePlayer(pid(), 'Raphael Wolf',           'GK', 34, 66, 'GER'),
         makePlayer(pid(), 'Matthias Zimmermann',    'RB', 31, 71, 'GER'),
@@ -462,7 +462,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Rouven Hennings',        'ST', 35, 70, 'GER'),
         makePlayer(pid(), 'Dawid Kownacki',         'ST', 26, 70, 'POL'),
     ]},
-    { id: 'h96',  name: 'Hannover 96',          short: 'H96', color: '#009B2A', colorAlt: '#000000', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*30000), stadium: 'Heinz von Heiden Arena',    capacity: 49000, squad: [
+    { id: 'h96',  name: 'Hannover 96',          short: 'H96', color: '#009B2A', colorAlt: '#000000', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*45000), stadium: 'Heinz von Heiden Arena',    capacity: 49000, squad: [
         makePlayer(pid(), 'Ron-Robert Zieler',      'GK', 34, 72, 'GER'),
         makePlayer(pid(), 'Martin Hansen',          'GK', 33, 68, 'DEN'),
         makePlayer(pid(), 'Nico Neidhart',          'RB', 21, 68, 'GER'),
@@ -481,7 +481,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Enrico Valentini',       'RB', 32, 69, 'GER'),
         makePlayer(pid(), 'Trevor Treinen',         'CM', 21, 68, 'USA'),
     ]},
-    { id: 'kil',  name: 'Holstein Kiel',        short: 'KIL', color: '#CC0000', colorAlt: '#003DA5', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000), stadium: 'Holstein-Stadion',          capacity: 15034, squad: [
+    { id: 'kil',  name: 'Holstein Kiel',        short: 'KIL', color: '#CC0000', colorAlt: '#003DA5', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000), stadium: 'Holstein-Stadion',          capacity: 15034, squad: [
         makePlayer(pid(), 'Thomas Dahne',           'GK', 32, 69, 'GER'),
         makePlayer(pid(), 'Timon Weiner',           'GK', 23, 64, 'GER'),
         makePlayer(pid(), 'Julian Korb',            'RB', 30, 68, 'GER'),
@@ -500,7 +500,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Shuto Machino',          'ST', 24, 70, 'JPN'),
         makePlayer(pid(), 'Benedikt Pichler',       'ST', 25, 67, 'AUT'),
     ]},
-    { id: 'fcn',  name: 'Nurnberg',             short: 'FCN', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000), stadium: 'Max-Morlock-Stadion',       capacity: 50000, squad: [
+    { id: 'fcn',  name: 'Nurnberg',             short: 'FCN', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000), stadium: 'Max-Morlock-Stadion',       capacity: 50000, squad: [
         makePlayer(pid(), 'Christian Mathenia',     'GK', 31, 69, 'GER'),
         makePlayer(pid(), 'Carl Klaus',             'GK', 24, 63, 'GER'),
         makePlayer(pid(), 'Enrico Valentini',       'RB', 32, 68, 'GER'),
@@ -519,7 +519,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Erik Shuranov',          'ST', 22, 66, 'GER'),
         makePlayer(pid(), 'Lukas Schleimer',        'ST', 25, 65, 'GER'),
     ]},
-    { id: 'ksl',  name: 'Kaiserslautern',       short: 'KSL', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 58, budget: Math.round(Math.pow(Math.max(0,58-40),2)*30000), stadium: 'Fritz Walter Stadion',      capacity: 49850, squad: [
+    { id: 'ksl',  name: 'Kaiserslautern',       short: 'KSL', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 58, budget: Math.round(Math.pow(Math.max(0,58-40),2)*45000), stadium: 'Fritz Walter Stadion',      capacity: 49850, squad: [
         makePlayer(pid(), 'Andreas Luthe',          'GK', 36, 67, 'GER'),
         makePlayer(pid(), 'Julian Krahl',           'GK', 24, 63, 'GER'),
         makePlayer(pid(), 'Jean Zimmer',            'RB', 29, 67, 'GER'),
@@ -538,7 +538,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Terrence Boyd',          'ST', 32, 67, 'USA'),
         makePlayer(pid(), 'Ragnar Ache',            'ST', 25, 67, 'GER'),
     ]},
-    { id: 'pad',  name: 'Paderborn',            short: 'SCP', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'Benteler Arena',            capacity: 15000, squad: [
+    { id: 'pad',  name: 'Paderborn',            short: 'SCP', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'Benteler Arena',            capacity: 15000, squad: [
         makePlayer(pid(), 'Lukas Kwasniok',         'GK', 30, 67, 'GER'),
         makePlayer(pid(), 'Leopold Zingerle',       'GK', 28, 65, 'AUT'),
         makePlayer(pid(), 'Marcel Correia',         'LB', 28, 65, 'POR'),
@@ -557,7 +557,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Felix Platte',           'ST', 27, 67, 'GER'),
         makePlayer(pid(), 'Sven Michel',            'ST', 33, 67, 'GER'),
     ]},
-    { id: 'ksc',  name: 'Karlsruher SC',        short: 'KSC', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'BBBank Wildpark',           capacity: 34301, squad: [
+    { id: 'ksc',  name: 'Karlsruher SC',        short: 'KSC', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'BBBank Wildpark',           capacity: 34301, squad: [
         makePlayer(pid(), 'Marius Gersbeck',        'GK', 29, 67, 'GER'),
         makePlayer(pid(), 'Benjamin Uphoff',        'GK', 29, 66, 'GER'),
         makePlayer(pid(), 'Sebastian Jung',         'RB', 32, 65, 'GER'),
@@ -576,7 +576,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Mikkel Kaufmann',        'ST', 22, 67, 'DEN'),
         makePlayer(pid(), 'Simone Rapp',            'ST', 30, 65, 'SUI'),
     ]},
-    { id: 'fcm',  name: 'Magdeburg',            short: 'FCM', color: '#0066CC', colorAlt: '#FFFFFF', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*30000), stadium: 'MDCC-Arena',                capacity: 27000, squad: [
+    { id: 'fcm',  name: 'Magdeburg',            short: 'FCM', color: '#0066CC', colorAlt: '#FFFFFF', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*45000), stadium: 'MDCC-Arena',                capacity: 27000, squad: [
         makePlayer(pid(), 'Dominik Reimann',        'GK', 25, 66, 'GER'),
         makePlayer(pid(), 'Eike Bansen',            'GK', 25, 62, 'GER'),
         makePlayer(pid(), 'Connor Krempicki',       'RB', 26, 64, 'GER'),
@@ -595,7 +595,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Luca Schuler',           'ST', 24, 65, 'GER'),
         makePlayer(pid(), 'Marvin Ingvartsen',      'ST', 27, 65, 'DEN'),
     ]},
-    { id: 'enb',  name: 'Braunschweig',         short: 'ENB', color: '#FFFF00', colorAlt: '#003DA5', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*30000), stadium: 'Eintracht-Stadion',         capacity: 25000, squad: [
+    { id: 'enb',  name: 'Braunschweig',         short: 'ENB', color: '#FFFF00', colorAlt: '#003DA5', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*45000), stadium: 'Eintracht-Stadion',         capacity: 25000, squad: [
         makePlayer(pid(), 'Patrick Drewes',         'GK', 30, 65, 'GER'),
         makePlayer(pid(), 'Jasmin Fejzic',          'GK', 35, 62, 'BIH'),
         makePlayer(pid(), 'Jan Lohmannsroben',      'RB', 26, 62, 'GER'),
@@ -614,7 +614,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Rayan Philippe',         'ST', 24, 63, 'FRA'),
         makePlayer(pid(), 'Mikkel Kaufmann',        'ST', 22, 64, 'DEN'),
     ]},
-    { id: 'jah',  name: 'Regensburg',           short: 'JAH', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000), stadium: 'Continental Arena',         capacity: 15255, squad: [
+    { id: 'jah',  name: 'Regensburg',           short: 'JAH', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000), stadium: 'Continental Arena',         capacity: 15255, squad: [
         makePlayer(pid(), 'Alexander Meyer',        'GK', 31, 65, 'GER'),
         makePlayer(pid(), 'Philipp Pentke',         'GK', 35, 62, 'GER'),
         makePlayer(pid(), 'Jonathan Meier',         'RB', 26, 62, 'GER'),
@@ -633,7 +633,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Andreas Albers',         'ST', 33, 63, 'DEN'),
         makePlayer(pid(), 'Marco Gruttner',         'ST', 35, 63, 'GER'),
     ]},
-    { id: 'els',  name: 'Elversberg',           short: 'ELS', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*30000), stadium: 'Ursapharm Arena',           capacity: 12000, squad: [
+    { id: 'els',  name: 'Elversberg',           short: 'ELS', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*45000), stadium: 'Ursapharm Arena',           capacity: 12000, squad: [
         makePlayer(pid(), 'Nicolas Kristof',        'GK', 27, 63, 'LUX'),
         makePlayer(pid(), 'Luca Unbehaun',          'GK', 23, 61, 'GER'),
         makePlayer(pid(), 'Ole Klitten',            'RB', 24, 61, 'DEN'),
@@ -652,7 +652,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Noel Futkeu',            'ST', 22, 62, 'GER'),
         makePlayer(pid(), 'Philipp Strompf',        'ST', 27, 61, 'GER'),
     ]},
-    { id: 'svw2', name: 'Wiesbaden',            short: 'SVW', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*30000), stadium: 'BRITA-Arena',               capacity: 13000, squad: [
+    { id: 'svw2', name: 'Wiesbaden',            short: 'SVW', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*45000), stadium: 'BRITA-Arena',               capacity: 13000, squad: [
         makePlayer(pid(), 'Florian Stritzel',       'GK', 26, 63, 'GER'),
         makePlayer(pid(), 'Ralph Schaffler',        'GK', 27, 60, 'GER'),
         makePlayer(pid(), 'Maximilian Meisel',      'RB', 24, 61, 'GER'),
@@ -671,7 +671,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'Ivan Prtajin',           'ST', 26, 63, 'CRO'),
         makePlayer(pid(), 'Sascha Mockenhaupt',     'CDM',32, 61, 'GER'),
     ]},
-    { id: 'hnr',  name: 'Rostock',              short: 'HNR', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*30000), stadium: 'Ostseestadion',             capacity: 29000, squad: [
+    { id: 'hnr',  name: 'Rostock',              short: 'HNR', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*45000), stadium: 'Ostseestadion',             capacity: 29000, squad: [
         makePlayer(pid(), 'Markus Kolke',           'GK', 31, 63, 'GER'),
         makePlayer(pid(), 'Kevin Broll',            'GK', 29, 60, 'GER'),
         makePlayer(pid(), 'Ryan Malone',            'RB', 23, 61, 'GER'),
@@ -690,7 +690,7 @@ const BUNDESLIGA2_TEAMS = [
         makePlayer(pid(), 'John Verhoek',           'ST', 34, 62, 'NED'),
         makePlayer(pid(), 'Mirnes Pepic',           'ST', 29, 61, 'BIH'),
     ]},
-    { id: 'vfl',  name: 'Osnabruck',            short: 'VFL', color: '#000080', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'Bremer Brucke',             capacity: 16068, squad: [
+    { id: 'vfl',  name: 'Osnabruck',            short: 'VFL', color: '#000080', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'Bremer Brucke',             capacity: 16068, squad: [
         makePlayer(pid(), 'Philipp Kuhn',           'GK', 28, 62, 'GER'),
         makePlayer(pid(), 'Stefan Zingerle',        'GK', 27, 59, 'AUT'),
         makePlayer(pid(), 'Roberto Massimo',        'RB', 23, 61, 'GER'),

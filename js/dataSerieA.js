@@ -1,7 +1,7 @@
 // dataSerieA.js — Serie A + Serie B
 
 const SERIE_A_TEAMS = [
-    { id: 'int', name: 'Inter Milan',    short: 'INT', color: '#010E80', colorAlt: '#000000', prestige: 90, budget: Math.round(Math.pow(Math.max(0,90-40),2)*30000), stadium: 'Giuseppe Meazza',          capacity: 75923, squad: [
+    { id: 'int', name: 'Inter Milan',    short: 'INT', color: '#010E80', colorAlt: '#000000', prestige: 90, budget: Math.round(Math.pow(Math.max(0,90-40),2)*45000), stadium: 'Giuseppe Meazza',          capacity: 75923, squad: [
         makePlayer(pid(), 'Yann Sommer',             'GK', 35, 87, 'SUI'),
         makePlayer(pid(), 'Antonio Di Gennaro',      'GK', 35, 71, 'ITA'),
         makePlayer(pid(), 'Denzel Dumfries',         'RB', 28, 83, 'NED'),
@@ -22,7 +22,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Juan Cuadrado',           'RW', 36, 77, 'COL'),
         makePlayer(pid(), 'Kristjan Asllani',        'CM', 22, 76, 'ALB'),
     ]},
-    { id: 'juv', name: 'Juventus',       short: 'JUV', color: '#000000', colorAlt: '#FFFFFF', prestige: 88, budget: Math.round(Math.pow(Math.max(0,88-40),2)*30000), stadium: 'Allianz Stadium',          capacity: 41507, squad: [
+    { id: 'juv', name: 'Juventus',       short: 'JUV', color: '#000000', colorAlt: '#FFFFFF', prestige: 88, budget: Math.round(Math.pow(Math.max(0,88-40),2)*45000), stadium: 'Allianz Stadium',          capacity: 41507, squad: [
         makePlayer(pid(), 'Wojciech Szczesny',       'GK', 34, 84, 'POL'),
         makePlayer(pid(), 'Mattia Perin',            'GK', 31, 78, 'ITA'),
         makePlayer(pid(), 'Danilo',                  'RB', 33, 81, 'BRA'),
@@ -43,7 +43,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Moise Kean',              'ST', 24, 78, 'ITA'),
         makePlayer(pid(), 'Kenan Yildiz',            'CAM',19, 78, 'TUR'),
     ]},
-    { id: 'acm', name: 'AC Milan',       short: 'ACM', color: '#FB090B', colorAlt: '#000000', prestige: 87, budget: Math.round(Math.pow(Math.max(0,87-40),2)*30000), stadium: 'Giuseppe Meazza',          capacity: 75923, squad: [
+    { id: 'acm', name: 'AC Milan',       short: 'ACM', color: '#FB090B', colorAlt: '#000000', prestige: 87, budget: Math.round(Math.pow(Math.max(0,87-40),2)*45000), stadium: 'Giuseppe Meazza',          capacity: 75923, squad: [
         makePlayer(pid(), 'Mike Maignan',            'GK', 28, 89, 'FRA'),
         makePlayer(pid(), 'Marco Sportiello',        'GK', 32, 74, 'ITA'),
         makePlayer(pid(), 'Davide Calabria',         'RB', 27, 80, 'ITA'),
@@ -64,7 +64,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Tijjani Reijnders',       'CM', 25, 82, 'NED'),
         makePlayer(pid(), 'Noah Okafor',             'LW', 24, 78, 'SUI'),
     ]},
-    { id: 'nap', name: 'Napoli',         short: 'NAP', color: '#087FC6', colorAlt: '#FFFFFF', prestige: 86, budget: Math.round(Math.pow(Math.max(0,86-40),2)*30000), stadium: 'Diego Armando Maradona',   capacity: 54726, squad: [
+    { id: 'nap', name: 'Napoli',         short: 'NAP', color: '#087FC6', colorAlt: '#FFFFFF', prestige: 86, budget: Math.round(Math.pow(Math.max(0,86-40),2)*45000), stadium: 'Diego Armando Maradona',   capacity: 54726, squad: [
         makePlayer(pid(), 'Alex Meret',              'GK', 27, 84, 'ITA'),
         makePlayer(pid(), 'Pierluigi Gollini',       'GK', 30, 74, 'ITA'),
         makePlayer(pid(), 'Giovanni Di Lorenzo',     'RB', 30, 84, 'ITA'),
@@ -85,7 +85,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Jesper Lindstrom',        'CM', 24, 76, 'DEN'),
         makePlayer(pid(), 'Elif Elmas',              'CM', 24, 78, 'MKD'),
     ]},
-    { id: 'rom', name: 'AS Roma',        short: 'ROM', color: '#9B0000', colorAlt: '#F5C400', prestige: 82, budget: Math.round(Math.pow(Math.max(0,82-40),2)*30000), stadium: 'Olimpico',                 capacity: 72698, squad: [
+    { id: 'rom', name: 'AS Roma',        short: 'ROM', color: '#9B0000', colorAlt: '#F5C400', prestige: 82, budget: Math.round(Math.pow(Math.max(0,82-40),2)*45000), stadium: 'Olimpico',                 capacity: 72698, squad: [
         makePlayer(pid(), 'Rui Patricio',            'GK', 36, 81, 'POR'),
         makePlayer(pid(), 'Mile Svilar',             'GK', 24, 77, 'BEL'),
         makePlayer(pid(), 'Rick Karsdorp',           'RB', 29, 78, 'NED'),
@@ -105,7 +105,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Stephan El Shaarawy',     'LW', 32, 77, 'ITA'),
         makePlayer(pid(), 'Tommaso Baldanzi',        'CAM',21, 75, 'ITA'),
     ]},
-    { id: 'laz', name: 'Lazio',          short: 'LAZ', color: '#87CEEB', colorAlt: '#FFFFFF', prestige: 78, budget: Math.round(Math.pow(Math.max(0,78-40),2)*30000), stadium: 'Olimpico',                 capacity: 72698, squad: [
+    { id: 'laz', name: 'Lazio',          short: 'LAZ', color: '#87CEEB', colorAlt: '#FFFFFF', prestige: 78, budget: Math.round(Math.pow(Math.max(0,78-40),2)*45000), stadium: 'Olimpico',                 capacity: 72698, squad: [
         makePlayer(pid(), 'Ivan Provedel',           'GK', 30, 82, 'ITA'),
         makePlayer(pid(), 'Christos Mandas',         'GK', 23, 74, 'GRE'),
         makePlayer(pid(), 'Manuel Lazzari',          'RB', 30, 79, 'ITA'),
@@ -125,7 +125,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Pedro',                   'ST', 36, 80, 'ESP'),
         makePlayer(pid(), 'Taty Castellanos',        'ST', 25, 77, 'ARG'),
     ]},
-    { id: 'ata', name: 'Atalanta',       short: 'ATA', color: '#1C83C5', colorAlt: '#000000', prestige: 80, budget: Math.round(Math.pow(Math.max(0,80-40),2)*30000), stadium: 'Gewiss Stadium',           capacity: 21300, squad: [
+    { id: 'ata', name: 'Atalanta',       short: 'ATA', color: '#1C83C5', colorAlt: '#000000', prestige: 80, budget: Math.round(Math.pow(Math.max(0,80-40),2)*45000), stadium: 'Gewiss Stadium',           capacity: 21300, squad: [
         makePlayer(pid(), 'Juan Musso',              'GK', 30, 82, 'ARG'),
         makePlayer(pid(), 'Marco Rossi',             'GK', 26, 72, 'ITA'),
         makePlayer(pid(), 'Davide Zappacosta',       'RB', 32, 77, 'ITA'),
@@ -145,7 +145,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Luis Muriel',             'ST', 33, 78, 'COL'),
         makePlayer(pid(), 'Charles De Ketelaere',    'CAM',23, 80, 'BEL'),
     ]},
-    { id: 'fio', name: 'Fiorentina',     short: 'FIO', color: '#4B0082', colorAlt: '#FFFFFF', prestige: 73, budget: Math.round(Math.pow(Math.max(0,73-40),2)*30000), stadium: 'Artemio Franchi',          capacity: 43147, squad: [
+    { id: 'fio', name: 'Fiorentina',     short: 'FIO', color: '#4B0082', colorAlt: '#FFFFFF', prestige: 73, budget: Math.round(Math.pow(Math.max(0,73-40),2)*45000), stadium: 'Artemio Franchi',          capacity: 43147, squad: [
         makePlayer(pid(), 'Pietro Terracciano',      'GK', 34, 79, 'ITA'),
         makePlayer(pid(), 'Olivier Christensen',     'GK', 26, 72, 'DEN'),
         makePlayer(pid(), 'Dodo',                    'RB', 26, 79, 'BRA'),
@@ -166,7 +166,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Lucas Beltran',           'ST', 23, 76, 'ARG'),
         makePlayer(pid(), 'Josip Brekalo',           'LW', 26, 75, 'CRO'),
     ]},
-    { id: 'tor', name: 'Torino',         short: 'TOR', color: '#8B0000', colorAlt: '#FFFFFF', prestige: 67, budget: Math.round(Math.pow(Math.max(0,67-40),2)*30000), stadium: 'Olimpico Grande Torino',   capacity: 27958, squad: [
+    { id: 'tor', name: 'Torino',         short: 'TOR', color: '#8B0000', colorAlt: '#FFFFFF', prestige: 67, budget: Math.round(Math.pow(Math.max(0,67-40),2)*45000), stadium: 'Olimpico Grande Torino',   capacity: 27958, squad: [
         makePlayer(pid(), 'Vanja Milinkovic-Savic',  'GK', 27, 76, 'SRB'),
         makePlayer(pid(), 'Luca Gemello',            'GK', 26, 65, 'ITA'),
         makePlayer(pid(), 'Wilfried Singo',          'RB', 23, 74, 'CIV'),
@@ -186,7 +186,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Ivan Ilic',               'CM', 22, 73, 'SRB'),
         makePlayer(pid(), 'Pietro Pellegri',         'ST', 23, 70, 'ITA'),
     ]},
-    { id: 'bol', name: 'Bologna',        short: 'BOL', color: '#990000', colorAlt: '#003DA5', prestige: 70, budget: Math.round(Math.pow(Math.max(0,70-40),2)*30000), stadium: "Renato Dall'Ara",          capacity: 36452, squad: [
+    { id: 'bol', name: 'Bologna',        short: 'BOL', color: '#990000', colorAlt: '#003DA5', prestige: 70, budget: Math.round(Math.pow(Math.max(0,70-40),2)*45000), stadium: "Renato Dall'Ara",          capacity: 36452, squad: [
         makePlayer(pid(), 'Lukasz Skorupski',        'GK', 32, 77, 'POL'),
         makePlayer(pid(), 'Nicola Bagnolini',        'GK', 24, 64, 'ITA'),
         makePlayer(pid(), 'Stefan Posch',            'RB', 26, 74, 'AUT'),
@@ -206,7 +206,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Dan Ndoye',               'LW', 23, 73, 'SUI'),
         makePlayer(pid(), 'Victor Kristiansen',      'LB', 21, 72, 'DEN'),
     ]},
-    { id: 'udi', name: 'Udinese',        short: 'UDI', color: '#000000', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*30000), stadium: 'Dacia Arena',              capacity: 25144, squad: [
+    { id: 'udi', name: 'Udinese',        short: 'UDI', color: '#000000', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*45000), stadium: 'Dacia Arena',              capacity: 25144, squad: [
         makePlayer(pid(), 'Marco Silvestri',         'GK', 31, 74, 'ITA'),
         makePlayer(pid(), 'Maduka Okoye',            'GK', 24, 69, 'NGA'),
         makePlayer(pid(), 'Nehuen Perez',            'RB', 23, 72, 'ARG'),
@@ -226,7 +226,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Lorenzo Lucca',           'ST', 23, 72, 'ITA'),
         makePlayer(pid(), 'Ola Aina',                'RB', 27, 71, 'NGA'),
     ]},
-    { id: 'gen', name: 'Genoa',          short: 'GEN', color: '#C8102E', colorAlt: '#003DA5', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*30000), stadium: 'Luigi Ferraris',           capacity: 36685, squad: [
+    { id: 'gen', name: 'Genoa',          short: 'GEN', color: '#C8102E', colorAlt: '#003DA5', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*45000), stadium: 'Luigi Ferraris',           capacity: 36685, squad: [
         makePlayer(pid(), 'Josep Martinez',          'GK', 25, 74, 'ESP'),
         makePlayer(pid(), 'Nicola Leali',            'GK', 30, 67, 'ITA'),
         makePlayer(pid(), 'Silvan Hefti',            'RB', 26, 71, 'SUI'),
@@ -246,7 +246,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Anass Ankeye',            'CM', 24, 68, 'SEN'),
         makePlayer(pid(), 'Albert Gudmundsson',      'RW', 26, 76, 'ISL'),
     ]},
-    { id: 'emp', name: 'Empoli',         short: 'EMP', color: '#0066CC', colorAlt: '#FFFFFF', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*30000), stadium: 'Carlo Castellani',         capacity: 16284, squad: [
+    { id: 'emp', name: 'Empoli',         short: 'EMP', color: '#0066CC', colorAlt: '#FFFFFF', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*45000), stadium: 'Carlo Castellani',         capacity: 16284, squad: [
         makePlayer(pid(), 'Guglielmo Vicario',       'GK', 26, 75, 'ITA'),
         makePlayer(pid(), 'Devis Vasquez',           'GK', 26, 66, 'COL'),
         makePlayer(pid(), 'Tyronne Ebuehi',          'RB', 27, 68, 'NGA'),
@@ -266,7 +266,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Jacopo Fazzini',          'CAM',20, 68, 'ITA'),
         makePlayer(pid(), 'Petar Stojanovic',        'RB', 26, 68, 'SVN'),
     ]},
-    { id: 'mon', name: 'Monza',          short: 'MON', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*30000), stadium: 'U-Power Stadium',          capacity: 18568, squad: [
+    { id: 'mon', name: 'Monza',          short: 'MON', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 63, budget: Math.round(Math.pow(Math.max(0,63-40),2)*45000), stadium: 'U-Power Stadium',          capacity: 18568, squad: [
         makePlayer(pid(), 'Michele Di Gregorio',     'GK', 25, 75, 'ITA'),
         makePlayer(pid(), 'Stefano Cragno',          'GK', 29, 71, 'ITA'),
         makePlayer(pid(), 'Pedro Pedro',             'RB', 26, 71, 'ESP'),
@@ -286,7 +286,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Luca Marrone',            'CDM',31, 68, 'ITA'),
         makePlayer(pid(), 'Milan Djuric',            'ST', 33, 70, 'BIH'),
     ]},
-    { id: 'fro', name: 'Frosinone',      short: 'FRO', color: '#FFCC00', colorAlt: '#003DA5', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'Benito Stirpe',            capacity: 16227, squad: [
+    { id: 'fro', name: 'Frosinone',      short: 'FRO', color: '#FFCC00', colorAlt: '#003DA5', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'Benito Stirpe',            capacity: 16227, squad: [
         makePlayer(pid(), 'Stefano Turati',          'GK', 22, 70, 'ITA'),
         makePlayer(pid(), 'Federico Ravaglia',       'GK', 24, 65, 'ITA'),
         makePlayer(pid(), 'Nadir Zortea',            'RB', 24, 68, 'ITA'),
@@ -305,7 +305,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Walid Cheddira',          'ST', 26, 69, 'MAR'),
         makePlayer(pid(), 'Tommaso Ciofani',         'ST', 36, 65, 'ITA'),
     ]},
-    { id: 'lec', name: 'Lecce',          short: 'LEC', color: '#CC0000', colorAlt: '#F5C400', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000), stadium: 'Via del Mare',             capacity: 31533, squad: [
+    { id: 'lec', name: 'Lecce',          short: 'LEC', color: '#CC0000', colorAlt: '#F5C400', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000), stadium: 'Via del Mare',             capacity: 31533, squad: [
         makePlayer(pid(), 'Wladimiro Falcone',       'GK', 28, 73, 'ITA'),
         makePlayer(pid(), 'Branimir Kalaica',        'GK', 22, 62, 'CRO'),
         makePlayer(pid(), 'Valentin Gendrey',        'RB', 24, 69, 'FRA'),
@@ -325,7 +325,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Lorenzo Colombo',         'ST', 22, 69, 'ITA'),
         makePlayer(pid(), 'Panagiotis Retsos',       'CB', 24, 68, 'GRE'),
     ]},
-    { id: 'cag', name: 'Cagliari',       short: 'CAG', color: '#990000', colorAlt: '#003DA5', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*30000), stadium: 'Sardegna Arena',           capacity: 16000, squad: [
+    { id: 'cag', name: 'Cagliari',       short: 'CAG', color: '#990000', colorAlt: '#003DA5', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*45000), stadium: 'Sardegna Arena',           capacity: 16000, squad: [
         makePlayer(pid(), 'Boris Radunovic',         'GK', 28, 71, 'SRB'),
         makePlayer(pid(), 'Simone Scuffet',          'GK', 27, 70, 'ITA'),
         makePlayer(pid(), 'Nahitan Nandez',          'RB', 28, 75, 'URU'),
@@ -345,7 +345,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Ante Budimir',            'ST', 31, 72, 'CRO'),
         makePlayer(pid(), 'Gaetano Prati',           'CDM',22, 68, 'ITA'),
     ]},
-    { id: 'sal', name: 'Salernitana',    short: 'SAL', color: '#8B0000', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000), stadium: 'Arechi',                   capacity: 37843, squad: [
+    { id: 'sal', name: 'Salernitana',    short: 'SAL', color: '#8B0000', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000), stadium: 'Arechi',                   capacity: 37843, squad: [
         makePlayer(pid(), 'Luigi Sepe',              'GK', 33, 71, 'ITA'),
         makePlayer(pid(), 'Vincenzo Fiorillo',       'GK', 35, 66, 'ITA'),
         makePlayer(pid(), 'Pasquale Mazzocchi',      'RB', 28, 69, 'ITA'),
@@ -364,7 +364,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Milan Djuric',            'ST', 33, 70, 'BIH'),
         makePlayer(pid(), 'Krzysztof Piatek',        'ST', 28, 70, 'POL'),
     ]},
-    { id: 'ver', name: 'Verona',         short: 'VER', color: '#003DA5', colorAlt: '#FFD700', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*30000), stadium: 'Marcantonio Bentegodi',    capacity: 39211, squad: [
+    { id: 'ver', name: 'Verona',         short: 'VER', color: '#003DA5', colorAlt: '#FFD700', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*45000), stadium: 'Marcantonio Bentegodi',    capacity: 39211, squad: [
         makePlayer(pid(), 'Lorenzo Montipo',         'GK', 27, 72, 'ITA'),
         makePlayer(pid(), 'Simone Perilli',          'GK', 30, 65, 'ITA'),
         makePlayer(pid(), 'Davide Faraoni',          'RB', 31, 71, 'ITA'),
@@ -384,7 +384,7 @@ const SERIE_A_TEAMS = [
         makePlayer(pid(), 'Ivor Pandur',             'GK', 22, 64, 'CRO'),
         makePlayer(pid(), 'Henry Bonazzoli',         'ST', 27, 68, 'ITA'),
     ]},
-    { id: 'sas', name: 'Sassuolo',       short: 'SAS', color: '#007A33', colorAlt: '#000000', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*30000), stadium: 'MAPEI Stadium',            capacity: 21525, squad: [
+    { id: 'sas', name: 'Sassuolo',       short: 'SAS', color: '#007A33', colorAlt: '#000000', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*45000), stadium: 'MAPEI Stadium',            capacity: 21525, squad: [
         makePlayer(pid(), 'Andrea Consigli',         'GK', 36, 73, 'ITA'),
         makePlayer(pid(), 'Gianluca Pegolo',         'GK', 38, 68, 'ITA'),
         makePlayer(pid(), 'Jeremy Toljan',           'RB', 29, 71, 'GER'),
@@ -407,7 +407,7 @@ const SERIE_A_TEAMS = [
 ];
 
 const SERIE_B_TEAMS = [
-    { id: 'par', name: 'Parma',          short: 'PAR', color: '#FFFF00', colorAlt: '#003DA5', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000), stadium: 'Tardini',                          capacity: 27906, squad: [
+    { id: 'par', name: 'Parma',          short: 'PAR', color: '#FFFF00', colorAlt: '#003DA5', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000), stadium: 'Tardini',                          capacity: 27906, squad: [
         makePlayer(pid(), 'Gianluigi Buffon',        'GK', 46, 70, 'ITA'),
         makePlayer(pid(), 'Simone Colombi',          'GK', 32, 66, 'ITA'),
         makePlayer(pid(), 'Enrico Delprato',         'RB', 25, 68, 'ITA'),
@@ -426,7 +426,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Roberto Inglese',         'ST', 32, 69, 'ITA'),
         makePlayer(pid(), 'Yann Karamoh',            'RW', 26, 67, 'FRA'),
     ]},
-    { id: 'com', name: 'Como',           short: 'COM', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'Stadio G. Sinigaglia',              capacity: 13602, squad: [
+    { id: 'com', name: 'Como',           short: 'COM', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'Stadio G. Sinigaglia',              capacity: 13602, squad: [
         makePlayer(pid(), 'Fabio Gliubizzi',         'GK', 28, 66, 'ITA'),
         makePlayer(pid(), 'Eduardo Ionita',          'GK', 32, 62, 'ROU'),
         makePlayer(pid(), 'Cesc Fabregas',           'CM', 37, 70, 'ESP'),
@@ -445,7 +445,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'La Gumina Antonino',      'ST', 28, 64, 'ITA'),
         makePlayer(pid(), 'Odenthal Obed',           'CB', 22, 63, 'NED'),
     ]},
-    { id: 'ven', name: 'Venezia',        short: 'VEN', color: '#FF6600', colorAlt: '#007A33', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'Pier Luigi Penzo',                  capacity: 11150, squad: [
+    { id: 'ven', name: 'Venezia',        short: 'VEN', color: '#FF6600', colorAlt: '#007A33', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'Pier Luigi Penzo',                  capacity: 11150, squad: [
         makePlayer(pid(), 'Niki Maenpaa',            'GK', 37, 68, 'FIN'),
         makePlayer(pid(), 'Luca Lezzerini',          'GK', 28, 66, 'ITA'),
         makePlayer(pid(), 'Pasquale Mazzocchi',      'RB', 28, 68, 'ITA'),
@@ -464,7 +464,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Christian Gytkjaer',      'ST', 30, 68, 'DEN'),
         makePlayer(pid(), 'Kristoffer Askildsen',    'CM', 23, 66, 'NOR'),
     ]},
-    { id: 'pal', name: 'Palermo',        short: 'PAL', color: '#FE4A00', colorAlt: '#000000', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000), stadium: 'Renzo Barbera',                     capacity: 36349, squad: [
+    { id: 'pal', name: 'Palermo',        short: 'PAL', color: '#FE4A00', colorAlt: '#000000', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000), stadium: 'Renzo Barbera',                     capacity: 36349, squad: [
         makePlayer(pid(), 'Piragibe',                'GK', 26, 65, 'BRA'),
         makePlayer(pid(), 'Sebastiano Desplanches',  'GK', 22, 63, 'ITA'),
         makePlayer(pid(), 'Dario Sala',              'RB', 25, 63, 'ITA'),
@@ -483,7 +483,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Matteo Brunori',          'ST', 28, 69, 'ITA'),
         makePlayer(pid(), 'Grzegorz Grosicki',       'RW', 35, 67, 'POL'),
     ]},
-    { id: 'bre', name: 'Brescia',        short: 'BRE', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000), stadium: 'Mario Rigamonti',                   capacity: 16999, squad: [
+    { id: 'bre', name: 'Brescia',        short: 'BRE', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000), stadium: 'Mario Rigamonti',                   capacity: 16999, squad: [
         makePlayer(pid(), 'Lorenzo Andrenacci',      'GK', 28, 66, 'ITA'),
         makePlayer(pid(), 'Emanuele Beccaro',        'GK', 25, 62, 'ITA'),
         makePlayer(pid(), 'Stefano Sabelli',         'RB', 28, 65, 'ITA'),
@@ -502,7 +502,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Emanuele Valeri',         'LB', 24, 64, 'ITA'),
         makePlayer(pid(), 'Massimo van de Looi',     'CDM',31, 64, 'NED'),
     ]},
-    { id: 'pis', name: 'Pisa',           short: 'PIS', color: '#003DA5', colorAlt: '#000000', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*30000), stadium: 'Arena Garibaldi',                   capacity: 10150, squad: [
+    { id: 'pis', name: 'Pisa',           short: 'PIS', color: '#003DA5', colorAlt: '#000000', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*45000), stadium: 'Arena Garibaldi',                   capacity: 10150, squad: [
         makePlayer(pid(), 'Nicolas Andrade',         'GK', 26, 65, 'BRA'),
         makePlayer(pid(), 'Gori Stefano',            'GK', 30, 63, 'ITA'),
         makePlayer(pid(), 'Barbieri Lorenzo',        'RB', 22, 64, 'ITA'),
@@ -521,7 +521,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Lorenzo Torregrossa',     'ST', 32, 66, 'ITA'),
         makePlayer(pid(), 'Arena Cristian',          'CDM',23, 62, 'ITA'),
     ]},
-    { id: 'cat', name: 'Catanzaro',      short: 'CAT', color: '#FF0000', colorAlt: '#FFFF00', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000), stadium: 'Nicola Ceravolo',                   capacity: 10310, squad: [
+    { id: 'cat', name: 'Catanzaro',      short: 'CAT', color: '#FF0000', colorAlt: '#FFFF00', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000), stadium: 'Nicola Ceravolo',                   capacity: 10310, squad: [
         makePlayer(pid(), 'Fulignati Luca',          'GK', 30, 63, 'ITA'),
         makePlayer(pid(), 'Sala Emilio',             'GK', 27, 59, 'ITA'),
         makePlayer(pid(), 'Scognamillo Nicolò',      'CB', 26, 62, 'ITA'),
@@ -540,7 +540,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Pontisso Stefano',        'CM', 28, 60, 'ITA'),
         makePlayer(pid(), 'Fazio Gianluca',          'LB', 25, 59, 'ITA'),
     ]},
-    { id: 'spe', name: 'Spezia',         short: 'SPE', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*30000), stadium: 'Alberto Picco',                     capacity: 10336, squad: [
+    { id: 'spe', name: 'Spezia',         short: 'SPE', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*45000), stadium: 'Alberto Picco',                     capacity: 10336, squad: [
         makePlayer(pid(), 'Bartlomiej Dragowski',    'GK', 26, 68, 'POL'),
         makePlayer(pid(), 'Jernej Zoet',             'GK', 32, 64, 'NED'),
         makePlayer(pid(), 'Luca Vignali',            'RB', 27, 65, 'ITA'),
@@ -559,7 +559,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Mbala Nzola',             'ST', 27, 69, 'ANG'),
         makePlayer(pid(), 'Daniele Verde',           'CAM',27, 65, 'ITA'),
     ]},
-    { id: 'mod', name: 'Modena',         short: 'MOD', color: '#FFFF00', colorAlt: '#003DA5', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*30000), stadium: 'Alberto Braglia',                   capacity: 21151, squad: [
+    { id: 'mod', name: 'Modena',         short: 'MOD', color: '#FFFF00', colorAlt: '#003DA5', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*45000), stadium: 'Alberto Braglia',                   capacity: 21151, squad: [
         makePlayer(pid(), 'Riccardo Gagno',          'GK', 28, 63, 'ITA'),
         makePlayer(pid(), 'Filippo Perucchini',      'GK', 26, 61, 'ITA'),
         makePlayer(pid(), 'Andrea Oukhadda',         'RB', 25, 61, 'ITA'),
@@ -578,7 +578,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Alessio Diaw',            'ST', 28, 64, 'ITA'),
         makePlayer(pid(), 'Marco Bonfanti',          'ST', 24, 62, 'ITA'),
     ]},
-    { id: 'cre', name: 'Cremonese',      short: 'CRE', color: '#CC0000', colorAlt: '#FFFF00', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*30000), stadium: 'Giovanni Zini',                     capacity: 16003, squad: [
+    { id: 'cre', name: 'Cremonese',      short: 'CRE', color: '#CC0000', colorAlt: '#FFFF00', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*45000), stadium: 'Giovanni Zini',                     capacity: 16003, squad: [
         makePlayer(pid(), 'Marco Carnesecchi',       'GK', 23, 72, 'ITA'),
         makePlayer(pid(), 'Felice Brancolini',       'GK', 23, 62, 'ITA'),
         makePlayer(pid(), 'Leonardo Sernicola',      'RB', 24, 63, 'ITA'),
@@ -597,7 +597,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Massimo Coda',            'ST', 33, 66, 'ITA'),
         makePlayer(pid(), 'Daniel Ciofani',          'ST', 36, 65, 'ITA'),
     ]},
-    { id: 'sam', name: 'Sampdoria',      short: 'SAM', color: '#003DA5', colorAlt: '#CC0000', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*30000), stadium: 'Luigi Ferraris',                    capacity: 36685, squad: [
+    { id: 'sam', name: 'Sampdoria',      short: 'SAM', color: '#003DA5', colorAlt: '#CC0000', prestige: 60, budget: Math.round(Math.pow(Math.max(0,60-40),2)*45000), stadium: 'Luigi Ferraris',                    capacity: 36685, squad: [
         makePlayer(pid(), 'Emil Audero',             'GK', 26, 72, 'ITA'),
         makePlayer(pid(), 'Nikita Contini',          'GK', 27, 65, 'ITA'),
         makePlayer(pid(), 'Bartosz Bereszynski',     'RB', 31, 71, 'POL'),
@@ -616,7 +616,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Francesco Caputo',        'ST', 36, 70, 'ITA'),
         makePlayer(pid(), 'Gerry Coda',              'ST', 27, 67, 'ITA'),
     ]},
-    { id: 'reg', name: 'Reggiana',       short: 'REG', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'Mapei Football Center',             capacity: 7500,  squad: [
+    { id: 'reg', name: 'Reggiana',       short: 'REG', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'Mapei Football Center',             capacity: 7500,  squad: [
         makePlayer(pid(), 'Stefano Voltolini',       'GK', 28, 61, 'ITA'),
         makePlayer(pid(), 'Christian Gibert',        'GK', 26, 57, 'ITA'),
         makePlayer(pid(), 'Luca Nardi',              'RB', 23, 61, 'ITA'),
@@ -635,7 +635,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Yeboah Emmanuel',         'ST', 22, 61, 'GHA'),
         makePlayer(pid(), 'Pettinari Stefano',       'ST', 30, 60, 'ITA'),
     ]},
-    { id: 'bar', name: 'Bari',           short: 'BAR', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*30000), stadium: 'San Nicola',                        capacity: 58270, squad: [
+    { id: 'bar', name: 'Bari',           short: 'BAR', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 54, budget: Math.round(Math.pow(Math.max(0,54-40),2)*45000), stadium: 'San Nicola',                        capacity: 58270, squad: [
         makePlayer(pid(), 'Nicola Radunovic',        'GK', 28, 65, 'SRB'),
         makePlayer(pid(), 'Elia Caprile',            'GK', 23, 64, 'ITA'),
         makePlayer(pid(), 'Vito Bellomo',            'LW', 30, 65, 'ITA'),
@@ -654,7 +654,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Citro Federico',          'ST', 25, 62, 'ITA'),
         makePlayer(pid(), 'Benedetti Cristian',      'CM', 29, 62, 'ITA'),
     ]},
-    { id: 'cit', name: 'Cittadella',     short: 'CIT', color: '#990000', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*30000), stadium: 'Pier Cesare Tombolato',             capacity: 7623,  squad: [
+    { id: 'cit', name: 'Cittadella',     short: 'CIT', color: '#990000', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*45000), stadium: 'Pier Cesare Tombolato',             capacity: 7623,  squad: [
         makePlayer(pid(), 'Matej Handanovic',        'GK', 39, 62, 'SVN'),
         makePlayer(pid(), 'Luca Maniero',            'GK', 26, 59, 'ITA'),
         makePlayer(pid(), 'Perticone Marcello',      'CB', 33, 61, 'ITA'),
@@ -673,7 +673,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Lores Varela',            'LW', 33, 61, 'POR'),
         makePlayer(pid(), 'Mastrantonio',            'GK', 32, 60, 'ITA'),
     ]},
-    { id: 'cos', name: 'Cosenza',        short: 'COS', color: '#FF0000', colorAlt: '#003DA5', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'San Vito-Gigi Marulla',             capacity: 24603, squad: [
+    { id: 'cos', name: 'Cosenza',        short: 'COS', color: '#FF0000', colorAlt: '#003DA5', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'San Vito-Gigi Marulla',             capacity: 24603, squad: [
         makePlayer(pid(), 'Marson Michael',          'GK', 25, 61, 'ITA'),
         makePlayer(pid(), 'Micai Alessandro',        'GK', 31, 60, 'ITA'),
         makePlayer(pid(), 'Gyamfi Emmanuel',         'RB', 23, 60, 'GHA'),
@@ -692,7 +692,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Butic Mirko',             'ST', 32, 60, 'SVN'),
         makePlayer(pid(), 'Martino Gennaro',         'CM', 25, 59, 'ITA'),
     ]},
-    { id: 'fsp', name: 'FeralpiSalo',    short: 'FSP', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*30000), stadium: 'Lino Turina',                       capacity: 4500,  squad: [
+    { id: 'fsp', name: 'FeralpiSalo',    short: 'FSP', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*45000), stadium: 'Lino Turina',                       capacity: 4500,  squad: [
         makePlayer(pid(), 'Pizzignacco Elia',        'GK', 26, 59, 'ITA'),
         makePlayer(pid(), 'Minelli Lorenzo',         'GK', 29, 57, 'ITA'),
         makePlayer(pid(), 'Bergonzi Filippo',        'RB', 25, 57, 'ITA'),
@@ -711,7 +711,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Legati Matteo',           'CB', 26, 56, 'ITA'),
         makePlayer(pid(), 'Balestrero Luca',         'CM', 28, 56, 'ITA'),
     ]},
-    { id: 'lcc', name: 'Lecco',          short: 'LCC', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 47, budget: Math.round(Math.pow(Math.max(0,47-40),2)*30000), stadium: 'Mario Rigamonti replica',           capacity: 4500,  squad: [
+    { id: 'lcc', name: 'Lecco',          short: 'LCC', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 47, budget: Math.round(Math.pow(Math.max(0,47-40),2)*45000), stadium: 'Mario Rigamonti replica',           capacity: 4500,  squad: [
         makePlayer(pid(), 'Stucchi Davide',          'GK', 28, 58, 'ITA'),
         makePlayer(pid(), 'Melgrati Martin',         'GK', 24, 56, 'ITA'),
         makePlayer(pid(), 'Lora Andrea',             'RB', 26, 56, 'ITA'),
@@ -730,7 +730,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Pinzauti Gianmarco',      'ST', 23, 58, 'ITA'),
         makePlayer(pid(), 'Sipos Antonio',           'ST', 24, 58, 'CRO'),
     ]},
-    { id: 'sdt', name: 'Sudtirol',       short: 'SDT', color: '#CC0000', colorAlt: '#000000', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'Druso',                             capacity: 7500,  squad: [
+    { id: 'sdt', name: 'Sudtirol',       short: 'SDT', color: '#CC0000', colorAlt: '#000000', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'Druso',                             capacity: 7500,  squad: [
         makePlayer(pid(), 'Poluzzi Eugenio',         'GK', 32, 61, 'ITA'),
         makePlayer(pid(), 'Drago Marco',             'GK', 27, 58, 'ITA'),
         makePlayer(pid(), 'Fabbri Luca',             'RB', 25, 59, 'ITA'),
@@ -749,7 +749,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Odogwu Cedric',           'ST', 25, 61, 'NGA'),
         makePlayer(pid(), 'Marconi Umberto',         'ST', 31, 60, 'ITA'),
     ]},
-    { id: 'ter', name: 'Ternana',        short: 'TER', color: '#CC0000', colorAlt: '#007A33', prestige: 49, budget: Math.round(Math.pow(Math.max(0,49-40),2)*30000), stadium: 'Libero Liberati',                   capacity: 17459, squad: [
+    { id: 'ter', name: 'Ternana',        short: 'TER', color: '#CC0000', colorAlt: '#007A33', prestige: 49, budget: Math.round(Math.pow(Math.max(0,49-40),2)*45000), stadium: 'Libero Liberati',                   capacity: 17459, squad: [
         makePlayer(pid(), 'Iannarilli Andrea',       'GK', 31, 61, 'ITA'),
         makePlayer(pid(), 'Furlan Michele',          'GK', 25, 57, 'ITA'),
         makePlayer(pid(), 'Mammarella Luca',         'LB', 32, 60, 'ITA'),
@@ -768,7 +768,7 @@ const SERIE_B_TEAMS = [
         makePlayer(pid(), 'Sorensen Sune',           'ST', 31, 61, 'DEN'),
         makePlayer(pid(), 'Agazzi Carmine',          'GK', 40, 59, 'ITA'),
     ]},
-    { id: 'asc', name: 'Ascoli',         short: 'ASC', color: '#000000', colorAlt: '#FFFFFF', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*30000), stadium: 'Cino e Lillo Del Duca',             capacity: 20389, squad: [
+    { id: 'asc', name: 'Ascoli',         short: 'ASC', color: '#000000', colorAlt: '#FFFFFF', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*45000), stadium: 'Cino e Lillo Del Duca',             capacity: 20389, squad: [
         makePlayer(pid(), 'Guarna Andrea',           'GK', 38, 60, 'ITA'),
         makePlayer(pid(), 'Bolletta Raffaele',       'GK', 26, 56, 'ITA'),
         makePlayer(pid(), 'Adjapong Christian',      'RB', 26, 59, 'ITA'),

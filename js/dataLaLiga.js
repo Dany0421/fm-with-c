@@ -1,7 +1,7 @@
 // dataLaLiga.js — La Liga + La Liga 2
 
 const LA_LIGA_TEAMS = [
-    { id: 'rma', name: 'Real Madrid',       short: 'RMA', color: '#FEBE10', colorAlt: '#FFFFFF', prestige: 97, budget: Math.round(Math.pow(Math.max(0,97-40),2)*30000), stadium: 'Santiago Bernabéu',                    capacity: 81044, squad: [
+    { id: 'rma', name: 'Real Madrid',       short: 'RMA', color: '#FEBE10', colorAlt: '#FFFFFF', prestige: 97, budget: Math.round(Math.pow(Math.max(0,97-40),2)*45000), stadium: 'Santiago Bernabéu',                    capacity: 81044, squad: [
         makePlayer(pid(), 'Thibaut Courtois',    'GK', 32, 90, 'BEL'),
         makePlayer(pid(), 'Andriy Lunin',        'GK', 25, 80, 'UKR'),
         makePlayer(pid(), 'Dani Carvajal',       'RB', 32, 85, 'ESP'),
@@ -22,7 +22,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Brahim Diaz',         'CAM',25, 79, 'ESP'),
         makePlayer(pid(), 'Dani Ceballos',       'CM', 28, 78, 'ESP'),
     ]},
-    { id: 'fcb', name: 'Barcelona',          short: 'FCB', color: '#A50044', colorAlt: '#004D98', prestige: 96, budget: Math.round(Math.pow(Math.max(0,96-40),2)*30000), stadium: 'Camp Nou',                              capacity: 99354, squad: [
+    { id: 'fcb', name: 'Barcelona',          short: 'FCB', color: '#A50044', colorAlt: '#004D98', prestige: 96, budget: Math.round(Math.pow(Math.max(0,96-40),2)*45000), stadium: 'Camp Nou',                              capacity: 99354, squad: [
         makePlayer(pid(), 'Marc-Andre ter Stegen', 'GK', 32, 89, 'GER'),
         makePlayer(pid(), 'Inaki Pena',            'GK', 25, 74, 'ESP'),
         makePlayer(pid(), 'Jules Kounde',          'RB', 25, 85, 'FRA'),
@@ -42,7 +42,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Ferran Torres',         'LW', 24, 80, 'ESP'),
         makePlayer(pid(), 'Dani Olmo',             'CAM',26, 84, 'ESP'),
     ]},
-    { id: 'atm', name: 'Atletico Madrid',    short: 'ATM', color: '#CB3524', colorAlt: '#FFFFFF', prestige: 88, budget: Math.round(Math.pow(Math.max(0,88-40),2)*30000), stadium: 'Wanda Metropolitano',                   capacity: 68456, squad: [
+    { id: 'atm', name: 'Atletico Madrid',    short: 'ATM', color: '#CB3524', colorAlt: '#FFFFFF', prestige: 88, budget: Math.round(Math.pow(Math.max(0,88-40),2)*45000), stadium: 'Wanda Metropolitano',                   capacity: 68456, squad: [
         makePlayer(pid(), 'Jan Oblak',           'GK', 31, 90, 'SVN'),
         makePlayer(pid(), 'Ivo Grbic',           'GK', 28, 75, 'SVN'),
         makePlayer(pid(), 'Nahuel Molina',       'RB', 26, 82, 'ARG'),
@@ -63,7 +63,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Thomas Lemar',        'LW', 28, 78, 'FRA'),
         makePlayer(pid(), 'Rodrigo Riquelme',    'RW', 24, 77, 'ESP'),
     ]},
-    { id: 'sev', name: 'Sevilla',            short: 'SEV', color: '#D4011D', colorAlt: '#FFFFFF', prestige: 78, budget: Math.round(Math.pow(Math.max(0,78-40),2)*30000), stadium: 'Ramon Sanchez-Pizjuan',                 capacity: 43883, squad: [
+    { id: 'sev', name: 'Sevilla',            short: 'SEV', color: '#D4011D', colorAlt: '#FFFFFF', prestige: 78, budget: Math.round(Math.pow(Math.max(0,78-40),2)*45000), stadium: 'Ramon Sanchez-Pizjuan',                 capacity: 43883, squad: [
         makePlayer(pid(), 'Ørjan Nyland',        'GK', 33, 76, 'NOR'),
         makePlayer(pid(), 'Marko Dmitrovic',     'GK', 30, 75, 'SRB'),
         makePlayer(pid(), 'Jesus Navas',         'RB', 38, 79, 'CRC'),
@@ -82,7 +82,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Juanlu Sanchez',      'RB', 21, 74, 'ESP'),
         makePlayer(pid(), 'Lucien Agoume',       'CM', 22, 74, 'FRA'),
     ]},
-    { id: 'rso', name: 'Real Sociedad',      short: 'RSO', color: '#0070B8', colorAlt: '#FFFFFF', prestige: 73, budget: Math.round(Math.pow(Math.max(0,73-40),2)*30000), stadium: 'Reale Arena',                          capacity: 39500, squad: [
+    { id: 'rso', name: 'Real Sociedad',      short: 'RSO', color: '#0070B8', colorAlt: '#FFFFFF', prestige: 73, budget: Math.round(Math.pow(Math.max(0,73-40),2)*45000), stadium: 'Reale Arena',                          capacity: 39500, squad: [
         makePlayer(pid(), 'Alex Remiro',         'GK', 28, 82, 'ESP'),
         makePlayer(pid(), 'Andrei Pacheco',      'GK', 26, 73, 'ESP'),
         makePlayer(pid(), 'Martin Zubimendi',    'CDM',25, 83, 'ESP'),
@@ -100,7 +100,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Luka Sucic',          'CM', 22, 76, 'CRO'),
         makePlayer(pid(), 'Robin Le Normand',    'CB', 27, 81, 'FRA'),
     ]},
-    { id: 'bet', name: 'Real Betis',         short: 'BET', color: '#00A650', colorAlt: '#FFFFFF', prestige: 72, budget: Math.round(Math.pow(Math.max(0,72-40),2)*30000), stadium: 'Estadio Benito Villamarin',             capacity: 60721, squad: [
+    { id: 'bet', name: 'Real Betis',         short: 'BET', color: '#00A650', colorAlt: '#FFFFFF', prestige: 72, budget: Math.round(Math.pow(Math.max(0,72-40),2)*45000), stadium: 'Estadio Benito Villamarin',             capacity: 60721, squad: [
         makePlayer(pid(), 'Rui Silva',           'GK', 31, 79, 'POR'),
         makePlayer(pid(), 'Claudio Bravo',       'GK', 29, 74, 'ESP'),
         makePlayer(pid(), 'Hector Bellerin',     'RB', 34, 76, 'ESP'),
@@ -119,7 +119,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Ez Abde',             'CAM',22, 75, 'ESP'),
         makePlayer(pid(), 'Johnny Cardoso',      'CM', 26, 74, 'ESP'),
     ]},
-    { id: 'vil', name: 'Villarreal',         short: 'VIL', color: '#FFE400', colorAlt: '#009EDA', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*30000), stadium: 'Estadio de la Cerámica',               capacity: 23500, squad: [
+    { id: 'vil', name: 'Villarreal',         short: 'VIL', color: '#FFE400', colorAlt: '#009EDA', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*45000), stadium: 'Estadio de la Cerámica',               capacity: 23500, squad: [
         makePlayer(pid(), 'Pepe Reina',          'GK', 42, 74, 'ESP'),
         makePlayer(pid(), 'Filip Jorgensen',     'GK', 27, 75, 'DEN'),
         makePlayer(pid(), 'Juan Foyth',          'RB', 26, 78, 'ARG'),
@@ -136,7 +136,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Manu Trigueros',      'CM', 32, 75, 'ESP'),
         makePlayer(pid(), 'Marc Terrats',        'CM', 25, 74, 'ESP'),
     ]},
-    { id: 'ath', name: 'Athletic Bilbao',    short: 'ATH', color: '#EE2523', colorAlt: '#FFFFFF', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*30000), stadium: 'San Mames',                            capacity: 53289, squad: [
+    { id: 'ath', name: 'Athletic Bilbao',    short: 'ATH', color: '#EE2523', colorAlt: '#FFFFFF', prestige: 71, budget: Math.round(Math.pow(Math.max(0,71-40),2)*45000), stadium: 'San Mames',                            capacity: 53289, squad: [
         makePlayer(pid(), 'Julen Agirrezabala',  'GK', 24, 77, 'ESP'),
         makePlayer(pid(), 'Unai Simon',          'GK', 27, 81, 'ESP'),
         makePlayer(pid(), 'Oscar de Marcos',     'RB', 35, 76, 'ESP'),
@@ -155,7 +155,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Oihan Sancet',        'CAM',23, 80, 'ESP'),
         makePlayer(pid(), 'Inaki Williams',      'ST', 30, 82, 'GHA'),
     ]},
-    { id: 'val', name: 'Valencia',           short: 'VAL', color: '#FF6900', colorAlt: '#000000', prestige: 68, budget: Math.round(Math.pow(Math.max(0,68-40),2)*30000), stadium: 'Mestalla',                             capacity: 55000, squad: [
+    { id: 'val', name: 'Valencia',           short: 'VAL', color: '#FF6900', colorAlt: '#000000', prestige: 68, budget: Math.round(Math.pow(Math.max(0,68-40),2)*45000), stadium: 'Mestalla',                             capacity: 55000, squad: [
         makePlayer(pid(), 'Giorgi Mamardashvili', 'GK', 23, 81, 'GEO'),
         makePlayer(pid(), 'Domenech',            'GK', 32, 72, 'ESP'),
         makePlayer(pid(), 'Thierry Correia',     'RB', 27, 74, 'CPV'),
@@ -173,7 +173,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Justin Kluivert',     'LW', 25, 73, 'ESP'),
         makePlayer(pid(), 'Mouctar Diakhaby',    'CB', 27, 74, 'GUI'),
     ]},
-    { id: 'osa', name: 'Osasuna',            short: 'OSA', color: '#DA0010', colorAlt: '#003DA5', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*30000), stadium: 'El Sadar',                             capacity: 23517, squad: [
+    { id: 'osa', name: 'Osasuna',            short: 'OSA', color: '#DA0010', colorAlt: '#003DA5', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*45000), stadium: 'El Sadar',                             capacity: 23517, squad: [
         makePlayer(pid(), 'Sergio Herrera',      'GK', 30, 71, 'ESP'),
         makePlayer(pid(), 'Iker Munoz',          'GK', 25, 63, 'ESP'),
         makePlayer(pid(), 'Nacho Vidal',         'RB', 31, 69, 'ESP'),
@@ -192,7 +192,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Brian Zaragoza',      'RW', 23, 68, 'ESP'),
         makePlayer(pid(), 'Aimar Oroz',          'CM', 22, 68, 'ESP'),
     ]},
-    { id: 'get', name: 'Getafe',             short: 'GET', color: '#0065BD', colorAlt: '#FFFFFF', prestige: 61, budget: Math.round(Math.pow(Math.max(0,61-40),2)*30000), stadium: 'Coliseum Alfonso Perez',               capacity: 17700, squad: [
+    { id: 'get', name: 'Getafe',             short: 'GET', color: '#0065BD', colorAlt: '#FFFFFF', prestige: 61, budget: Math.round(Math.pow(Math.max(0,61-40),2)*45000), stadium: 'Coliseum Alfonso Perez',               capacity: 17700, squad: [
         makePlayer(pid(), 'David Soria',         'GK', 30, 71, 'ESP'),
         makePlayer(pid(), 'Chema Rodriguez',     'GK', 28, 63, 'ESP'),
         makePlayer(pid(), 'Damian Suarez',       'RB', 35, 69, 'URU'),
@@ -211,7 +211,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Luis Milla',          'CM', 27, 67, 'ESP'),
         makePlayer(pid(), 'Oscar Rodriguez',     'CM', 25, 68, 'ESP'),
     ]},
-    { id: 'cel', name: 'Celta Vigo',         short: 'CEL', color: '#6CBDE9', colorAlt: '#FFFFFF', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*30000), stadium: 'Abanca-Balaídos',                      capacity: 29000, squad: [
+    { id: 'cel', name: 'Celta Vigo',         short: 'CEL', color: '#6CBDE9', colorAlt: '#FFFFFF', prestige: 62, budget: Math.round(Math.pow(Math.max(0,62-40),2)*45000), stadium: 'Abanca-Balaídos',                      capacity: 29000, squad: [
         makePlayer(pid(), 'Ruben Blanco',        'GK', 30, 71, 'ESP'),
         makePlayer(pid(), 'Ivan Villar',         'GK', 24, 69, 'ESP'),
         makePlayer(pid(), 'Kevin Vazquez',       'RB', 27, 67, 'ESP'),
@@ -230,7 +230,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Anastasios Douvikas', 'ST', 24, 67, 'GRE'),
         makePlayer(pid(), 'Carles Perez',        'RW', 25, 68, 'ESP'),
     ]},
-    { id: 'ray', name: 'Rayo Vallecano',     short: 'RAY', color: '#CC1221', colorAlt: '#FFFFFF', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*30000), stadium: 'Campo de Futbol de Vallecas',          capacity: 14708, squad: [
+    { id: 'ray', name: 'Rayo Vallecano',     short: 'RAY', color: '#CC1221', colorAlt: '#FFFFFF', prestige: 59, budget: Math.round(Math.pow(Math.max(0,59-40),2)*45000), stadium: 'Campo de Futbol de Vallecas',          capacity: 14708, squad: [
         makePlayer(pid(), 'Stole Dimitrievski',  'GK', 31, 69, 'MKD'),
         makePlayer(pid(), 'Teodoro Boubacar',    'GK', 26, 60, 'ESP'),
         makePlayer(pid(), 'Ivan Balliu',         'RB', 31, 66, 'ALB'),
@@ -249,7 +249,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Randy Nteka',         'ST', 25, 65, 'FRA'),
         makePlayer(pid(), 'Diego Lopez',         'RB', 21, 63, 'ESP'),
     ]},
-    { id: 'gir', name: 'Girona',             short: 'GIR', color: '#CD1B2F', colorAlt: '#FFFFFF', prestige: 64, budget: Math.round(Math.pow(Math.max(0,64-40),2)*30000), stadium: 'Estadi Municipal de Montilivi',        capacity: 13500, squad: [
+    { id: 'gir', name: 'Girona',             short: 'GIR', color: '#CD1B2F', colorAlt: '#FFFFFF', prestige: 64, budget: Math.round(Math.pow(Math.max(0,64-40),2)*45000), stadium: 'Estadi Municipal de Montilivi',        capacity: 13500, squad: [
         makePlayer(pid(), 'Paulo Gazzaniga',     'GK', 31, 71, 'ARG'),
         makePlayer(pid(), 'Juan Carlos',         'GK', 33, 68, 'ESP'),
         makePlayer(pid(), 'Miguel Gutierrez',    'LB', 22, 71, 'ESP'),
@@ -268,7 +268,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Yangel Herrera',      'CM', 25, 71, 'VEN'),
         makePlayer(pid(), 'Jhon Solis',          'CM', 22, 65, 'COL'),
     ]},
-    { id: 'lpa', name: 'Las Palmas',         short: 'LPA', color: '#FFED00', colorAlt: '#003DA5', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*30000), stadium: 'Gran Canaria Stadium',                 capacity: 32788, squad: [
+    { id: 'lpa', name: 'Las Palmas',         short: 'LPA', color: '#FFED00', colorAlt: '#003DA5', prestige: 57, budget: Math.round(Math.pow(Math.max(0,57-40),2)*45000), stadium: 'Gran Canaria Stadium',                 capacity: 32788, squad: [
         makePlayer(pid(), 'Alvaro Valles',       'GK', 28, 67, 'ESP'),
         makePlayer(pid(), 'Jesus Fernandez',     'GK', 24, 58, 'ESP'),
         makePlayer(pid(), 'Sergi Cardona',       'LB', 23, 65, 'ESP'),
@@ -287,7 +287,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Munir El Haddadi',    'RW', 28, 68, 'ESP'),
         makePlayer(pid(), 'Anthony Lozano',      'ST', 30, 65, 'HON'),
     ]},
-    { id: 'rcd', name: 'Mallorca',           short: 'RCD', color: '#C8102E', colorAlt: '#000000', prestige: 58, budget: Math.round(Math.pow(Math.max(0,58-40),2)*30000), stadium: 'Son Moix',                             capacity: 23142, squad: [
+    { id: 'rcd', name: 'Mallorca',           short: 'RCD', color: '#C8102E', colorAlt: '#000000', prestige: 58, budget: Math.round(Math.pow(Math.max(0,58-40),2)*45000), stadium: 'Son Moix',                             capacity: 23142, squad: [
         makePlayer(pid(), 'Predrag Rajkovic',    'GK', 29, 70, 'SRB'),
         makePlayer(pid(), 'Leo Roman',           'GK', 22, 61, 'ESP'),
         makePlayer(pid(), 'Pablo Maffeo',        'RB', 27, 70, 'ESP'),
@@ -306,7 +306,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Dani Munoz',          'RB', 26, 67, 'ESP'),
         makePlayer(pid(), 'Giovanni Gonzalez',   'LW', 23, 65, 'ARG'),
     ]},
-    { id: 'ala', name: 'Alaves',             short: 'ALA', color: '#003B88', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000), stadium: 'Mendizorroza',                         capacity: 19840, squad: [
+    { id: 'ala', name: 'Alaves',             short: 'ALA', color: '#003B88', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000), stadium: 'Mendizorroza',                         capacity: 19840, squad: [
         makePlayer(pid(), 'Antonio Sivera',      'GK', 28, 67, 'ESP'),
         makePlayer(pid(), 'Miguel Fernandez',    'GK', 25, 58, 'ESP'),
         makePlayer(pid(), 'Nahuel Tenaglia',     'RB', 27, 66, 'ARG'),
@@ -325,7 +325,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Gonzalo Escalante',   'CM', 30, 65, 'ARG'),
         makePlayer(pid(), 'Theo Zidane',         'LB', 24, 65, 'ESP'),
     ]},
-    { id: 'cad', name: 'Cadiz',              short: 'CAD', color: '#F0E800', colorAlt: '#003DA5', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*30000), stadium: 'Estadio Ramon de Carranza',            capacity: 20724, squad: [
+    { id: 'cad', name: 'Cadiz',              short: 'CAD', color: '#F0E800', colorAlt: '#003DA5', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*45000), stadium: 'Estadio Ramon de Carranza',            capacity: 20724, squad: [
         makePlayer(pid(), 'Jeremias Ledesma',    'GK', 30, 67, 'ARG'),
         makePlayer(pid(), 'David Gil',           'GK', 29, 61, 'ESP'),
         makePlayer(pid(), 'Joseba Zaldua',       'RB', 30, 64, 'ESP'),
@@ -344,7 +344,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Alvaro Gimenez',      'ST', 31, 65, 'ESP'),
         makePlayer(pid(), 'Victor Chust',        'CB', 23, 62, 'ESP'),
     ]},
-    { id: 'gra', name: 'Granada',            short: 'GRA', color: '#C8102E', colorAlt: '#FFFFFF', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000), stadium: 'Nuevo Los Carmenes',                   capacity: 19336, squad: [
+    { id: 'gra', name: 'Granada',            short: 'GRA', color: '#C8102E', colorAlt: '#FFFFFF', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000), stadium: 'Nuevo Los Carmenes',                   capacity: 19336, squad: [
         makePlayer(pid(), 'Luis Maximiano',      'GK', 24, 67, 'POR'),
         makePlayer(pid(), 'Rui Silva',           'GK', 30, 66, 'POR'),
         makePlayer(pid(), 'Ricard Sanchez',      'RB', 25, 61, 'ESP'),
@@ -363,7 +363,7 @@ const LA_LIGA_TEAMS = [
         makePlayer(pid(), 'Oscar Melendo',       'CM', 27, 63, 'ESP'),
         makePlayer(pid(), 'Uzuni',               'ST', 27, 64, 'ALB'),
     ]},
-    { id: 'alm', name: 'Almeria',            short: 'ALM', color: '#E8001C', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*30000), stadium: 'Estadio de los Juegos Mediterraneos',  capacity: 15000, squad: [
+    { id: 'alm', name: 'Almeria',            short: 'ALM', color: '#E8001C', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*45000), stadium: 'Estadio de los Juegos Mediterraneos',  capacity: 15000, squad: [
         makePlayer(pid(), 'Fernando Martinez',   'GK', 29, 65, 'ESP'),
         makePlayer(pid(), 'Maracin',             'GK', 25, 58, 'ESP'),
         makePlayer(pid(), 'Arnau Puigmal',       'RB', 22, 62, 'ESP'),
@@ -385,7 +385,7 @@ const LA_LIGA_TEAMS = [
 ];
 
 const LA_LIGA2_TEAMS = [
-    { id: 'eib',  name: 'Eibar',             short: 'EIB', color: '#CF0000', colorAlt: '#003DA5', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000), stadium: 'Estadio Municipal de Ipurua',                       capacity: 7083,  squad: [
+    { id: 'eib',  name: 'Eibar',             short: 'EIB', color: '#CF0000', colorAlt: '#003DA5', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000), stadium: 'Estadio Municipal de Ipurua',                       capacity: 7083,  squad: [
         makePlayer(pid(), 'Asier Riesgo',        'GK', 37, 68, 'ESP'),
         makePlayer(pid(), 'Giorgi Kadaria',      'GK', 26, 62, 'GEO'),
         makePlayer(pid(), 'Recio',               'CDM',32, 68, 'ESP'),
@@ -404,7 +404,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Inui',                'LW', 34, 68, 'JPN'),
         makePlayer(pid(), 'Pablo Muniz',         'LB', 24, 64, 'ESP'),
     ]},
-    { id: 'lev',  name: 'Levante',            short: 'LEV', color: '#002FA6', colorAlt: '#CC0000', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*30000), stadium: 'Estadi Ciutat de Valencia',                         capacity: 25354, squad: [
+    { id: 'lev',  name: 'Levante',            short: 'LEV', color: '#002FA6', colorAlt: '#CC0000', prestige: 55, budget: Math.round(Math.pow(Math.max(0,55-40),2)*45000), stadium: 'Estadi Ciutat de Valencia',                         capacity: 25354, squad: [
         makePlayer(pid(), 'Aitor Fernandez',     'GK', 32, 74, 'ESP'),
         makePlayer(pid(), 'Dani Cardenas',       'GK', 25, 67, 'ESP'),
         makePlayer(pid(), 'Ruben Vezo',          'CB', 31, 71, 'POR'),
@@ -423,7 +423,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Son',                 'LW', 27, 68, 'KOR'),
         makePlayer(pid(), 'Tono',                'LB', 34, 66, 'ESP'),
     ]},
-    { id: 'vll',  name: 'Valladolid',         short: 'VLL', color: '#480070', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*30000), stadium: 'Estadio Jose Zorrilla',                             capacity: 26512, squad: [
+    { id: 'vll',  name: 'Valladolid',         short: 'VLL', color: '#480070', colorAlt: '#FFFFFF', prestige: 56, budget: Math.round(Math.pow(Math.max(0,56-40),2)*45000), stadium: 'Estadio Jose Zorrilla',                             capacity: 26512, squad: [
         makePlayer(pid(), 'Jordi Masip',         'GK', 35, 72, 'ESP'),
         makePlayer(pid(), 'Jesus Ruiz',          'GK', 27, 64, 'ESP'),
         makePlayer(pid(), 'Luis Perez',          'RB', 27, 68, 'ESP'),
@@ -442,7 +442,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Sergio Moran',        'CDM',26, 67, 'ESP'),
         makePlayer(pid(), 'Meseguer',            'CM', 26, 67, 'ESP'),
     ]},
-    { id: 'leg',  name: 'Leganes',            short: 'LEG', color: '#1A3E89', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*30000), stadium: 'Estadio Municipal de Butarque',                     capacity: 12454, squad: [
+    { id: 'leg',  name: 'Leganes',            short: 'LEG', color: '#1A3E89', colorAlt: '#FFFFFF', prestige: 52, budget: Math.round(Math.pow(Math.max(0,52-40),2)*45000), stadium: 'Estadio Municipal de Butarque',                     capacity: 12454, squad: [
         makePlayer(pid(), 'Ivan Cuellar',        'GK', 38, 67, 'ESP'),
         makePlayer(pid(), 'Marko Dmitrovic',     'GK', 31, 72, 'SRB'),
         makePlayer(pid(), 'Jonathan Silva',      'LB', 29, 67, 'ARG'),
@@ -461,7 +461,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Pedro Diaz',          'CM', 22, 65, 'ESP'),
         makePlayer(pid(), 'Kenan Kodro',         'ST', 29, 65, 'BIH'),
     ]},
-    { id: 'rac',  name: 'Racing Santander',   short: 'RAC', color: '#003280', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'El Sardinero',                                      capacity: 22222, squad: [
+    { id: 'rac',  name: 'Racing Santander',   short: 'RAC', color: '#003280', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'El Sardinero',                                      capacity: 22222, squad: [
         makePlayer(pid(), 'Iago Abraido',        'GK', 31, 65, 'ESP'),
         makePlayer(pid(), 'Carlos Abad',         'GK', 27, 62, 'ESP'),
         makePlayer(pid(), 'Adri Castellano',     'RB', 26, 63, 'ESP'),
@@ -480,7 +480,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Ruben Castro',        'ST', 41, 65, 'ESP'),
         makePlayer(pid(), 'Jairo Izquierdo',     'LW', 25, 62, 'ECU'),
     ]},
-    { id: 'rea',  name: 'Zaragoza',           short: 'ZAR', color: '#00529F', colorAlt: '#FFFFFF', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*30000), stadium: 'La Romareda',                                       capacity: 34596, squad: [
+    { id: 'rea',  name: 'Zaragoza',           short: 'ZAR', color: '#00529F', colorAlt: '#FFFFFF', prestige: 53, budget: Math.round(Math.pow(Math.max(0,53-40),2)*45000), stadium: 'La Romareda',                                       capacity: 34596, squad: [
         makePlayer(pid(), 'Cristian Alvarez',    'GK', 31, 68, 'ARG'),
         makePlayer(pid(), 'Raton',               'GK', 26, 62, 'ESP'),
         makePlayer(pid(), 'Jair',                'RB', 27, 66, 'ESP'),
@@ -499,7 +499,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Bermejo',             'CM', 31, 63, 'ESP'),
         makePlayer(pid(), 'Tomas Exposito',      'CM', 26, 65, 'ESP'),
     ]},
-    { id: 'spo',  name: 'Sporting Gijon',     short: 'SPO', color: '#D0021B', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*30000), stadium: 'El Molinon',                                        capacity: 29029, squad: [
+    { id: 'spo',  name: 'Sporting Gijon',     short: 'SPO', color: '#D0021B', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*45000), stadium: 'El Molinon',                                        capacity: 29029, squad: [
         makePlayer(pid(), 'Diego Marino',        'GK', 30, 65, 'ESP'),
         makePlayer(pid(), 'Ivan Cuellar',        'GK', 38, 64, 'ESP'),
         makePlayer(pid(), 'Pedro Diaz',          'RB', 27, 63, 'ESP'),
@@ -518,7 +518,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Zarfino',             'CM', 28, 61, 'ESP'),
         makePlayer(pid(), 'Queijeiro',           'CM', 23, 61, 'ESP'),
     ]},
-    { id: 'hue',  name: 'Huesca',             short: 'HUE', color: '#003087', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'El Alcoraz',                                        capacity: 8000,  squad: [
+    { id: 'hue',  name: 'Huesca',             short: 'HUE', color: '#003087', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'El Alcoraz',                                        capacity: 8000,  squad: [
         makePlayer(pid(), 'Alex Dominguez',      'GK', 29, 65, 'ESP'),
         makePlayer(pid(), 'Herrero',             'GK', 26, 61, 'ESP'),
         makePlayer(pid(), 'Pablo Maffeo',        'RB', 27, 70, 'ESP'),
@@ -537,7 +537,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Juan Carlos',         'CM', 33, 63, 'ESP'),
         makePlayer(pid(), 'Escriche',            'ST', 25, 63, 'ESP'),
     ]},
-    { id: 'ten',  name: 'Tenerife',           short: 'TEN', color: '#003180', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*30000), stadium: 'Heliodoro Rodriguez Lopez',                         capacity: 21892, squad: [
+    { id: 'ten',  name: 'Tenerife',           short: 'TEN', color: '#003180', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*45000), stadium: 'Heliodoro Rodriguez Lopez',                         capacity: 21892, squad: [
         makePlayer(pid(), 'Carlos Marin',        'GK', 30, 65, 'ESP'),
         makePlayer(pid(), 'Dani Hernandez',      'GK', 35, 64, 'ESP'),
         makePlayer(pid(), 'Aitor Sanz',          'CM', 32, 65, 'ESP'),
@@ -556,7 +556,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Carlos Bermejo',      'LW', 29, 63, 'ESP'),
         makePlayer(pid(), 'Jose Leon',           'LB', 26, 62, 'ESP'),
     ]},
-    { id: 'mal',  name: 'Malaga',             short: 'MAL', color: '#003A6D', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'La Rosaleda',                                       capacity: 30044, squad: [
+    { id: 'mal',  name: 'Malaga',             short: 'MAL', color: '#003A6D', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'La Rosaleda',                                       capacity: 30044, squad: [
         makePlayer(pid(), 'Dani Barrio',         'GK', 31, 65, 'ESP'),
         makePlayer(pid(), 'Alfonso Herrero',     'GK', 27, 62, 'ESP'),
         makePlayer(pid(), 'Pablo Chavarria',     'ST', 32, 65, 'ARG'),
@@ -575,7 +575,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Manu Molina',         'CM', 22, 63, 'ESP'),
         makePlayer(pid(), 'Jorge Villafana',     'LB', 32, 61, 'MEX'),
     ]},
-    { id: 'alb',  name: 'Albacete',           short: 'ALB', color: '#FFD700', colorAlt: '#003DA5', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*30000), stadium: 'Carlos Belmonte',                                   capacity: 17000, squad: [
+    { id: 'alb',  name: 'Albacete',           short: 'ALB', color: '#FFD700', colorAlt: '#003DA5', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*45000), stadium: 'Carlos Belmonte',                                   capacity: 17000, squad: [
         makePlayer(pid(), 'Bernabe Barragan',    'GK', 28, 62, 'ESP'),
         makePlayer(pid(), 'Tomeu Nadal',         'GK', 34, 61, 'ESP'),
         makePlayer(pid(), 'Quiles',              'RB', 27, 60, 'ESP'),
@@ -594,7 +594,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Tano Bonmaison',      'LB', 26, 58, 'ARG'),
         makePlayer(pid(), 'Hector Hernandez',    'ST', 25, 59, 'ESP'),
     ]},
-    { id: 'bur',  name: 'Burgos',             short: 'BUR', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 47, budget: Math.round(Math.pow(Math.max(0,47-40),2)*30000), stadium: 'El Plantio',                                        capacity: 9000,  squad: [
+    { id: 'bur',  name: 'Burgos',             short: 'BUR', color: '#CC0000', colorAlt: '#FFFFFF', prestige: 47, budget: Math.round(Math.pow(Math.max(0,47-40),2)*45000), stadium: 'El Plantio',                                        capacity: 9000,  squad: [
         makePlayer(pid(), 'Mario Ortega',        'GK', 29, 61, 'ESP'),
         makePlayer(pid(), 'Cifuentes',           'GK', 25, 58, 'ESP'),
         makePlayer(pid(), 'Eneko',               'RB', 27, 60, 'ESP'),
@@ -613,7 +613,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Rolivi',              'CM', 28, 58, 'ESP'),
         makePlayer(pid(), 'Borja Gonzalez',      'ST', 26, 58, 'ESP'),
     ]},
-    { id: 'mir',  name: 'Mirandes',           short: 'MIR', color: '#B22222', colorAlt: '#FFFFFF', prestige: 47, budget: Math.round(Math.pow(Math.max(0,47-40),2)*30000), stadium: 'Estadio Municipal de Anduva',                       capacity: 5800,  squad: [
+    { id: 'mir',  name: 'Mirandes',           short: 'MIR', color: '#B22222', colorAlt: '#FFFFFF', prestige: 47, budget: Math.round(Math.pow(Math.max(0,47-40),2)*45000), stadium: 'Estadio Municipal de Anduva',                       capacity: 5800,  squad: [
         makePlayer(pid(), 'Oier Olazabal',       'GK', 31, 61, 'ESP'),
         makePlayer(pid(), 'Sergio Garcia',       'GK', 26, 57, 'ESP'),
         makePlayer(pid(), 'Unai Dufur',          'RB', 25, 59, 'ESP'),
@@ -632,7 +632,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Lope Gurdiel',        'LB', 26, 57, 'ESP'),
         makePlayer(pid(), 'Iker Alegre',         'CM', 21, 58, 'ESP'),
     ]},
-    { id: 'car',  name: 'Cartagena',          short: 'CAR', color: '#C8102E', colorAlt: '#FFFFFF', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*30000), stadium: 'Estadio Cartagonova',                               capacity: 13000, squad: [
+    { id: 'car',  name: 'Cartagena',          short: 'CAR', color: '#C8102E', colorAlt: '#FFFFFF', prestige: 48, budget: Math.round(Math.pow(Math.max(0,48-40),2)*45000), stadium: 'Estadio Cartagonova',                               capacity: 13000, squad: [
         makePlayer(pid(), 'Marc Martinez',       'GK', 29, 62, 'ESP'),
         makePlayer(pid(), 'Andres Prieto',       'GK', 35, 61, 'ESP'),
         makePlayer(pid(), 'Jose Rueda',          'RB', 27, 60, 'ESP'),
@@ -651,7 +651,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Ruben Cruz',          'ST', 28, 59, 'ESP'),
         makePlayer(pid(), 'Sillero',             'RW', 23, 58, 'ESP'),
     ]},
-    { id: 'elc',  name: 'Elche',              short: 'ELC', color: '#006400', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*30000), stadium: 'Martinez Valero',                                   capacity: 33732, squad: [
+    { id: 'elc',  name: 'Elche',              short: 'ELC', color: '#006400', colorAlt: '#FFFFFF', prestige: 50, budget: Math.round(Math.pow(Math.max(0,50-40),2)*45000), stadium: 'Martinez Valero',                                   capacity: 33732, squad: [
         makePlayer(pid(), 'Edgar Badia',         'GK', 29, 66, 'ESP'),
         makePlayer(pid(), 'Adan',                'GK', 35, 64, 'ESP'),
         makePlayer(pid(), 'Pedro Bigas',         'CB', 30, 64, 'ESP'),
@@ -670,7 +670,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Emiliano Rigoni',     'RW', 30, 63, 'ARG'),
         makePlayer(pid(), 'Benedetto',           'ST', 33, 63, 'ARG'),
     ]},
-    { id: 'ovi',  name: 'Oviedo',             short: 'OVI', color: '#003F8C', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*30000), stadium: 'Carlos Tartiere',                                   capacity: 22000, squad: [
+    { id: 'ovi',  name: 'Oviedo',             short: 'OVI', color: '#003F8C', colorAlt: '#FFFFFF', prestige: 51, budget: Math.round(Math.pow(Math.max(0,51-40),2)*45000), stadium: 'Carlos Tartiere',                                   capacity: 22000, squad: [
         makePlayer(pid(), 'Axel Werner',         'GK', 23, 64, 'ARG'),
         makePlayer(pid(), 'Alfonso',             'GK', 32, 63, 'ESP'),
         makePlayer(pid(), 'Carlos Hernandez',    'RB', 28, 63, 'ESP'),
@@ -689,7 +689,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Cazorla',             'CM', 39, 64, 'ESP'),
         makePlayer(pid(), 'Viti',                'RW', 23, 62, 'ESP'),
     ]},
-    { id: 'cor',  name: 'Cordoba',            short: 'COR', color: '#007A33', colorAlt: '#FFFFFF', prestige: 46, budget: Math.round(Math.pow(Math.max(0,46-40),2)*30000), stadium: 'Nuevo Arcangel',                                    capacity: 20989, squad: [
+    { id: 'cor',  name: 'Cordoba',            short: 'COR', color: '#007A33', colorAlt: '#FFFFFF', prestige: 46, budget: Math.round(Math.pow(Math.max(0,46-40),2)*45000), stadium: 'Nuevo Arcangel',                                    capacity: 20989, squad: [
         makePlayer(pid(), 'Carlos Marin',        'GK', 30, 60, 'ESP'),
         makePlayer(pid(), 'Edu Frias',           'GK', 26, 57, 'ESP'),
         makePlayer(pid(), 'Ekaitz Arrondo',      'RB', 25, 58, 'ESP'),
@@ -708,7 +708,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Karim Azamoum',       'CM', 23, 57, 'MAR'),
         makePlayer(pid(), 'Owusu',               'RW', 27, 57, 'GHA'),
     ]},
-    { id: 'cas',  name: 'Castellon',          short: 'CAS', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 46, budget: Math.round(Math.pow(Math.max(0,46-40),2)*30000), stadium: 'Estadio Castalia',                                  capacity: 15400, squad: [
+    { id: 'cas',  name: 'Castellon',          short: 'CAS', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 46, budget: Math.round(Math.pow(Math.max(0,46-40),2)*45000), stadium: 'Estadio Castalia',                                  capacity: 15400, squad: [
         makePlayer(pid(), 'Jaime Garrido',       'GK', 28, 60, 'ESP'),
         makePlayer(pid(), 'Alvaro Gonzalez',     'GK', 25, 56, 'ESP'),
         makePlayer(pid(), 'Iturra',              'RB', 28, 58, 'ESP'),
@@ -727,7 +727,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Alex Millan',         'RW', 22, 56, 'ESP'),
         makePlayer(pid(), 'Juanma Soria',        'LB', 29, 56, 'ESP'),
     ]},
-    { id: 'amo',  name: 'Amorebieta',         short: 'AMO', color: '#0052A5', colorAlt: '#FFFFFF', prestige: 43, budget: Math.round(Math.pow(Math.max(0,43-40),2)*30000), stadium: 'Campo Urritxe',                                     capacity: 2800,  squad: [
+    { id: 'amo',  name: 'Amorebieta',         short: 'AMO', color: '#0052A5', colorAlt: '#FFFFFF', prestige: 43, budget: Math.round(Math.pow(Math.max(0,43-40),2)*45000), stadium: 'Campo Urritxe',                                     capacity: 2800,  squad: [
         makePlayer(pid(), 'Julen Agirre',        'GK', 28, 57, 'ESP'),
         makePlayer(pid(), 'Iker Onaindia',       'GK', 24, 53, 'ESP'),
         makePlayer(pid(), 'Unai Llarena',        'RB', 26, 55, 'ESP'),
@@ -746,7 +746,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Andoni Zubikarai',    'RB', 26, 53, 'ESP'),
         makePlayer(pid(), 'Inigo Eguaras',       'CM', 24, 53, 'ESP'),
     ]},
-    { id: 'fer',  name: 'Ferrol',             short: 'FER', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 43, budget: Math.round(Math.pow(Math.max(0,43-40),2)*30000), stadium: 'O Inferniño',                                       capacity: 5500,  squad: [
+    { id: 'fer',  name: 'Ferrol',             short: 'FER', color: '#003DA5', colorAlt: '#FFFFFF', prestige: 43, budget: Math.round(Math.pow(Math.max(0,43-40),2)*45000), stadium: 'O Inferniño',                                       capacity: 5500,  squad: [
         makePlayer(pid(), 'Tomas Mejias',        'GK', 33, 57, 'ESP'),
         makePlayer(pid(), 'Marcos Dorado',       'GK', 25, 52, 'ESP'),
         makePlayer(pid(), 'Fran Manzanara',      'RB', 27, 54, 'ESP'),
@@ -765,7 +765,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Rafa Sanchez',        'CB', 26, 52, 'ESP'),
         makePlayer(pid(), 'Jonatan Gomez',       'ST', 28, 52, 'ESP'),
     ]},
-    { id: 'eld',  name: 'Eldense',            short: 'ELD', color: '#CF0000', colorAlt: '#FFFFFF', prestige: 42, budget: Math.round(Math.pow(Math.max(0,42-40),2)*30000), stadium: 'Estadio Nuevo Pepico Amat',                         capacity: 5500,  squad: [
+    { id: 'eld',  name: 'Eldense',            short: 'ELD', color: '#CF0000', colorAlt: '#FFFFFF', prestige: 42, budget: Math.round(Math.pow(Math.max(0,42-40),2)*45000), stadium: 'Estadio Nuevo Pepico Amat',                         capacity: 5500,  squad: [
         makePlayer(pid(), 'Israel Puerto',       'GK', 29, 56, 'ESP'),
         makePlayer(pid(), 'Lucas Cantero',       'GK', 25, 51, 'ESP'),
         makePlayer(pid(), 'Sergi Tomas',         'RB', 26, 53, 'ESP'),
@@ -784,7 +784,7 @@ const LA_LIGA2_TEAMS = [
         makePlayer(pid(), 'Alberto Giner',       'RB', 25, 51, 'ESP'),
         makePlayer(pid(), 'Jorge Morato',        'ST', 23, 51, 'ESP'),
     ]},
-    { id: 'and',  name: 'Andorra FC',         short: 'AND', color: '#CF0000', colorAlt: '#FFFF00', prestige: 42, budget: Math.round(Math.pow(Math.max(0,42-40),2)*30000), stadium: 'Estadi Nacional',                                   capacity: 3306,  squad: [
+    { id: 'and',  name: 'Andorra FC',         short: 'AND', color: '#CF0000', colorAlt: '#FFFF00', prestige: 42, budget: Math.round(Math.pow(Math.max(0,42-40),2)*45000), stadium: 'Estadi Nacional',                                   capacity: 3306,  squad: [
         makePlayer(pid(), 'Gazzaniga II',        'GK', 28, 56, 'AND'),
         makePlayer(pid(), 'Marc Vales',          'GK', 25, 51, 'AND'),
         makePlayer(pid(), 'Carlos Martinez',     'RB', 27, 53, 'ESP'),

@@ -99,7 +99,7 @@ function getBestEleven(teamId, formation) {
 // Transfer market
 function searchTransferMarket(gameState, filters = {}) {
   const results = [];
-  const { maxValue, position, minOverall, leagueFilter } = filters;
+  const { maxValue, position, minOverall } = filters;
 
   getAllTeams().forEach(team => {
     if (team.id === gameState.playerTeam) return;
@@ -112,16 +112,16 @@ function searchTransferMarket(gameState, filters = {}) {
     });
   });
 
-  // Add free agents
-  FREE_AGENTS.forEach(player => {
-    const val = calculateTransferValue(player);
-    if (maxValue && val > maxValue) return;
-    if (position && player.pos !== position) return;
-    if (minOverall && player.overall < minOverall) return;
-    results.push({ ...player, teamId: null, teamName: 'Free Agent', value: val * 0 });
-  });
+  return results.sort((a, b) => b.overall - a.overall).slice(0, 150);
+}
 
-  return results.sort((a, b) => b.overall - a.overall).slice(0, 50);
+function getFreeAgents(filters = {}) {
+  const { position, minOverall } = filters;
+  return FREE_AGENTS.filter(p => {
+    if (position && p.pos !== position) return false;
+    if (minOverall && p.overall < minOverall) return false;
+    return true;
+  }).sort((a, b) => b.overall - a.overall);
 }
 
 function attemptTransfer(gameState, playerId, fromTeamId) {
@@ -289,12 +289,12 @@ function getLoanablePlayers(gameState) {
   getAllTeams().forEach(team => {
     if (team.id === gameState.playerTeam) return;
     team.squad.forEach(p => {
-      if (p.age <= 23 && p.overall >= 65) {
+      if (p.age <= 24 && p.overall >= 60 && p.overall <= 87) {
         results.push({ ...p, teamId: team.id, teamName: team.name, loanFee: Math.round(p.wage * 26) });
       }
     });
   });
-  return results.sort((a, b) => b.overall - a.overall).slice(0, 30);
+  return results.sort((a, b) => b.overall - a.overall).slice(0, 60);
 }
 
 function getPlayerStats(teamId) {

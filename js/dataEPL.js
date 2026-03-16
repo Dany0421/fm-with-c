@@ -84,7 +84,7 @@ function generateSquad(players) {
 const PREMIER_LEAGUE_TEAMS = [
   {
     id: 'mci', name: 'Manchester City', short: 'MCI', color: '#6CABDD', colorAlt: '#FFFFFF',
-    prestige: 97, budget: 200000000, stadium: 'Etihad Stadium', capacity: 53400,
+    prestige: 97, budget: 146205000, stadium: 'Etihad Stadium', capacity: 53400,
     squad: generateSquad([
       ['Ederson', 'GK', 30, 88, 'BRA'], ['Ortega', 'GK', 31, 79, 'GER'],
       ['Walker', 'RB', 33, 82, 'ENG'], ['Lewis', 'RB', 22, 78, 'ENG'],
@@ -101,7 +101,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'ars', name: 'Arsenal', short: 'ARS', color: '#EF0107', colorAlt: '#FFFFFF',
-    prestige: 92, budget: 150000000, stadium: 'Emirates Stadium', capacity: 60704,
+    prestige: 92, budget: 121680000, stadium: 'Emirates Stadium', capacity: 60704,
     squad: generateSquad([
       ['Raya', 'GK', 28, 85, 'ESP'], ['Neto', 'GK', 34, 76, 'BRA'],
       ['Ben White', 'RB', 26, 84, 'ENG'], ['Timber', 'RB', 22, 82, 'NED'],
@@ -118,7 +118,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'liv', name: 'Liverpool', short: 'LIV', color: '#C8102E', colorAlt: '#F6EB61',
-    prestige: 94, budget: 130000000, stadium: 'Anfield', capacity: 61000,
+    prestige: 94, budget: 131220000, stadium: 'Anfield', capacity: 61000,
     squad: generateSquad([
       ['Alisson', 'GK', 31, 91, 'BRA'], ['Kelleher', 'GK', 25, 77, 'IRL'],
       ['Alexander-Arnold', 'RB', 25, 88, 'ENG'], ['Bradley', 'RB', 20, 76, 'USA'],
@@ -135,7 +135,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'che', name: 'Chelsea', short: 'CHE', color: '#034694', colorAlt: '#FFFFFF',
-    prestige: 88, budget: 180000000, stadium: 'Stamford Bridge', capacity: 40341,
+    prestige: 88, budget: 103680000, stadium: 'Stamford Bridge', capacity: 40341,
     squad: generateSquad([
       ['Sanchez', 'GK', 32, 82, 'COL'], ['Petrovic', 'GK', 24, 76, 'SRB'],
       ['Reece James', 'RB', 24, 86, 'ENG'], ['Gusto', 'RB', 21, 80, 'FRA'],
@@ -152,7 +152,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'mun', name: 'Manchester United', short: 'MUN', color: '#DA020E', colorAlt: '#FFE500',
-    prestige: 90, budget: 120000000, stadium: 'Old Trafford', capacity: 74310,
+    prestige: 90, budget: 112500000, stadium: 'Old Trafford', capacity: 74310,
     squad: generateSquad([
       ['Onana', 'GK', 28, 83, 'CMR'], ['Bayindir', 'GK', 26, 74, 'TUR'],
       ['Dalot', 'RB', 25, 80, 'POR'], ['Wan-Bissaka', 'RB', 26, 77, 'ENG'],
@@ -169,7 +169,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'tot', name: 'Tottenham', short: 'TOT', color: '#132257', colorAlt: '#FFFFFF',
-    prestige: 86, budget: 100000000, stadium: 'Tottenham Hotspur Stadium', capacity: 62850,
+    prestige: 86, budget: 95220000, stadium: 'Tottenham Hotspur Stadium', capacity: 62850,
     squad: generateSquad([
       ['Vicario', 'GK', 27, 83, 'ITA'], ['Forster', 'GK', 35, 74, 'ENG'],
       ['Porro', 'RB', 24, 82, 'ESP'], ['Spence', 'RB', 23, 74, 'ENG'],
@@ -186,7 +186,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'new', name: 'Newcastle United', short: 'NEW', color: '#241F20', colorAlt: '#FFFFFF',
-    prestige: 84, budget: 90000000, stadium: "St. James' Park", capacity: 52305,
+    prestige: 84, budget: 87120000, stadium: "St. James' Park", capacity: 52305,
     squad: generateSquad([
       ['Pope', 'GK', 32, 86, 'ENG'], ['Dubravka', 'GK', 35, 76, 'SVK'],
       ['Trippier', 'RB', 33, 84, 'ENG'], ['Livramento', 'RB', 21, 78, 'ENG'],
@@ -203,7 +203,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'avl', name: 'Aston Villa', short: 'AVL', color: '#95BFE5', colorAlt: '#670E36',
-    prestige: 82, budget: 80000000, stadium: 'Villa Park', capacity: 42785,
+    prestige: 82, budget: 79380000, stadium: 'Villa Park', capacity: 42785,
     squad: generateSquad([
       ['Martinez', 'GK', 31, 88, 'ARG'], ['Olsen', 'GK', 34, 76, 'SWE'],
       ['Cash', 'RB', 26, 81, 'POL'], ['Konsa', 'CB', 26, 82, 'ENG'],
@@ -220,7 +220,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'whu', name: 'West Ham', short: 'WHU', color: '#7A263A', colorAlt: '#1BB1E7',
-    prestige: 76, budget: 60000000, stadium: 'London Stadium', capacity: 60000,
+    prestige: 76, budget: 58320000, stadium: 'London Stadium', capacity: 60000,
     squad: generateSquad([
       ['Areola', 'GK', 30, 79, 'FRA'], ['Fabianski', 'GK', 39, 72, 'POL'],
       ['Coufal', 'RB', 31, 76, 'CZE'], ['Wan-Bissaka', 'RB', 26, 77, 'ENG'],
@@ -237,7 +237,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'bri', name: 'Brighton', short: 'BRI', color: '#0057B8', colorAlt: '#FFFFFF',
-    prestige: 78, budget: 70000000, stadium: 'Amex Stadium', capacity: 31800,
+    prestige: 78, budget: 64980000, stadium: 'Amex Stadium', capacity: 31800,
     squad: generateSquad([
       ['Flekken', 'GK', 30, 80, 'NED'], ['Steele', 'GK', 31, 74, 'ENG'],
       ['Lamptey', 'RB', 23, 78, 'GHA'], ['Veltman', 'RB', 32, 74, 'NED'],
@@ -254,7 +254,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'wol', name: 'Wolverhampton', short: 'WOL', color: '#FDB913', colorAlt: '#231F20',
-    prestige: 72, budget: 40000000, stadium: 'Molineux', capacity: 31700,
+    prestige: 72, budget: 46080000, stadium: 'Molineux', capacity: 31700,
     squad: generateSquad([
       ['Sa', 'GK', 31, 80, 'POR'], ['Bentley', 'GK', 30, 72, 'ENG'],
       ['Semedo', 'RB', 30, 79, 'POR'], ['Doherty', 'RB', 32, 75, 'IRL'],
@@ -271,7 +271,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'eve', name: 'Everton', short: 'EVE', color: '#003399', colorAlt: '#FFFFFF',
-    prestige: 70, budget: 30000000, stadium: 'Goodison Park', capacity: 39572,
+    prestige: 70, budget: 40500000, stadium: 'Goodison Park', capacity: 39572,
     squad: generateSquad([
       ['Pickford', 'GK', 29, 83, 'ENG'], ['Virginia', 'GK', 24, 72, 'POR'],
       ['Patterson', 'RB', 22, 74, 'SCO'], ['Holgate', 'CB', 27, 73, 'ENG'],
@@ -288,7 +288,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'ful', name: 'Fulham', short: 'FUL', color: '#FFFFFF', colorAlt: '#000000',
-    prestige: 68, budget: 35000000, stadium: 'Craven Cottage', capacity: 25700,
+    prestige: 68, budget: 35280000, stadium: 'Craven Cottage', capacity: 25700,
     squad: generateSquad([
       ['Leno', 'GK', 32, 81, 'GER'], ['Benda', 'GK', 25, 70, 'CZE'],
       ['Tete', 'RB', 23, 76, 'BRA'], ['Castagne', 'RB', 28, 76, 'BEL'],
@@ -305,7 +305,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'bou', name: 'Bournemouth', short: 'BOU', color: '#DA291C', colorAlt: '#000000',
-    prestige: 65, budget: 30000000, stadium: 'Vitality Stadium', capacity: 11307,
+    prestige: 65, budget: 28125000, stadium: 'Vitality Stadium', capacity: 11307,
     squad: generateSquad([
       ['Neto', 'GK', 34, 76, 'BRA'], ['Travers', 'GK', 24, 72, 'IRL'],
       ['Smith', 'RB', 28, 74, 'ENG'], ['Hill', 'RB', 22, 72, 'ENG'],
@@ -322,7 +322,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'cry', name: 'Crystal Palace', short: 'CRY', color: '#1B458F', colorAlt: '#C4122E',
-    prestige: 66, budget: 25000000, stadium: 'Selhurst Park', capacity: 25486,
+    prestige: 66, budget: 30420000, stadium: 'Selhurst Park', capacity: 25486,
     squad: generateSquad([
       ['Henderson', 'GK', 33, 79, 'ENG'], ['Matthews', 'GK', 27, 70, 'ENG'],
       ['Clyne', 'RB', 33, 71, 'ENG'], ['Ward', 'RB', 34, 71, 'ENG'],
@@ -339,7 +339,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'bha', name: 'Brentford', short: 'BRE', color: '#D20000', colorAlt: '#FFFFFF',
-    prestige: 68, budget: 35000000, stadium: 'Gtech Community Stadium', capacity: 17250,
+    prestige: 68, budget: 35280000, stadium: 'Gtech Community Stadium', capacity: 17250,
     squad: generateSquad([
       ['Flekken', 'GK', 30, 79, 'NED'], ['Cox', 'GK', 23, 70, 'ENG'],
       ['Hickey', 'RB', 22, 76, 'SCO'], ['Roerslev', 'RB', 23, 74, 'DEN'],
@@ -356,7 +356,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'nfo', name: 'Nottingham Forest', short: 'NFO', color: '#DD0000', colorAlt: '#FFFFFF',
-    prestige: 65, budget: 30000000, stadium: 'City Ground', capacity: 30332,
+    prestige: 65, budget: 28125000, stadium: 'City Ground', capacity: 30332,
     squad: generateSquad([
       ['Sels', 'GK', 32, 78, 'BEL'], ['Turner', 'GK', 29, 74, 'USA'],
       ['Aina', 'RB', 27, 76, 'NGA'], ['Williams', 'RB', 22, 73, 'WAL'],
@@ -373,7 +373,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'bur', name: 'Burnley', short: 'BUR', color: '#6C1D45', colorAlt: '#99D6EA',
-    prestige: 58, budget: 15000000, stadium: 'Turf Moor', capacity: 21944,
+    prestige: 58, budget: 14580000, stadium: 'Turf Moor', capacity: 21944,
     squad: generateSquad([
       ['Trafford', 'GK', 21, 74, 'ENG'], ['Muric', 'GK', 25, 72, 'KOS'],
       ['Roberts', 'RB', 24, 72, 'WAL'], ['Lowton', 'RB', 34, 69, 'ENG'],
@@ -390,7 +390,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'she', name: 'Sheffield United', short: 'SHU', color: '#EE2737', colorAlt: '#000000',
-    prestige: 55, budget: 10000000, stadium: 'Bramall Lane', capacity: 32050,
+    prestige: 55, budget: 10125000, stadium: 'Bramall Lane', capacity: 32050,
     squad: generateSquad([
       ['Foderingham', 'GK', 33, 72, 'ENG'], ['Davies', 'GK', 27, 69, 'ENG'],
       ['Baldock', 'RB', 31, 72, 'ENG'], ['Ahmedhodzic', 'CB', 24, 74, 'BOS'],
@@ -407,7 +407,7 @@ const PREMIER_LEAGUE_TEAMS = [
   },
   {
     id: 'lui', name: 'Luton Town', short: 'LUT', color: '#F78F1E', colorAlt: '#FFFFFF',
-    prestige: 52, budget: 8000000, stadium: 'Kenilworth Road', capacity: 10356,
+    prestige: 52, budget: 6480000, stadium: 'Kenilworth Road', capacity: 10356,
     squad: generateSquad([
       ['Kaminski', 'GK', 31, 72, 'BEL'], ['Shea', 'GK', 34, 67, 'USA'],
       ['Bree', 'RB', 28, 70, 'ENG'], ['Osho', 'CB', 25, 70, 'ENG'],
@@ -427,7 +427,7 @@ const PREMIER_LEAGUE_TEAMS = [
 const CHAMPIONSHIP_TEAMS = [
   {
     id: 'lee', name: 'Leeds United', short: 'LEE', color: '#FFCD00', colorAlt: '#1D428A',
-    prestige: 72, budget: 25000000, stadium: 'Elland Road', capacity: 37890,
+    prestige: 72, budget: 46080000, stadium: 'Elland Road', capacity: 37890,
     squad: generateSquad([
       ['Meslier', 'GK', 24, 78, 'FRA'], ['Darlow', 'GK', 33, 70, 'ENG'],
       ['Ayling', 'RB', 32, 74, 'ENG'], ['Bogle', 'RB', 23, 73, 'ENG'],
@@ -444,7 +444,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'lei', name: 'Leicester City', short: 'LEI', color: '#003090', colorAlt: '#FDBE11',
-    prestige: 74, budget: 30000000, stadium: 'King Power Stadium', capacity: 32261,
+    prestige: 74, budget: 52020000, stadium: 'King Power Stadium', capacity: 32261,
     squad: generateSquad([
       ['Ward', 'GK', 36, 74, 'ENG'], ['Hermansen', 'GK', 23, 74, 'DEN'],
       ['Castagne', 'RB', 28, 75, 'BEL'], ['Justin', 'RB', 26, 75, 'ENG'],
@@ -461,7 +461,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'sou', name: 'Southampton', short: 'SOU', color: '#D71920', colorAlt: '#130C0E',
-    prestige: 65, budget: 20000000, stadium: "St Mary's Stadium", capacity: 32384,
+    prestige: 65, budget: 28125000, stadium: "St Mary's Stadium", capacity: 32384,
     squad: generateSquad([
       ['McCarthy', 'GK', 34, 74, 'IRL'], ['Bazunu', 'GK', 22, 74, 'IRL'],
       ['Walker-Peters', 'RB', 26, 75, 'ENG'], ['Valery', 'RB', 25, 70, 'FRA'],
@@ -478,7 +478,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'ips', name: 'Ipswich Town', short: 'IPS', color: '#0044A9', colorAlt: '#FFFFFF',
-    prestige: 60, budget: 15000000, stadium: 'Portman Road', capacity: 29543,
+    prestige: 60, budget: 18000000, stadium: 'Portman Road', capacity: 29543,
     squad: generateSquad([
       ['Walton', 'GK', 28, 73, 'ENG'], ['Hladky', 'GK', 32, 69, 'CZE'],
       ['Donacien', 'RB', 28, 70, 'AIA'], ['Clarke', 'CB', 22, 73, 'ENG'],
@@ -495,7 +495,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'mid', name: 'Middlesbrough', short: 'MID', color: '#D71920', colorAlt: '#FFFFFF',
-    prestige: 58, budget: 10000000, stadium: 'Riverside Stadium', capacity: 34742,
+    prestige: 58, budget: 14580000, stadium: 'Riverside Stadium', capacity: 34742,
     squad: generateSquad([
       ['Flint', 'GK', 34, 70, 'ENG'], ['Roberts', 'GK', 26, 69, 'ENG'],
       ['Smith', 'RB', 27, 70, 'ENG'], ['McNair', 'CB', 28, 72, 'NIR'],
@@ -512,7 +512,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'wba', name: 'West Brom', short: 'WBA', color: '#122F67', colorAlt: '#FFFFFF',
-    prestige: 60, budget: 12000000, stadium: 'The Hawthorns', capacity: 26688,
+    prestige: 60, budget: 18000000, stadium: 'The Hawthorns', capacity: 26688,
     squad: generateSquad([
       ['Palmer', 'GK', 37, 72, 'ENG'], ['Button', 'GK', 35, 68, 'ENG'],
       ['Furlong', 'RB', 31, 72, 'IRL'], ['Townsend', 'RB', 24, 70, 'ENG'],
@@ -529,7 +529,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'swa', name: 'Swansea City', short: 'SWA', color: '#FFFFFF', colorAlt: '#121321',
-    prestige: 55, budget: 8000000, stadium: 'Swansea.com Stadium', capacity: 20520,
+    prestige: 55, budget: 10125000, stadium: 'Swansea.com Stadium', capacity: 20520,
     squad: generateSquad([
       ['Fisher', 'GK', 25, 69, 'ENG'], ['Benda', 'GK', 25, 70, 'CZE'],
       ['Naughton', 'RB', 35, 69, 'ENG'], ['Cabango', 'CB', 23, 72, 'WAL'],
@@ -546,7 +546,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'snd', name: 'Sunderland', short: 'SUN', color: '#EB172B', colorAlt: '#FFFFFF',
-    prestige: 57, budget: 9000000, stadium: 'Stadium of Light', capacity: 49000,
+    prestige: 57, budget: 13005000, stadium: 'Stadium of Light', capacity: 49000,
     squad: generateSquad([
       ['Patterson', 'GK', 27, 71, 'ENG'], ['Bass', 'GK', 28, 68, 'ENG'],
       ['Hume', 'RB', 21, 70, 'NIR'], ['Wright', 'CB', 22, 72, 'ENG'],
@@ -563,7 +563,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'nor', name: 'Norwich City', short: 'NOR', color: '#00A650', colorAlt: '#FFF200',
-    prestige: 60, budget: 10000000, stadium: 'Carrow Road', capacity: 27359,
+    prestige: 60, budget: 18000000, stadium: 'Carrow Road', capacity: 27359,
     squad: generateSquad([
       ['Krul', 'GK', 35, 73, 'NED'], ['Gunn', 'GK', 28, 72, 'ENG'],
       ['Aarons', 'RB', 24, 76, 'ENG'], ['Williams', 'RB', 23, 70, 'ENG'],
@@ -580,7 +580,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'qpr', name: 'QPR', short: 'QPR', color: '#1D5BA4', colorAlt: '#FFFFFF',
-    prestige: 52, budget: 6000000, stadium: 'Loftus Road', capacity: 18360,
+    prestige: 52, budget: 6480000, stadium: 'Loftus Road', capacity: 18360,
     squad: generateSquad([
       ['Dieng', 'GK', 27, 71, 'SEN'], ['Archer', 'GK', 28, 68, 'ENG'],
       ['Kakay', 'RB', 25, 69, 'GUI'], ['Bonne', 'CB', 27, 69, 'ZIM'],
@@ -597,7 +597,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'car', name: 'Cardiff City', short: 'CAR', color: '#0070B5', colorAlt: '#FFFFFF',
-    prestige: 54, budget: 7000000, stadium: 'Cardiff City Stadium', capacity: 33316,
+    prestige: 54, budget: 8820000, stadium: 'Cardiff City Stadium', capacity: 33316,
     squad: generateSquad([
       ['Phillips', 'GK', 31, 70, 'ENG'], ['Smithies', 'GK', 33, 68, 'ENG'],
       ['Ng', 'RB', 26, 69, 'HKG'], ['Nelson', 'CB', 24, 70, 'ENG'],
@@ -614,7 +614,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'bla', name: 'Blackburn Rovers', short: 'BLA', color: '#009EE0', colorAlt: '#FFFFFF',
-    prestige: 55, budget: 8000000, stadium: 'Ewood Park', capacity: 31367,
+    prestige: 55, budget: 10125000, stadium: 'Ewood Park', capacity: 31367,
     squad: generateSquad([
       ['Kaminski', 'GK', 31, 71, 'BEL'], ['Pears', 'GK', 26, 68, 'ENG'],
       ['Brittain', 'RB', 25, 69, 'ENG'], ['Wharton', 'CB', 21, 70, 'ENG'],
@@ -631,7 +631,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'pre', name: 'Preston North End', short: 'PRE', color: '#FFFFFF', colorAlt: '#000000',
-    prestige: 52, budget: 5000000, stadium: 'Deepdale', capacity: 23408,
+    prestige: 52, budget: 6480000, stadium: 'Deepdale', capacity: 23408,
     squad: generateSquad([
       ['Woodman', 'GK', 27, 71, 'ENG'], ['Cornell', 'GK', 32, 67, 'WAL'],
       ['Storey', 'RB', 27, 69, 'ENG'], ['Lindsay', 'CB', 29, 70, 'SCO'],
@@ -648,7 +648,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'sht', name: 'Sheffield Wednesday', short: 'SHW', color: '#003082', colorAlt: '#FFFFFF',
-    prestige: 56, budget: 8000000, stadium: 'Hillsborough', capacity: 39812,
+    prestige: 56, budget: 11520000, stadium: 'Hillsborough', capacity: 39812,
     squad: generateSquad([
       ['Wildsmith', 'GK', 29, 70, 'ENG'], ['Stockdale', 'GK', 39, 65, 'ENG'],
       ['Palmer', 'RB', 33, 68, 'ENG'], ['Iorfa', 'CB', 27, 70, 'ENG'],
@@ -665,7 +665,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'mil', name: 'Millwall', short: 'MIL', color: '#001D5E', colorAlt: '#FFFFFF',
-    prestige: 50, budget: 4000000, stadium: 'The Den', capacity: 20146,
+    prestige: 50, budget: 4500000, stadium: 'The Den', capacity: 20146,
     squad: generateSquad([
       ['Long', 'GK', 33, 70, 'IRL'], ['King', 'GK', 29, 67, 'ENG'],
       ['McNamara', 'RB', 21, 69, 'ENG'], ['Ballard', 'CB', 24, 71, 'NIR'],
@@ -682,7 +682,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'hud', name: 'Huddersfield Town', short: 'HUD', color: '#0E63AD', colorAlt: '#FFFFFF',
-    prestige: 48, budget: 3000000, stadium: 'John Smith Stadium', capacity: 24169,
+    prestige: 48, budget: 2880000, stadium: 'John Smith Stadium', capacity: 24169,
     squad: generateSquad([
       ['Nicholls', 'GK', 31, 68, 'ENG'], ['Chapman', 'GK', 24, 64, 'ENG'],
       ['Turton', 'RB', 29, 67, 'ENG'], ['Lees', 'CB', 32, 69, 'ENG'],
@@ -699,7 +699,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'cov', name: 'Coventry City', short: 'COV', color: '#59CBE8', colorAlt: '#FFFFFF',
-    prestige: 55, budget: 7000000, stadium: 'CBS Arena', capacity: 32609,
+    prestige: 55, budget: 10125000, stadium: 'CBS Arena', capacity: 32609,
     squad: generateSquad([
       ['Wilson', 'GK', 36, 69, 'ENG'], ['Moore', 'GK', 27, 67, 'ENG'],
       ['Tavares', 'RB', 22, 70, 'POR'], ['Hyam', 'CB', 28, 71, 'ENG'],
@@ -716,7 +716,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'sto', name: 'Stoke City', short: 'STO', color: '#E03A3E', colorAlt: '#FFFFFF',
-    prestige: 57, budget: 8000000, stadium: 'bet365 Stadium', capacity: 30089,
+    prestige: 57, budget: 13005000, stadium: 'bet365 Stadium', capacity: 30089,
     squad: generateSquad([
       ['Bonham', 'GK', 29, 69, 'ENG'], ['Davies', 'GK', 34, 67, 'ENG'],
       ['Wilmot', 'RB', 22, 68, 'ENG'], ['Jagielka', 'CB', 41, 65, 'ENG'],
@@ -733,7 +733,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'wat', name: 'Watford', short: 'WAT', color: '#FBEE23', colorAlt: '#ED2127',
-    prestige: 58, budget: 10000000, stadium: 'Vicarage Road', capacity: 22200,
+    prestige: 58, budget: 14580000, stadium: 'Vicarage Road', capacity: 22200,
     squad: generateSquad([
       ['Bachmann', 'GK', 29, 71, 'AUT'], ['Foster', 'GK', 40, 66, 'ENG'],
       ['Femenia', 'RB', 31, 72, 'ESP'], ['Kabasele', 'CB', 32, 72, 'BEL'],
@@ -750,7 +750,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'bri2', name: 'Bristol City', short: 'BSC', color: '#E3001B', colorAlt: '#FFFFFF',
-    prestige: 50, budget: 4000000, stadium: 'Ashton Gate', capacity: 27000,
+    prestige: 50, budget: 4500000, stadium: 'Ashton Gate', capacity: 27000,
     squad: generateSquad([
       ['Bentley', 'GK', 30, 69, 'ENG'], ['O Leary', 'GK', 24, 65, 'ENG'],
       ['Dasilva', 'RB', 25, 70, 'ENG'], ['Atkinson', 'CB', 25, 70, 'ENG'],
@@ -767,7 +767,7 @@ const CHAMPIONSHIP_TEAMS = [
   },
   {
     id: 'rot', name: 'Rotherham United', short: 'ROT', color: '#FF0000', colorAlt: '#FFFFFF',
-    prestige: 45, budget: 2000000, stadium: 'AESSEAL New York Stadium', capacity: 12022,
+    prestige: 45, budget: 1125000, stadium: 'AESSEAL New York Stadium', capacity: 12022,
     squad: generateSquad([
       ['Johansson', 'GK', 27, 67, 'SWE'], ['Vickers', 'GK', 28, 65, 'ENG'],
       ['Huffer', 'RB', 25, 65, 'ENG'], ['Ihiekwe', 'CB', 30, 67, 'ENG'],
@@ -862,21 +862,129 @@ function makeTeamSquad(prestige, country) {
 
 // Free agent pool for transfers
 const FREE_AGENTS = generateSquad([
-  ['James Collins', 'CB', 35, 64, 'ENG'],
-  ['Daryl Murphy', 'ST', 37, 62, 'IRL'],
-  ['Joe Hart', 'GK', 36, 65, 'ENG'],
+  // ── Goalkeepers ──
+  ['Joe Hart', 'GK', 38, 66, 'ENG'],
+  ['Ben Foster', 'GK', 41, 65, 'ENG'],
+  ['Brad Guzan', 'GK', 40, 66, 'USA'],
+  ['Darren Randolph', 'GK', 37, 67, 'IRL'],
+  ['Lee Grant', 'GK', 40, 62, 'ENG'],
+  ['Adam Bogdan', 'GK', 36, 60, 'HUN'],
+  ['Petr Cech', 'GK', 42, 72, 'CZE'],
+  ['Tim Howard', 'GK', 45, 67, 'USA'],
+  ['Robert Green', 'GK', 44, 63, 'ENG'],
+  ['Paul Robinson', 'GK', 45, 64, 'ENG'],
+  // ── Centre Backs ──
+  ['James Collins', 'CB', 37, 63, 'WAL'],
+  ['Phil Jagielka', 'CB', 42, 65, 'ENG'],
+  ['Michael Dawson', 'CB', 41, 63, 'ENG'],
+  ['John Terry', 'CB', 43, 67, 'ENG'],
+  ['Matthew Upson', 'CB', 44, 62, 'ENG'],
+  ['Ryan Shawcross', 'CB', 37, 66, 'ENG'],
+  ['Gary Cahill', 'CB', 39, 71, 'ENG'],
+  ['Joleon Lescott', 'CB', 42, 66, 'ENG'],
+  ['Sylvain Distin', 'CB', 47, 64, 'FRA'],
+  ['Richard Dunne', 'CB', 46, 64, 'IRL'],
+  ['Bruno Alves', 'CB', 43, 68, 'POR'],
+  ['Nicolas Otamendi', 'CB', 37, 72, 'ARG'],
+  ['Luca Caldirola', 'CB', 33, 65, 'ITA'],
+  ['Wes Brown', 'CB', 46, 62, 'ENG'],
+  ['Brede Hangeland', 'CB', 43, 65, 'NOR'],
+  ['Younes Kaboul', 'CB', 39, 67, 'FRA'],
+  // ── Right Backs ──
+  ['Nathaniel Clyne', 'RB', 33, 67, 'ENG'],
+  ['Daryl Janmaat', 'RB', 35, 67, 'NED'],
+  ['Glen Johnson', 'RB', 41, 63, 'ENG'],
+  ['Rafael da Silva', 'RB', 34, 68, 'BRA'],
+  ['Carl Jenkinson', 'RB', 33, 63, 'ENG'],
+  ['Pablo Zabaleta', 'RB', 43, 68, 'ARG'],
+  ['Bacary Sagna', 'RB', 42, 67, 'FRA'],
+  ['Micah Richards', 'RB', 37, 65, 'ENG'],
+  ['Phil Bardsley', 'RB', 39, 63, 'SCO'],
+  // ── Left Backs ──
+  ['Robbie Brady', 'LB', 32, 67, 'IRL'],
+  ['Leighton Baines', 'LB', 41, 66, 'ENG'],
+  ['Stephen Ward', 'LB', 39, 63, 'IRL'],
+  ['Luke Shaw', 'LB', 30, 72, 'ENG'],
+  ['Enda Stevens', 'LB', 35, 65, 'IRL'],
+  ['Patrice Evra', 'LB', 44, 67, 'FRA'],
+  ['Ashley Cole', 'LB', 44, 66, 'ENG'],
+  ['Gael Clichy', 'LB', 40, 67, 'FRA'],
+  ['Kieran Gibbs', 'LB', 35, 66, 'ENG'],
+  ['Martin Olsson', 'LB', 37, 65, 'SWE'],
+  // ── Defensive Midfielders ──
   ['Claudio Yacob', 'CDM', 36, 63, 'ARG'],
-  ['Victor Anichebe', 'ST', 35, 61, 'NGA'],
-  ['Leon Best', 'ST', 36, 60, 'IRL'],
-  ['Marcus Bent', 'ST', 43, 55, 'ENG'],
-  ['Scott Sinclair', 'LW', 35, 65, 'ENG'],
-  ['Yannick Bolasie', 'RW', 34, 66, 'COD'],
-  ['Tom Cleverley', 'CM', 34, 67, 'ENG'],
-  ['Jack Wilshere', 'CM', 32, 66, 'ENG'],
-  ['Nathaniel Clyne', 'RB', 33, 68, 'ENG'],
-  ['Robbie Brady', 'LB', 32, 68, 'IRL'],
-  ['Andy Carroll', 'ST', 35, 64, 'ENG'],
-  ['Fraizer Campbell', 'ST', 36, 62, 'ENG']
+  ['Liam Bridcutt', 'CDM', 35, 63, 'SCO'],
+  ['Scott Arfield', 'CDM', 37, 65, 'CAN'],
+  ['Cheikhou Kouyate', 'CDM', 35, 68, 'SEN'],
+  ['Victor Wanyama', 'CDM', 33, 68, 'NGA'],
+  ['Mohamed Elneny', 'CDM', 33, 69, 'EGY'],
+  ['Nigel de Jong', 'CDM', 40, 67, 'NED'],
+  ['Michael Carrick', 'CDM', 44, 69, 'ENG'],
+  ['Lassana Diarra', 'CDM', 40, 66, 'FRA'],
+  ['Gareth Barry', 'CDM', 44, 67, 'ENG'],
+  // ── Central Midfielders ──
+  ['Tom Cleverley', 'CM', 35, 66, 'ENG'],
+  ['Jack Wilshere', 'CM', 33, 65, 'ENG'],
+  ['Craig Bryson', 'CM', 37, 63, 'SCO'],
+  ['Steven Nzonzi', 'CM', 37, 68, 'FRA'],
+  ['Lucas Leiva', 'CM', 38, 67, 'BRA'],
+  ['Charlie Adam', 'CM', 39, 67, 'SCO'],
+  ['Lee Cattermole', 'CM', 38, 64, 'ENG'],
+  ['Kevin Nolan', 'CM', 44, 63, 'ENG'],
+  ['Stephane Sessegnon', 'CM', 40, 62, 'SEN'],
+  ['Nuri Sahin', 'CM', 36, 68, 'TUR'],
+  // ── Attacking Midfielders ──
+  ['Nacer Chadli', 'CAM', 36, 68, 'BEL'],
+  ['Adnan Januzaj', 'CAM', 30, 68, 'BEL'],
+  ['Andros Townsend', 'CAM', 34, 68, 'ENG'],
+  ['Tom Ince', 'CAM', 34, 65, 'ENG'],
+  ['Hatem Ben Arfa', 'CAM', 38, 70, 'FRA'],
+  ['Josh McEachran', 'CAM', 33, 63, 'ENG'],
+  ['Antonio Cassano', 'CAM', 43, 70, 'ITA'],
+  ['Diego Forlan', 'CAM', 46, 65, 'URU'],
+  ['Emre Mor', 'CAM', 28, 65, 'TUR'],
+  // ── Right Wingers ──
+  ['Yannick Bolasie', 'RW', 35, 65, 'COD'],
+  ['Florent Malouda', 'RW', 44, 60, 'FRA'],
+  ['Theo Walcott', 'RW', 36, 67, 'ENG'],
+  ['Aaron Lennon', 'RW', 37, 65, 'ENG'],
+  ['Nani', 'RW', 38, 70, 'POR'],
+  ['Shaun Wright-Phillips', 'RW', 43, 65, 'ENG'],
+  ['Stevan Jovetic', 'RW', 35, 70, 'SRB'],
+  ['Juan Cuadrado', 'RW', 37, 73, 'COL'],
+  ['David Bentley', 'RW', 40, 63, 'ENG'],
+  // ── Left Wingers ──
+  ['Scott Sinclair', 'LW', 35, 64, 'ENG'],
+  ['Nicolas Anelka', 'LW', 46, 65, 'FRA'],
+  ['Peter Odemwingie', 'LW', 43, 65, 'NGA'],
+  ['Nathan Dyer', 'LW', 38, 63, 'ENG'],
+  ['Adam Johnson', 'LW', 37, 66, 'ENG'],
+  ['Chris Brunt', 'LW', 39, 63, 'ENG'],
+  ['Marvin Sordell', 'LW', 34, 62, 'ENG'],
+  ['Stewart Downing', 'LW', 39, 66, 'ENG'],
+  ['Stephen Ireland', 'LW', 38, 63, 'IRL'],
+  // ── Strikers ──
+  ['Andy Carroll', 'ST', 36, 63, 'ENG'],
+  ['Daryl Murphy', 'ST', 38, 61, 'IRL'],
+  ['Victor Anichebe', 'ST', 35, 60, 'NGA'],
+  ['Leon Best', 'ST', 37, 60, 'IRL'],
+  ['Marcus Bent', 'ST', 44, 58, 'ENG'],
+  ['Fraizer Campbell', 'ST', 37, 61, 'ENG'],
+  ['Kevin Doyle', 'ST', 41, 62, 'IRL'],
+  ['Carlton Cole', 'ST', 41, 62, 'ENG'],
+  ['Bobby Zamora', 'ST', 44, 61, 'ENG'],
+  ['Jay Rodriguez', 'ST', 35, 68, 'ENG'],
+  ['Simon Cox', 'ST', 38, 62, 'ENG'],
+  ['Shane Long', 'ST', 38, 65, 'IRL'],
+  ['Robbie Keane', 'ST', 45, 68, 'IRL'],
+  ['Emile Heskey', 'ST', 47, 63, 'ENG'],
+  ['Demba Ba', 'ST', 39, 69, 'SEN'],
+  ['Daniel Sturridge', 'ST', 31, 72, 'ENG'],
+  ['Peter Crouch', 'ST', 45, 64, 'ENG'],
+  ['Kevin Davies', 'ST', 48, 62, 'ENG'],
+  ['Nicky Maynard', 'ST', 37, 62, 'ENG'],
+  ['Gyorgy Sandor', 'ST', 33, 63, 'HUN'],
+  ['Nikica Jelavic', 'ST', 40, 67, 'CRO']
 ]);
 
 const NATIONALITIES = {

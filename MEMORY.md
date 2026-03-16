@@ -1,6 +1,6 @@
 # MEMORY.md — Project State
 
-*Last updated: 2026-03-15 (Sessão 5 — completa)*
+*Last updated: 2026-03-16 (Sessão 6 — completa)*
 
 -----
 
@@ -10,9 +10,9 @@ Football Manager no browser — Premier League + Championship com promoção/rel
 
 -----
 
-## Current session goal
+## Current state
 
-Sessão 5 completa. Multi-league system implementado (5 países / 9 ligas).
+Sessão 6 completa. Jogo totalmente funcional no browser + mobile. Multi-league (5 países / 9 ligas), CL + EL, career system, player modals, save system melhorado. Próxima prioridade: match engine upgrade (só `engine.js`).
 
 -----
 
@@ -64,6 +64,29 @@ Sessão 5 completa. Multi-league system implementado (5 países / 9 ligas).
 - [x] **Europa League trophy no HoF** — `career.hallOfFame.europaWins` incrementado em `resolveEuropaAndRefresh`. Card 🌟 na career page.
 - [x] **Loan system** — Aba "Loans" nos transfers. Fee = 15% do transfer value. Badge `LOAN` azul na squad page. Row com tint azul. Retorno automático no início da season com notificação. `executeLoan` em manager.js, `returnLoanedPlayers` em season.js.
 - [x] **AI bidding** — Durante transfer window, 22% chance/matchweek de oferta por jogador ≥74 OVR. Card "📬 TRANSFER OFFERS" no hub com Accept/Reject. Accept vende ao preço da oferta (5-45% acima do valor). Máx 3 bids pendentes. Limpa no início de cada season. `generateAIBids` em season.js.
+
+### Sessão 6 — Features novas
+- [x] **Mobile responsive** — `style.css` com dois breakpoints: `@media (max-width: 768px)` e `@media (max-width: 480px)`. Cobre todas as screens.
+  - Hub: topbar wraps, hub-left/right stack verticalmente
+  - Team select: teams-grid full-width 3-col (max-height 200px), team-detail stack abaixo
+  - Tactics: controls em row wrap, pitch ao centro, right-panel stack abaixo
+  - Squad table: oculta colunas Age/Nat/POT/PAC/SHO/PAS/DEF/PHY/DRI/Goals/Assists — mantém POS/Name/OVR/Value/Action
+  - Transfers table: oculta Age/PAC/SHO/PAS/DEF/PHY — mantém POS/Name/Club/OVR/Value/Action
+  - League table: oculta GF/GA — mantém #/Club/P/W/D/L/GD/Pts
+  - End season: `align-items: stretch`, buttons full-width, season-tables com overflow safety
+  - Europa/CL: `europa-header` wraps, `europa-matchup` wraps + max-width 140px por team name, groups 1-col, brackets 2-per-row
+  - Stats, end-of-season, career, press conf: tudo stack e compacto no mobile
+- [x] **Player modal** — `showPlayerModal(playerId)` em ui.js. Clicar em qualquer row na Squad page ou Transfer Market abre modal com: nome/pos/age/nation/club, badges OVR/POT/Goals/Assists/Value, 6 stat bars coloridas (PAC/SHO/PAS/DEF/PHY/DRI), badge de lesão/loan se aplicável. Rows têm `onclick="showPlayerModal(p.id)"` + `cursor:pointer`. Botões Sell/Sign/Loan usam `event.stopPropagation()` para não disparar o modal.
+- [x] **💾 Save button** — botão "💾 Save" no hub nav (`hub-nav-save` class). Chama `manualSave()` → `saveGame()` + toast "Game saved!".
+- [x] **Save indicator** — ícone `💾` clickável no hub topbar (id `save-indicator`). Após qualquer `saveGame()` (auto ou manual), pisca "💾 Saved!" a verde por 2s. `gameState._lastSaved = Date.now()` guardado no save.
+- [x] **🏠 Menu button** — botão "🏠 Menu" no hub nav (`hub-nav-menu` class). Chama `goToMainMenu()` → modal de confirmação → `saveGame()` + `showScreen('main-menu')`. Vai para o main menu com "NEW GAME" e "CONTINUE" disponíveis.
+
+### Sessão 5b — Features novas (mesma sessão, cont.)
+- [x] **Champions League** — top 4 de cada div1 × 5 países = 20 teams. 4 grupos de 5, 10 rondas, QF/SF/Final. 3.º de cada grupo → EL Playoff. `initChampionsLeague` → `simulateCLGroupRound` → `setupCLKnockout` → knockout. Screen `champions-league`. HoF: `clWins`.
+- [x] **Europa League expandida** — pos 5-6 de cada div1 × 5 = 10 base teams + 4 CL dropdowns (3.º lugar por grupo) → EL Playoff → 2 vencedores entram nos grupos. Fase `waiting_cl_dropdowns` → `el_playoff` → `group` → `knockout_sf` → `final` → `complete`. `triggerELWithDropdowns` chamado de `setupCLKnockout`. HoF: `europaWins`.
+- [x] **European result na Career History** — `getEuropeanSeasonResult(gameState)` em season.js. Campo `europeanResult` no history push de `endSeason`. Coluna "Europe" na tabela de career history. Valores: CL Winner (gold), EL Winner (purple), Runner-up (silver), SF (blue), QF (light blue), Group Phase (green), EL Playoff (lavender), Did not qualify (muted). CL 3rd-place dropout → mostra resultado EL, não "Group Phase CL".
+- [x] **Simulate Next 5** — botão "⚡ Simulate Next 5" no hub-next card. `simulateNextGames(n)` em ui.js — simula n matches (liga > cup > CL > EL por prioridade). `showSimResults(results)` mostra screen com W/D/L summary + "⚡ 5 More" button.
+- [x] **Bugfix: domestic cup nome** — `loadGame()` backfilla `playerCountry` de `LEAGUES[playerLeague]?.country` e corrige `faCup.name` de `COUNTRY_CONFIG[playerCountry]?.cup`. Fallback em season.js: `gameState.playerCountry || LEAGUES[gameState.playerLeague]?.country || 'england'`.
 
 ### Sessão 5 — Features novas
 - [x] **Multi-league system** — 5 países, 9 ligas total:
@@ -143,6 +166,10 @@ Sessão 5 completa. Multi-league system implementado (5 países / 9 ligas).
 - `gameState.faCup.name` guarda o nome do cup correto — UI usa este em vez de hardcoded "FA Cup"
 - `hof.domesticCupWins` é o novo campo (compatível com antigo `faCupWins` via `|| hof.faCupWins`)
 - Scout system descartado — Dany acha a feature inútil.
+- Mobile: column hiding via CSS nth-child em vez de JS (squad: mantém POS/Name/OVR/Value/Action; transfers: mantém POS/Name/Club/OVR/Value/Action; league: mantém #/Club/P/W/D/L/GD/Pts)
+- Player modal usa `getAllTeams()` para encontrar jogador em qualquer liga — não precisa de contexto
+- Row onclick + `event.stopPropagation()` nos action buttons — pattern a seguir em futuras tabelas clicáveis
+- `saveGame()` sempre atualiza o DOM do save-indicator se estiver presente — não precisa re-render
 
 -----
 
@@ -157,17 +184,17 @@ Sessão 5 completa. Multi-league system implementado (5 países / 9 ligas).
 
 ## Next session ideas
 
-0. **PRIORIDADE — Match Engine Upgrade** (só `engine.js`, ~30 linhas):
+0. **PRIORIDADE — Match Engine Upgrade** (só `engine.js`, ~30 linhas). Plano detalhado em `/home/dany0421/.claude/plans/humming-wondering-wand.md`:
    - Usar stats individuais (pace/shooting/passing/defending/dribbling/physical) no attack/defense em vez de só `overall`
    - Dois helpers: `playerAttackContrib(p)` e `playerDefenseContrib(p)` — composite por posição, blend `contrib*0.8 + overall*0.2`
    - Upset/variance factor `0.88–1.12` por equipa por match
    - Formation passa a importar automaticamente como consequência
 1. Transfer negotiation — contra-oferta do clube vendedor, poder negociar preço
 2. Player aging / contract expiry warnings — jogadores a 1 season de reformar → notificação
-3. Youth Academy with youth market system, we should change it with the one we have now, the one now is basic so later its gonna be removed when we do the right one
+3. Youth Academy com mercado próprio — substituir o sistema actual (básico)
 4. Pre-season friendlies — 2-3 jogos antes da season para testar formação sem consequências
-5. News feed — no hub, um ticker de notícias do futebol: "X signed by Y", "Z is out injured", "Manager of the week"
-6. Champions League — top 4 de cada liga com `euroLeague:true` → formato mais rico com fase de grupos maior
+5. News feed — ticker no hub: "X signed by Y", "Z is out injured", "Manager of the week"
+6. Champions League — top 4 de cada liga → formato mais rico (já implementado grupos, falta testar fluxo completo)
 
 -----
 
@@ -196,7 +223,7 @@ test2/
 ## Layout do Hub (para referência)
 
 ```
-[TOPBAR: club · season · week · budget · morale]
+[TOPBAR: club · season · week · budget · morale · rep · 💾 indicator]
 [NOTIFICATION se houver]
 [INJURY NOTIFICATIONS (laranja) se houver]
 [hub-left flex:2]                    [hub-right flex:1]
@@ -205,10 +232,13 @@ test2/
   · Cup pending card (se houver)
   · hub-next (próximo jogo)
     · SET TACTICS & PLAY btn
+    · ⚡ Simulate Next 5 btn
     · Sim to Last Matchweek btn (se >1 jogo restante)
   · matchup-card (formations + bars)
-[NAV: Squad · Tactics · Table · Fixtures · Transfers · Stats · Career]
+[NAV: Squad · Tactics · Table · Fixtures · Transfers · Stats · Career · 💾 Save · 🏠 Menu]
 ```
+
+**Mobile:** hub-left e hub-right stack verticalmente. NAV faz flex-wrap.
 
 ## Layout da Team Select (para referência)
 
