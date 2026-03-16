@@ -35,6 +35,77 @@ function showModal({ title, body, confirm, cancel, onConfirm, onCancel, danger =
   modal.addEventListener('click', e => { if (e.target === modal) { close(); onCancel?.(); } });
 }
 
+// ─── PLAYER MODAL ─────────────────────────────────────────────────────────────
+function showPlayerModal(playerId) {
+  let player = null, teamName = '';
+  for (const team of getAllTeams()) {
+    const p = team.squad.find(q => q.id === playerId);
+    if (p) { player = p; teamName = team.name; break; }
+  }
+  if (!player) return;
+
+  const val = calculateTransferValue(player);
+  function statBar(label, v) {
+    const pct = Math.round((v / 99) * 100);
+    const color = v >= 80 ? 'var(--green)' : v >= 70 ? 'var(--accent)' : v >= 60 ? 'var(--warn)' : 'var(--danger)';
+    return `<div class="pm-stat-row">
+      <span class="pm-stat-label">${label}</span>
+      <div class="pm-stat-track"><div class="pm-stat-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="pm-stat-val" style="color:${color}">${v}</span>
+    </div>`;
+  }
+
+  showModal({
+    title: false,
+    cancel: 'Close',
+    confirm: false,
+    body: `
+      <div class="pm-header">
+        <span class="pos-badge pos-${player.pos}">${player.pos}</span>
+        <div>
+          <div class="pm-name">${player.name}</div>
+          <div class="pm-meta">${player.age}y · ${player.nation} · ${teamName}</div>
+        </div>
+      </div>
+      <div class="pm-ovr-row">
+        <div class="pm-badge"><div class="pm-badge-val ovr-${ovrClass(player.overall)}">${player.overall}</div><div class="pm-badge-lbl">OVR</div></div>
+        <div class="pm-badge"><div class="pm-badge-val muted">${player.potential || '?'}</div><div class="pm-badge-lbl">POT</div></div>
+        <div class="pm-badge"><div class="pm-badge-val green">${player.goals || 0}</div><div class="pm-badge-lbl">Goals</div></div>
+        <div class="pm-badge"><div class="pm-badge-val">${player.assists || 0}</div><div class="pm-badge-lbl">Assists</div></div>
+        <div class="pm-badge"><div class="pm-badge-val" style="font-size:13px;color:var(--accent2)">${formatMoney(val)}</div><div class="pm-badge-lbl">Value</div></div>
+      </div>
+      <div class="pm-stats">
+        ${statBar('PAC', player.pace)}
+        ${statBar('SHO', player.shooting)}
+        ${statBar('PAS', player.passing)}
+        ${statBar('DEF', player.defending)}
+        ${statBar('PHY', player.physical)}
+        ${statBar('DRI', player.dribbling)}
+      </div>
+      ${player.injuredWeeks ? `<div style="margin-top:10px;background:#3b1010;border:1px solid var(--danger);border-radius:6px;padding:8px 12px;font-size:12px;color:#fca5a5">🤕 Injured — out for <strong>${player.injuredWeeks}w</strong></div>` : ''}
+      ${player.onLoan ? `<div style="margin-top:8px;background:#0f2a4a;border:1px solid #2563eb;border-radius:6px;padding:6px 12px;font-size:12px;color:#60a5fa">🔄 On loan</div>` : ''}
+    `
+  });
+}
+
+function manualSave() {
+  saveGame();
+  showToast('Game saved!', 'success');
+}
+
+function goToMainMenu() {
+  showModal({
+    title: 'Return to Main Menu',
+    body: '<p>Your progress is auto-saved. You can continue later.</p>',
+    confirm: 'Go to Menu',
+    cancel: 'Stay',
+    onConfirm: () => {
+      saveGame();
+      showScreen('main-menu');
+    }
+  });
+}
+
 function showToast(message, type = 'info') {
   const existing = document.getElementById('fm-toast');
   if (existing) existing.remove();
@@ -266,6 +337,7 @@ function renderHub(app) {
           <div class="hub-stat">Morale <strong class="${morale>75?'green':morale>50?'yellow':'red'}">${moralLabel(morale)}</strong></div>
           <div class="hub-stat">Rep <strong class="rep-label">${repLabel(gameState.managerReputation || 50)}</strong></div>
         </div>
+        <span id="save-indicator" class="hub-stat muted" style="font-size:12px;cursor:pointer" onclick="manualSave()" title="Click to save">💾</span>
       </div>
 
       ${notification ? `<div class="notification">${notification}</div>` : ''}
@@ -327,6 +399,8 @@ function renderHub(app) {
         <button onclick="showScreen('stats')">🏆 Stats</button>
         <button onclick="showScreen('career')">📖 Career</button>
         ${gameState.seasonEnded ? `<button onclick="showScreen('end-season')" class="btn-alert">🏁 Season End</button>` : ''}
+        <button onclick="manualSave()" class="hub-nav-save" title="Save game">💾 Save</button>
+        <button onclick="goToMainMenu()" class="hub-nav-menu" title="Main menu">🏠 Menu</button>
       </nav>
     </div>
   `;
@@ -396,7 +470,7 @@ function renderSquad(app) {
           <th></th>
         </tr>
         ${squad.map(p => `
-          <tr class="${p.injuredWeeks ? 'player-injured' : p.onLoan ? 'player-loaned' : ''}">
+          <tr class="${p.injuredWeeks ? 'player-injured' : p.onLoan ? 'player-loaned' : ''}" onclick="showPlayerModal(${p.id})" style="cursor:pointer">
             <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
             <td class="p-name">
               ${p.name}
@@ -413,7 +487,7 @@ function renderSquad(app) {
             <td>${p.defending}</td><td>${p.physical}</td><td>${p.dribbling}</td>
             <td>${p.goals}</td><td>${p.assists}</td>
             <td class="muted">${formatMoney(calculateTransferValue(p))}</td>
-            <td><button class="btn-sm btn-danger" onclick="sellConfirm(${p.id})">Sell</button></td>
+            <td><button class="btn-sm btn-danger" onclick="event.stopPropagation();sellConfirm(${p.id})">Sell</button></td>
           </tr>
         `).join('')}
       </table>
@@ -935,7 +1009,7 @@ function renderTransferMarketTab(windowOpen) {
     <table class="squad-table">
       <tr><th>POS</th><th>Name</th><th>Club</th><th>Age</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>Value</th><th></th></tr>
       ${players.map(p => `
-        <tr>
+        <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
           <td>${p.name}</td>
           <td class="muted">${p.teamName}</td>
@@ -944,7 +1018,7 @@ function renderTransferMarketTab(windowOpen) {
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
           <td>${p.teamId ? formatMoney(p.value) : 'Free'}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
-            ${windowOpen?`onclick="buyConfirm(${p.id},'${p.teamId||''}')"`:''}>Sign</button></td>
+            ${windowOpen?`onclick="event.stopPropagation();buyConfirm(${p.id},'${p.teamId||''}')"`:''}>Sign</button></td>
         </tr>
       `).join('')}
     </table>
@@ -962,7 +1036,7 @@ function renderLoansTab(windowOpen) {
     <table class="squad-table">
       <tr><th>POS</th><th>Name</th><th>Club</th><th>Age</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>Loan Fee</th><th></th></tr>
       ${loanable.map(p => `
-        <tr>
+        <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
           <td>${p.name}</td>
           <td class="muted">${p.teamName}</td>
@@ -971,7 +1045,7 @@ function renderLoansTab(windowOpen) {
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
           <td>${formatMoney(Math.round(calculateTransferValue(p) * 0.15))}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
-            ${windowOpen?`onclick="loanConfirm(${p.id},'${p.teamId}')"`:''}>${windowOpen ? 'Loan' : 'Closed'}</button></td>
+            ${windowOpen?`onclick="event.stopPropagation();loanConfirm(${p.id},'${p.teamId}')"`:''}>${windowOpen ? 'Loan' : 'Closed'}</button></td>
         </tr>
       `).join('')}
     </table>
@@ -1788,6 +1862,7 @@ function isLight(hex) {
 // ─── SAVE / LOAD ─────────────────────────────────────────────────────────────
 function saveGame() {
   try {
+    gameState._lastSaved = Date.now();
     // Snapshot all squad data into gameState before saving
     gameState.squadData = {};
     getAllTeams().forEach(t => {
@@ -1795,6 +1870,13 @@ function saveGame() {
     });
     gameState._nextPid = gameState._nextPid || 100000;
     localStorage.setItem('fm_save', JSON.stringify(gameState));
+    // Flash save indicator in hub topbar if visible
+    const el = document.getElementById('save-indicator');
+    if (el) {
+      el.textContent = '💾 Saved!';
+      el.style.color = 'var(--green)';
+      setTimeout(() => { if (el) { el.textContent = '💾'; el.style.color = ''; } }, 2000);
+    }
   } catch(e) {
     console.warn('Save failed (storage full?)', e);
   }

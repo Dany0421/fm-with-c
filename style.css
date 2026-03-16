@@ -850,6 +850,40 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 .replay-ft-badge.loss { color: var(--danger); }
 .replay-ft-score { font-size: 48px; font-weight: 900; margin-bottom: 4px; }
 
+/* ── PLAYER MODAL ────────────────────────────────────────────── */
+.pm-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.pm-name { font-size: 18px; font-weight: 800; line-height: 1.2; }
+.pm-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.pm-ovr-row {
+  display: flex; gap: 6px; justify-content: space-between;
+  background: var(--bg3); border-radius: 8px; padding: 12px 8px;
+  margin-bottom: 14px;
+}
+.pm-badge { text-align: center; flex: 1; }
+.pm-badge-val { font-size: 18px; font-weight: 900; line-height: 1.1; }
+.pm-badge-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.pm-stats { display: flex; flex-direction: column; gap: 8px; }
+.pm-stat-row { display: flex; align-items: center; gap: 10px; }
+.pm-stat-label { min-width: 32px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.pm-stat-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.pm-stat-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.pm-stat-val { min-width: 28px; text-align: right; font-size: 13px; font-weight: 700; }
+
+/* ── HUB NAV SAVE/MENU BUTTONS ──────────────────────────────── */
+.hub-nav-save {
+  background: none; color: var(--muted); padding: 8px 12px;
+  border-radius: var(--radius); font-size: 13px; border: 1px solid var(--border);
+  margin-left: auto;
+}
+.hub-nav-save:hover { background: var(--bg3); color: var(--green); border-color: var(--green); }
+.hub-nav-menu {
+  background: none; color: var(--muted); padding: 8px 12px;
+  border-radius: var(--radius); font-size: 13px; border: 1px solid var(--border);
+}
+.hub-nav-menu:hover { background: var(--bg3); color: var(--text); }
+
 /* ── MOBILE RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 768px) {
 
@@ -1036,6 +1070,16 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   .modal-stats-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .modal-actions { flex-wrap: wrap; gap: 8px; }
   .modal-actions .btn { min-width: unset; flex: 1; }
+
+  /* ── Player modal — compact on mobile ── */
+  .pm-name { font-size: 16px; }
+  .pm-badge-val { font-size: 16px; }
+  .pm-ovr-row { padding: 10px 6px; gap: 4px; }
+  .pm-stat-track { height: 7px; }
+  .pm-stat-val { font-size: 12px; }
+
+  /* ── Hub nav save/menu — don't push to new line awkwardly ── */
+  .hub-nav-save { margin-left: 0; }
 
   /* ── Toast ── */
   .toast { white-space: normal; text-align: center; max-width: 90vw; padding: 10px 18px; }
