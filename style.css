@@ -1052,13 +1052,26 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   .pc-option { padding: 12px 12px; gap: 10px; }
 
   /* ── Europa / CL ── */
-  .europa-header { padding: 12px 14px; }
+  .europa-header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+  .europa-header .btn-secondary { align-self: flex-start; font-size: 12px; padding: 6px 10px; }
   .europa-body { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
   .europa-groups { grid-template-columns: 1fr; gap: 10px; }
-  .europa-matchup { font-size: 15px; gap: 12px; }
-  .europa-next-match { padding: 16px; }
-  .bracket-pairs { gap: 8px; }
-  .bracket-pair { min-width: unset; flex: 1; min-width: 140px; }
+  .europa-matchup { font-size: 14px; gap: 8px; flex-wrap: wrap; justify-content: center; text-align: center; }
+  .europa-matchup span { max-width: 140px; }
+  .europa-next-match { padding: 14px; }
+  .europa-winner-banner { padding: 20px 14px; }
+  .europa-winner-title { font-size: 20px; }
+  .bracket-section { padding: 12px; }
+  .bracket-pairs { gap: 8px; flex-wrap: wrap; }
+  .bracket-pair { min-width: unset; width: calc(50% - 4px); }
+
+  /* ── End Season — action buttons full-width, sections stretch ── */
+  .season-summary { align-items: stretch; }
+  .season-summary .btn-xl { width: 100%; text-align: center; }
+  .season-summary > br { display: none; }
+
+  /* ── Season tables — overflow safety ── */
+  .season-tables > div { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* ── Matchup Card (hub) ── */
   .matchup-compare { width: 120px; }
