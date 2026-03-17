@@ -1,6 +1,6 @@
 # MEMORY.md — Project State
 
-*Last updated: 2026-03-16 (Sessão 6 — completa)*
+*Last updated: 2026-03-17 (Sessão 8 — completa)*
 
 -----
 
@@ -12,7 +12,7 @@ Football Manager no browser — Premier League + Championship com promoção/rel
 
 ## Current state
 
-Sessão 6 completa. Jogo totalmente funcional no browser + mobile. Multi-league (5 países / 9 ligas), CL + EL, career system, player modals, save system melhorado. Próxima prioridade: match engine upgrade (só `engine.js`).
+Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minuto, stats ao vivo no replay, chance tiers, goal types, penaltis e free kicks. Bugfix no W/D/L das sim results.
 
 -----
 
@@ -20,7 +20,7 @@ Sessão 6 completa. Jogo totalmente funcional no browser + mobile. Multi-league 
 
 ### Core Engine
 - [x] `dataEPL.js` — 44 equipas EPL/Championship com ~900 jogadores hand-crafted, stats por posição, potential, valores realistas. Define `makePlayer`, `pid()`, `LEAGUES`, `TEAM_MAP`, `ALL_TEAMS`, `COUNTRY_CONFIG`, `makeTeamSquad`, `makeNameFor`.
-- [x] `engine.js` — attack/defense calculados separadamente, pesos por posição, modificadores táticos, form streak morale, injuries (com return de jogadores lesionados), wage cost helper
+- [x] `engine.js` — **totalmente reescrito (Sessão 8)**. Ver secção "Sessão 8" para detalhes.
 - [x] `season.js` — fixtures round-robin, tabelas, promoção/relegação, seasons infinitas, career tracking, retirements, regens, domestic cup, Europa League, simulateToLastMatchweek, AI bids, loan returns
 
 ### Táticas
@@ -64,6 +64,39 @@ Sessão 6 completa. Jogo totalmente funcional no browser + mobile. Multi-league 
 - [x] **Europa League trophy no HoF** — `career.hallOfFame.europaWins` incrementado em `resolveEuropaAndRefresh`. Card 🌟 na career page.
 - [x] **Loan system** — Aba "Loans" nos transfers. Fee = 15% do transfer value. Badge `LOAN` azul na squad page. Row com tint azul. Retorno automático no início da season com notificação. `executeLoan` em manager.js, `returnLoanedPlayers` em season.js.
 - [x] **AI bidding** — Durante transfer window, 22% chance/matchweek de oferta por jogador ≥74 OVR. Card "📬 TRANSFER OFFERS" no hub com Accept/Reject. Accept vende ao preço da oferta (5-45% acima do valor). Máx 3 bids pendentes. Limpa no início de cada season. `generateAIBids` em season.js.
+
+### Sessão 8 — Features novas
+- [x] **Match engine reescrito — simulação minuto a minuto** (`engine.js` completo):
+  - `playerAttackContrib(p)` + `playerDefenseContrib(p)` — stats individuais (pace/shooting/passing/defending/physical/dribbling) com pesos por posição. Blended `80% contrib + 20% overall`.
+  - `getTeamMidfield(p)` — controlo de posse baseado em passing/physical/dribbling, peso maior em CDM/CM/CAM.
+  - `pickWeighted(pool, statFn)` — seleção probabilística de scorer/assister.
+  - Loop 90 minutos: posse decidida por midfield ratio; chanceRate 0.14 base; upset factor `0.88–1.12` por equipa por jogo.
+  - Momentum: golo dá +10% attack por 5 minutos.
+  - Retorna: `possession`, `xG`, `shots`, `bigChances`.
+- [x] **Chance tiers** (`getChanceType`, `getXGForType`):
+  - Low (long shot): xG 0.03–0.08
+  - Medium: xG 0.09–0.22
+  - Big: xG 0.28–0.50
+  - Probabilidade influenciada por: mentality, passingStyle, pressing, midfield dominance, shotQ.
+  - `bigChances` tracked separadamente, incluído no retorno e nos stats bars.
+- [x] **Goal types** (`getGoalType(chanceType)`):
+  - Low → Long Shot / Header / Volley
+  - Medium → Finish / Header / Volley / Tap In
+  - Big → Tap In / 1v1 / Header / Finish
+  - `goalType` incluído em todos os goal events.
+- [x] **Sistema de penaltis** — 22% home / 18% away por jogo. 75% conversão. Missed penalty → evento `penalty_miss` (❌). Sem assister.
+- [x] **Sistema de free kicks** — 14% home / 11% away por jogo. 15% conversão. Taker escolhido por `(passing + shooting) / 2`. Sem assister.
+- [x] **Match stats bar** (post-match + replay) — Possession / Shots / xG / Big Chances (amber). Aparece em `renderMatchResult`.
+- [x] **Replay stats ao vivo** — bars animam em tempo real durante o replay. Possession interpolada smooth; shots/xG/bigChances em ticks discretos por shot. `startReplayAnimation` drive tudo.
+- [x] **Replay event feed melhorado** — cada golo mostra: scorer name + `↪ assister` + badge de goal type. Penalty miss aparece como ❌. Goal type badge em uppercase pequeno com bg semi-transparente.
+- [x] **Bugfix: W/D/L errado em sim results** — `displayResult` em `simulateFaCupPlayerMatch`, `simulateEuropaKnockoutPlayerMatch`, `simulateCLKnockoutPlayerMatch`, `simulateELPlayoffPlayerMatch` estava a fazer swap de goals (player goals sempre em homeGoals). Corrigido: `displayResult = { ...result, homeGoals: hg, awayGoals: ag }` — goals reais home/away, `isHome` trata o display.
+
+### Sessão 7 — Features novas
+- [x] **Free Agents tab** — aba dedicada no Transfer Market (entre Transfers e Loans). `renderFreeAgentsTab(windowOpen)` em ui.js. Filtros por posição + OVR min. Todos os agentes livres gratuitos (só salário). `getFreeAgents(filters)` em manager.js.
+- [x] **FREE_AGENTS pool expandido** — 15 → 113 jogadores cobrindo todos os 10 posições. OVR 58–73, idades 28–48. Jogadores retirados/veteranos — sem conflito de nomes com squads activos. Definidos em `dataEPL.js`.
+- [x] **Loans OVR cap** — jogadores OVR > 87 não aparecem nos Loans (não é realista emprestar Haaland/Vini). Threshold em `getLoanablePlayers`: `p.overall >= 60 && p.overall <= 87`.
+- [x] **Budgets rebalanceados** — todos os leagues usam fórmula `(prestige-40)² × 45000`. Top teams: prestige 97 → €146M, prestige 92 → €122M. Multiplier uniformizado via Python/sed em todos os 5 data files.
+- [x] **Max Price filter** — dropdown "Any Price / 500K / 1M / 2M / 5M / 10M / 25M / 50M max" no Transfer Market tab. Usa `transferFilters.maxValue` já existente no backend.
 
 ### Sessão 6 — Features novas
 - [x] **Mobile responsive** — `style.css` com dois breakpoints: `@media (max-width: 768px)` e `@media (max-width: 480px)`. Cobre todas as screens.
@@ -170,6 +203,13 @@ Sessão 6 completa. Jogo totalmente funcional no browser + mobile. Multi-league 
 - Player modal usa `getAllTeams()` para encontrar jogador em qualquer liga — não precisa de contexto
 - Row onclick + `event.stopPropagation()` nos action buttons — pattern a seguir em futuras tabelas clicáveis
 - `saveGame()` sempre atualiza o DOM do save-indicator se estiver presente — não precisa re-render
+- Free agents separados do Transfer Market — tab própria, `getFreeAgents()` em manager.js, sempre visíveis (não cortados por slice)
+- Loans cap em OVR 87 — acima disso só compra, não empréstimo
+- FREE_AGENTS só devem ter jogadores retirados/veteranos, sem overlap com squads activos
+- `displayResult` em cup/CL/EL knockout NÃO faz swap de goals — usa `{ homeGoals: hg, awayGoals: ag }` real; `isHome` trata o display no UI
+- chanceRate base = 0.14 (6 shots/team avg); goalProb = `0.06 + shotQ * 0.20` era o antigo, agora varia por chanceType
+- Penalty: 22%/18% por jogo, 75% conversão, no assister. Free kick: 14%/11%, 15% conversão, no assister
+- Goal types determinados por chanceType: low→long_shot/header/volley, medium→finish/header/volley/tap_in, big→tap_in/one_on_one/header/finish
 
 -----
 

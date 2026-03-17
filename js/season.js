@@ -933,7 +933,7 @@ function simulateFaCupPlayerMatch(gameState, playerTactics) {
   const oppGoals = isHome ? ag : hg;
   const matchResult = playerGoals > oppGoals ? 'win' : 'loss';
 
-  const displayResult = { ...result, homeGoals: isHome ? hg : ag, awayGoals: isHome ? ag : hg };
+  const displayResult = { ...result, homeGoals: hg, awayGoals: ag };
   return {
     fixture: { home: homeId, away: awayId },
     result: displayResult, isHome, matchResult,
@@ -1164,7 +1164,7 @@ function simulateEuropaKnockoutPlayerMatch(gameState, tactics) {
   const oppGoals = isHome ? ag : hg;
   const playerWon = playerGoals > oppGoals;
 
-  const displayResult = { ...result, homeGoals: isHome ? hg : ag, awayGoals: isHome ? ag : hg };
+  const displayResult = { ...result, homeGoals: hg, awayGoals: ag };
 
   el.playerMatchPending = false;
   if (!el.knockoutResults[el.phase]) el.knockoutResults[el.phase] = [];
@@ -1408,7 +1408,7 @@ function simulateCLKnockoutPlayerMatch(gameState, tactics) {
   const playerGoals = isHome ? hg : ag;
   const oppGoals = isHome ? ag : hg;
   const playerWon = playerGoals > oppGoals;
-  const displayResult = { ...result, homeGoals: isHome ? hg : ag, awayGoals: isHome ? ag : hg };
+  const displayResult = { ...result, homeGoals: hg, awayGoals: ag };
 
   cl.playerMatchPending = false;
   if (!cl.knockoutResults[cl.phase]) cl.knockoutResults[cl.phase] = [];
@@ -1519,7 +1519,7 @@ function simulateELPlayoffPlayerMatch(gameState, tactics) {
   const oppGoals = isHome ? ag : hg;
   const playerWon = playerGoals > oppGoals;
   const opponent = isHome ? awayId : homeId;
-  const displayResult = { ...result, homeGoals: isHome ? hg : ag, awayGoals: isHome ? ag : hg };
+  const displayResult = { ...result, homeGoals: hg, awayGoals: ag };
 
   el.playerMatchPending = false;
   el.playoffResults.push({ home: homeId, away: awayId, winner: playerWon ? gameState.playerTeam : opponent, playerMatch: true });

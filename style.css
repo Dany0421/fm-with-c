@@ -1144,3 +1144,83 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   .transfers-screen .squad-table th:nth-child(3),
   .transfers-screen .squad-table td:nth-child(3) { display: none; }
 }
+
+/* ── Match Stats Bar (possession / shots / xG) ──────────────────────────── */
+.match-stats-bar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ms-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 80px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+}
+.ms-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+.ms-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ms-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
+}
+.ms-track-right {
+  justify-content: flex-start;
+}
+.ms-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.ms-fill-right {
+  background: var(--muted);
+}
+
+/* ── Goal type info (replay + post-match events) ────────────────────────── */
+.ev-goal-info, .event-goal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.ev-goal-meta, .event-goal-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ev-goal-type, .event-goal-type {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ev-assist, .event-assist {
+  font-size: 11px;
+  color: var(--muted);
+}

@@ -800,18 +800,67 @@ function renderMatchResult(app, data) {
         </div>
       </div>
 
+      ${result.shots ? `
+      <div class="match-stats-bar">
+        <div class="ms-row">
+          <span class="ms-val">${result.possession.home}%</span>
+          <div class="ms-track"><div class="ms-fill" style="width:${result.possession.home}%"></div></div>
+          <span class="ms-label">Possession</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" style="width:${result.possession.away}%"></div></div>
+          <span class="ms-val">${result.possession.away}%</span>
+        </div>
+        <div class="ms-row">
+          <span class="ms-val">${result.shots.home}</span>
+          <div class="ms-track"><div class="ms-fill" style="width:${Math.round(result.shots.home/(result.shots.home+result.shots.away||1)*100)}%"></div></div>
+          <span class="ms-label">Shots</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" style="width:${Math.round(result.shots.away/(result.shots.home+result.shots.away||1)*100)}%"></div></div>
+          <span class="ms-val">${result.shots.away}</span>
+        </div>
+        <div class="ms-row">
+          <span class="ms-val">${result.xG.home}</span>
+          <div class="ms-track"><div class="ms-fill" style="width:${Math.round(result.xG.home/(result.xG.home+result.xG.away||1)*100)}%"></div></div>
+          <span class="ms-label">xG</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" style="width:${Math.round(result.xG.away/(result.xG.home+result.xG.away||1)*100)}%"></div></div>
+          <span class="ms-val">${result.xG.away}</span>
+        </div>
+        ${result.bigChances ? `
+        <div class="ms-row">
+          <span class="ms-val" style="color:#f59e0b">${result.bigChances.home}</span>
+          <div class="ms-track"><div class="ms-fill" style="width:${Math.round(result.bigChances.home/(result.bigChances.home+result.bigChances.away||1)*100)}%;background:#f59e0b"></div></div>
+          <span class="ms-label">Big Chances</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" style="width:${Math.round(result.bigChances.away/(result.bigChances.home+result.bigChances.away||1)*100)}%;background:#f59e0b"></div></div>
+          <span class="ms-val" style="color:#f59e0b">${result.bigChances.away}</span>
+        </div>` : ''}
+      </div>` : ''}
+
       <div class="match-events">
         <h3>MATCH EVENTS</h3>
         ${result.events.length === 0 ? '<p class="muted">No notable events.</p>' : ''}
-        ${result.events.map(ev => `
-          <div class="event-row event-${ev.type} event-${ev.team === (isHome?'home':'away') ? 'mine' : 'opp'}">
-            <span class="event-min">${ev.min}'</span>
-            <span class="event-icon">${ev.type === 'goal' ? '⚽' : ev.type === 'yellow' ? '🟨' : '🟥'}</span>
-            <span class="event-player">${ev.player}</span>
-            ${ev.assist ? `<span class="event-assist">(assist: ${ev.assist})</span>` : ''}
-            <span class="event-team">${ev.team === 'home' ? getTeam(fixture.home).name : getTeam(fixture.away).name}</span>
-          </div>
-        `).join('')}
+        ${result.events.map(ev => {
+          const isMine = ev.team === (isHome ? 'home' : 'away');
+          const teamName = ev.team === 'home' ? getTeam(fixture.home).name : getTeam(fixture.away).name;
+          const goalTypeLabel = { penalty:'Penalty', free_kick:'Free Kick', header:'Header', long_shot:'Long Shot', tap_in:'Tap In', one_on_one:'1v1', volley:'Volley', finish:'Finish' }[ev.goalType] || '';
+          if (ev.type === 'penalty_miss') return `
+            <div class="event-row event-penalty_miss event-${isMine ? 'mine' : 'opp'}">
+              <span class="event-min">${ev.min}'</span>
+              <span class="event-icon">❌</span>
+              <div class="event-goal-info">
+                <span class="event-player">${ev.player}</span>
+                <div class="event-goal-meta"><span class="event-goal-type">Penalty Missed</span></div>
+              </div>
+              <span class="event-team">${teamName}</span>
+            </div>`;
+          return `
+            <div class="event-row event-${ev.type} event-${isMine ? 'mine' : 'opp'}">
+              <span class="event-min">${ev.min}'</span>
+              <span class="event-icon">${ev.type === 'goal' ? '⚽' : ev.type === 'yellow' ? '🟨' : '🟥'}</span>
+              <div class="event-goal-info">
+                <span class="event-player">${ev.player}</span>
+                ${ev.type === 'goal' ? `<div class="event-goal-meta">${ev.assist ? `<span class="event-assist">↪ ${ev.assist}</span>` : ''}${goalTypeLabel ? `<span class="event-goal-type">${goalTypeLabel}</span>` : ''}</div>` : ''}
+              </div>
+              <span class="event-team">${teamName}</span>
+            </div>`;
+        }).join('')}
       </div>
 
       <div class="result-actions">
@@ -1787,6 +1836,37 @@ function renderMatchReplay(app) {
         </div>
       </div>
 
+      <div class="match-stats-bar" id="replay-stats" style="margin:12px 0">
+        <div class="ms-row">
+          <span class="ms-val" id="rs-poss-h">50%</span>
+          <div class="ms-track"><div class="ms-fill" id="rs-poss-fill-h" style="width:50%"></div></div>
+          <span class="ms-label">Possession</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" id="rs-poss-fill-a" style="width:50%"></div></div>
+          <span class="ms-val" id="rs-poss-a">50%</span>
+        </div>
+        <div class="ms-row">
+          <span class="ms-val" id="rs-shots-h">0</span>
+          <div class="ms-track"><div class="ms-fill" id="rs-shots-fill-h" style="width:0%"></div></div>
+          <span class="ms-label">Shots</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" id="rs-shots-fill-a" style="width:0%"></div></div>
+          <span class="ms-val" id="rs-shots-a">0</span>
+        </div>
+        <div class="ms-row">
+          <span class="ms-val" id="rs-xg-h">0.0</span>
+          <div class="ms-track"><div class="ms-fill" id="rs-xg-fill-h" style="width:0%"></div></div>
+          <span class="ms-label">xG</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" id="rs-xg-fill-a" style="width:0%"></div></div>
+          <span class="ms-val" id="rs-xg-a">0.0</span>
+        </div>
+        <div class="ms-row">
+          <span class="ms-val" id="rs-bc-h" style="color:#f59e0b">0</span>
+          <div class="ms-track"><div class="ms-fill" id="rs-bc-fill-h" style="width:0%;background:#f59e0b"></div></div>
+          <span class="ms-label">Big Chances</span>
+          <div class="ms-track ms-track-right"><div class="ms-fill ms-fill-right" id="rs-bc-fill-a" style="width:0%;background:#f59e0b"></div></div>
+          <span class="ms-val" id="rs-bc-a" style="color:#f59e0b">0</span>
+        </div>
+      </div>
+
       <div class="replay-events" id="replay-events">
         <div class="replay-events-label">MATCH EVENTS</div>
       </div>
@@ -1808,15 +1888,75 @@ function startReplayAnimation(data, isHome) {
   const events = [...(data.events || [])].sort((a, b) => a.min - b.min);
   let homeScore = 0, awayScore = 0;
 
-  // Clock ticker
+  // Live stats setup
+  const finalPoss  = data.possession  || { home: 50, away: 50 };
+  const finalShots = data.shots       || { home: 0, away: 0 };
+  const finalXG    = data.xG          || { home: 0, away: 0 };
+  const finalBC    = data.bigChances  || { home: 0, away: 0 };
+  let liveShots = { home: 0, away: 0 };
+  let liveXG    = { home: 0, away: 0 };
+  let liveBC    = { home: 0, away: 0 };
+
+  // Helper to refresh the stats bar DOM
+  function updateLiveStats(progress) {
+    const hp = Math.round(50 + (finalPoss.home - 50) * progress);
+    const ap = 100 - hp;
+    const totalS  = liveShots.home + liveShots.away || 1;
+    const totalX  = liveXG.home   + liveXG.away    || 1;
+    const totalBC = liveBC.home   + liveBC.away     || 1;
+    const set  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const setW = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = pct + '%'; };
+    set('rs-poss-h', hp + '%');  set('rs-poss-a', ap + '%');
+    setW('rs-poss-fill-h', hp);  setW('rs-poss-fill-a', ap);
+    set('rs-shots-h', liveShots.home);  set('rs-shots-a', liveShots.away);
+    setW('rs-shots-fill-h', Math.round(liveShots.home / totalS * 100));
+    setW('rs-shots-fill-a', Math.round(liveShots.away / totalS * 100));
+    set('rs-xg-h', liveXG.home.toFixed(1));  set('rs-xg-a', liveXG.away.toFixed(1));
+    setW('rs-xg-fill-h', Math.round(liveXG.home / totalX * 100));
+    setW('rs-xg-fill-a', Math.round(liveXG.away / totalX * 100));
+    set('rs-bc-h', liveBC.home);  set('rs-bc-a', liveBC.away);
+    setW('rs-bc-fill-h', Math.round(liveBC.home / totalBC * 100));
+    setW('rs-bc-fill-a', Math.round(liveBC.away / totalBC * 100));
+  }
+
+  // Schedule discrete shot + xG + bigChance ticks
+  function scheduleShotTicks(shotCount, xgTotal, bcCount, side) {
+    if (!shotCount) return;
+    const xgPerShot = xgTotal / shotCount;
+    // which shot indices are big chances (evenly spaced)
+    const bcIndices = new Set();
+    if (bcCount > 0) {
+      for (let i = 0; i < bcCount; i++) bcIndices.add(Math.round((i / bcCount) * shotCount));
+    }
+    for (let i = 0; i < shotCount; i++) {
+      const base   = ((i + 0.5) / shotCount) * DURATION;
+      const jitter = (Math.random() - 0.5) * (DURATION / shotCount) * 0.5;
+      const delay  = Math.max(400, Math.min(DURATION - 300, base + jitter));
+      const isBig  = bcIndices.has(i);
+      const t = setTimeout(() => {
+        liveShots[side]++;
+        liveXG[side] = Math.min(xgTotal, +(liveXG[side] + xgPerShot).toFixed(2));
+        if (isBig) liveBC[side]++;
+        updateLiveStats(Math.min(1, (Date.now() - clockStart) / DURATION));
+      }, delay);
+      _replayTimeouts.push(t);
+    }
+  }
+
+  scheduleShotTicks(finalShots.home, finalXG.home, finalBC.home, 'home');
+  scheduleShotTicks(finalShots.away, finalXG.away, finalBC.away, 'away');
+
+  // Clock ticker (also drives possession interpolation)
   const clockStart = Date.now();
   const clockInt = setInterval(() => {
     const elapsed = Date.now() - clockStart;
-    const minute = Math.min(90, Math.round((elapsed / DURATION) * 90));
+    const progress = Math.min(1, elapsed / DURATION);
+    const minute = Math.min(90, Math.round(progress * 90));
     const clockEl = document.getElementById('replay-clock');
     const barEl = document.getElementById('replay-bar');
     if (clockEl) clockEl.textContent = `${minute}'`;
-    if (barEl) barEl.style.width = `${Math.min(100, (elapsed / DURATION) * 100)}%`;
+    if (barEl) barEl.style.width = `${progress * 100}%`;
+    updateLiveStats(progress);
   }, 150);
   _replayIntervals.push(clockInt);
 
@@ -1829,6 +1969,8 @@ function startReplayAnimation(data, isHome) {
 
       const isMyTeam = (ev.team === 'home') === isHome;
 
+      const GOAL_TYPE_LABELS = { penalty:'Penalty', free_kick:'Free Kick', header:'Header', long_shot:'Long Shot', tap_in:'Tap In', one_on_one:'1v1', volley:'Volley', finish:'Finish' };
+
       if (ev.type === 'goal') {
         if (ev.team === 'home') homeScore++; else awayScore++;
         const scoreEl = document.getElementById('replay-score');
@@ -1837,12 +1979,34 @@ function startReplayAnimation(data, isHome) {
           scoreEl.classList.add('score-pulse');
           setTimeout(() => scoreEl.classList.remove('score-pulse'), 700);
         }
+        const typeLabel = GOAL_TYPE_LABELS[ev.goalType] || '';
         const row = document.createElement('div');
         row.className = `replay-event ${isMyTeam ? 'ev-mine' : 'ev-opp'}`;
-        row.innerHTML = `<span class="ev-min">${ev.min}'</span><span class="ev-icon">⚽</span><span class="ev-player">${ev.player}</span>${ev.assist ? `<span class="ev-assist">↪ ${ev.assist}</span>` : ''}`;
+        row.innerHTML = `
+          <span class="ev-min">${ev.min}'</span>
+          <span class="ev-icon">⚽</span>
+          <div class="ev-goal-info">
+            <span class="ev-player">${ev.player}</span>
+            <div class="ev-goal-meta">
+              ${ev.assist ? `<span class="ev-assist">↪ ${ev.assist}</span>` : ''}
+              ${typeLabel ? `<span class="ev-goal-type">${typeLabel}</span>` : ''}
+            </div>
+          </div>`;
         feed.appendChild(row);
         requestAnimationFrame(() => row.classList.add('ev-visible'));
         row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else if (ev.type === 'penalty_miss') {
+        const row = document.createElement('div');
+        row.className = `replay-event ev-card ${isMyTeam ? 'ev-mine' : 'ev-opp'}`;
+        row.innerHTML = `
+          <span class="ev-min">${ev.min}'</span>
+          <span class="ev-icon">❌</span>
+          <div class="ev-goal-info">
+            <span class="ev-player">${ev.player}</span>
+            <div class="ev-goal-meta"><span class="ev-goal-type" style="color:var(--danger)">Penalty Missed</span></div>
+          </div>`;
+        feed.appendChild(row);
+        requestAnimationFrame(() => row.classList.add('ev-visible'));
       } else {
         const row = document.createElement('div');
         row.className = `replay-event ev-card ${isMyTeam ? 'ev-mine' : 'ev-opp'}`;
@@ -2412,7 +2576,11 @@ function playMatch() {
     homeTeamId: data.fixture.home,
     awayTeamId: data.fixture.away,
     isHome: data.isHome,
-    matchResult: data.matchResult
+    matchResult: data.matchResult,
+    possession: data.result.possession,
+    xG: data.result.xG,
+    shots: data.result.shots,
+    bigChances: data.result.bigChances
   };
 
   gameState._postMatchResult = data.matchResult;

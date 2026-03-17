@@ -1,31 +1,62 @@
 // engine.js — Match simulation and game logic
 
+// ── Per-position contribution using individual stats ──────────────────────────
+
+function playerAttackContrib(p) {
+  switch (p.pos) {
+    case 'ST': case 'CF': return p.shooting*0.5  + p.pace*0.25     + p.physical*0.25;
+    case 'LW': case 'RW': return p.pace*0.4      + p.dribbling*0.35 + p.shooting*0.25;
+    case 'CAM':            return p.dribbling*0.35 + p.passing*0.35  + p.shooting*0.3;
+    case 'CM': case 'RM': case 'LM':
+                           return p.passing*0.5   + p.physical*0.3  + p.dribbling*0.2;
+    case 'CDM':            return p.passing*0.35  + p.physical*0.35 + p.shooting*0.3;
+    case 'RB': case 'LB': return p.pace*0.4      + p.passing*0.35  + p.physical*0.25;
+    case 'CB':             return p.physical*0.5  + p.passing*0.3   + p.pace*0.2;
+    case 'GK':             return p.overall * 0.3;
+    default:               return p.overall;
+  }
+}
+
+function playerDefenseContrib(p) {
+  switch (p.pos) {
+    case 'GK':             return p.overall;
+    case 'CB':             return p.defending*0.55 + p.physical*0.3  + p.pace*0.15;
+    case 'RB': case 'LB': return p.defending*0.45 + p.pace*0.3      + p.physical*0.25;
+    case 'CDM':            return p.defending*0.5  + p.physical*0.3  + p.passing*0.2;
+    case 'CM': case 'RM': case 'LM':
+                           return p.defending*0.35 + p.physical*0.4  + p.pace*0.25;
+    case 'CAM':            return p.physical*0.5   + p.defending*0.3 + p.pace*0.2;
+    default:               return p.physical*0.5   + p.pace*0.3      + p.defending*0.2;
+  }
+}
+
+// ── Team ratings ──────────────────────────────────────────────────────────────
+
 function getTeamAttack(team, gameState) {
   const tactics = gameState?.tactics?.[team.id] || {};
-  const squad = [...team.squad].sort((a, b) => b.overall - a.overall).slice(0, 11);
+  const squad = [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
 
-  // Weight attacking stats
   const atkScore = squad.reduce((s, p) => {
     const w = ['ST','CF','RW','LW','CAM'].includes(p.pos) ? 1.3 :
               ['CM','RM','LM'].includes(p.pos) ? 1.0 : 0.6;
-    return s + p.overall * w;
+    const contrib = playerAttackContrib(p);
+    return s + (contrib * 0.8 + p.overall * 0.2) * w;
   }, 0) / 11;
 
   let mod = 1.0;
   if (tactics.mentality === 'attacking')  mod *= 1.15;
-  if (tactics.mentality === 'defensive') mod *= 0.87;
-  if (tactics.pressing === 'high')       mod *= 1.06;
-  if (tactics.pressing === 'low')        mod *= 0.96;
-  if (tactics.tempo === 'fast')          mod *= 1.05;
-  if (tactics.tempo === 'slow')          mod *= 0.96;
+  if (tactics.mentality === 'defensive')  mod *= 0.87;
+  if (tactics.pressing === 'high')        mod *= 1.06;
+  if (tactics.pressing === 'low')         mod *= 0.96;
+  if (tactics.tempo === 'fast')           mod *= 1.05;
+  if (tactics.tempo === 'slow')           mod *= 0.96;
   if (tactics.width === 'wide') {
     const wingers = team.squad.filter(p => ['RW','LW','RM','LM'].includes(p.pos));
     if (wingers.length > 0 && wingers[0].overall >= 76) mod *= 1.06;
   }
-  if (tactics.passingStyle === 'direct') mod *= 1.04;
-  if (tactics.passingStyle === 'short')  mod *= 0.97;
+  if (tactics.passingStyle === 'direct')  mod *= 1.04;
+  if (tactics.passingStyle === 'short')   mod *= 0.97;
 
-  // Captain morale bonus
   const captain = tactics.captain ? team.squad.find(p => p.id === tactics.captain) : null;
   if (captain && (captain.morale || 70) > 75) mod *= 1.03;
 
@@ -38,23 +69,24 @@ function getTeamAttack(team, gameState) {
 
 function getTeamDefense(team, gameState) {
   const tactics = gameState?.tactics?.[team.id] || {};
-  const squad = [...team.squad].sort((a, b) => b.overall - a.overall).slice(0, 11);
+  const squad = [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
 
   const defScore = squad.reduce((s, p) => {
     const w = ['GK','CB'].includes(p.pos) ? 1.4 :
               ['RB','LB','CDM'].includes(p.pos) ? 1.1 :
               ['CM','RM','LM'].includes(p.pos) ? 0.8 : 0.5;
-    return s + p.overall * w;
+    const contrib = playerDefenseContrib(p);
+    return s + (contrib * 0.8 + p.overall * 0.2) * w;
   }, 0) / 11;
 
   let mod = 1.0;
-  if (tactics.mentality === 'defensive') mod *= 1.15;
-  if (tactics.mentality === 'attacking') mod *= 0.87;
-  if (tactics.defensiveLine === 'high')  mod *= 1.08;
-  if (tactics.defensiveLine === 'low')   mod *= 0.94;
-  if (tactics.pressing === 'high')       mod *= 1.04;
-  if (tactics.pressing === 'low')        mod *= 0.96;
-  if (tactics.width === 'narrow')        mod *= 1.04;
+  if (tactics.mentality === 'defensive')  mod *= 1.15;
+  if (tactics.mentality === 'attacking')  mod *= 0.87;
+  if (tactics.defensiveLine === 'high')   mod *= 1.08;
+  if (tactics.defensiveLine === 'low')    mod *= 0.94;
+  if (tactics.pressing === 'high')        mod *= 1.04;
+  if (tactics.pressing === 'low')         mod *= 0.96;
+  if (tactics.width === 'narrow')         mod *= 1.04;
 
   const morale = gameState?.morale?.[team.id] || 70;
   const moraleBonus = (morale - 50) / 200;
@@ -63,147 +95,303 @@ function getTeamDefense(team, gameState) {
   return defScore * mod * (1 + moraleBonus + fitnessBonus);
 }
 
-// Simulate a single match between two teams
+function getTeamMidfield(team, gameState) {
+  const tactics = gameState?.tactics?.[team.id] || {};
+  const squad = [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
+
+  const midScore = squad.reduce((s, p) => {
+    const w = ['CDM','CM','CAM'].includes(p.pos) ? 1.4 :
+              ['RM','LM'].includes(p.pos) ? 1.2 :
+              ['RB','LB'].includes(p.pos) ? 0.7 :
+              ['CB','GK'].includes(p.pos) ? 0.4 : 0.8;
+    const contrib = p.passing * 0.5 + p.physical * 0.25 + p.dribbling * 0.25;
+    return s + contrib * w;
+  }, 0) / 11;
+
+  let mod = 1.0;
+  if (tactics.passingStyle === 'short') mod *= 1.06;
+  if (tactics.tempo === 'fast')         mod *= 1.04;
+  mod *= (1 + ((gameState?.morale?.[team.id] || 70) - 50) / 300);
+
+  return midScore * mod;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// ── Goal type ─────────────────────────────────────────────────────────────────
+
+function getGoalType(chanceType) {
+  const r = Math.random();
+  if (chanceType === 'low') {
+    if (r < 0.72) return 'long_shot';
+    if (r < 0.87) return 'header';
+    return 'volley';
+  }
+  if (chanceType === 'medium') {
+    if (r < 0.38) return 'finish';
+    if (r < 0.62) return 'header';
+    if (r < 0.78) return 'volley';
+    return 'tap_in';
+  }
+  // big chance
+  if (r < 0.42) return 'tap_in';
+  if (r < 0.68) return 'one_on_one';
+  if (r < 0.84) return 'header';
+  return 'finish';
+}
+
+// ── Chance type (low / medium / big) ─────────────────────────────────────────
+
+function getChanceType(shotQ, tactics, midDominance) {
+  let pBig = 0.18;
+
+  if (tactics.mentality === 'attacking')   pBig += 0.07;
+  if (tactics.mentality === 'defensive')   pBig -= 0.06;
+  if (tactics.passingStyle === 'direct')   pBig -= 0.05; // more speculative long shots
+  if (tactics.passingStyle === 'short')    pBig += 0.04; // build-up creates better chances
+  if (tactics.pressing === 'high')         pBig += 0.03; // press wins the ball in dangerous areas
+  if (midDominance > 0.55)                 pBig += 0.05; // dominating midfield = better positions
+  pBig += (shotQ - 0.5) * 0.12;           // stronger attacker vs weaker defense = more big chances
+  pBig = Math.max(0.08, Math.min(0.42, pBig));
+
+  const pMedium = Math.min(0.50, 0.38 + (0.20 - pBig) * 0.3);
+
+  const roll = Math.random();
+  if (roll < pBig)            return 'big';
+  if (roll < pBig + pMedium)  return 'medium';
+  return 'low';
+}
+
+function getXGForType(type, shotQ) {
+  switch (type) {
+    case 'big':    return 0.28 + shotQ * 0.22; // 0.28 – 0.50
+    case 'medium': return 0.09 + shotQ * 0.13; // 0.09 – 0.22
+    case 'low':    return 0.03 + shotQ * 0.05; // 0.03 – 0.08
+  }
+}
+
+// Weighted random pick from pool using a stat getter
+function pickWeighted(pool, statFn) {
+  const weights = pool.map(p => Math.max(1, statFn(p)));
+  const total = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[0];
+}
+
+// ── Main match simulation (minute-by-minute) ──────────────────────────────────
+
 function simulateMatch(homeTeamId, awayTeamId, gameState) {
   const home = getTeam(homeTeamId);
   const away = getTeam(awayTeamId);
 
-  const homeAtk = getTeamAttack(home, gameState) * 1.1; // home advantage on attack
-  const homeDef = getTeamDefense(home, gameState) * 1.08;
-  const awayAtk = getTeamAttack(away, gameState);
-  const awayDef = getTeamDefense(away, gameState);
+  // Base ratings (home advantage baked in)
+  const homeAtkBase = getTeamAttack(home, gameState) * 1.1;
+  const homeDefBase = getTeamDefense(home, gameState) * 1.08;
+  const homeMidBase = getTeamMidfield(home, gameState) * 1.05;
+  const awayAtkBase = getTeamAttack(away, gameState);
+  const awayDefBase = getTeamDefense(away, gameState);
+  const awayMidBase = getTeamMidfield(away, gameState);
 
-  // Win probability: my attack vs their defense
-  const homeScore = homeAtk / (homeAtk + awayDef);
-  const awayScore = awayAtk / (awayAtk + homeDef);
-  const total = homeScore + awayScore;
-  const homeWinProb = homeScore / total;
+  // Upset/variance factor per team per match (0.88–1.12)
+  const homeVar = 0.88 + Math.random() * 0.24;
+  const awayVar = 0.88 + Math.random() * 0.24;
+  const homeAtk = homeAtkBase * homeVar;
+  const homeDef = homeDefBase * homeVar;
+  const homeMid = homeMidBase * homeVar;
+  const awayAtk = awayAtkBase * awayVar;
+  const awayDef = awayDefBase * awayVar;
+  const awayMid = awayMidBase * awayVar;
 
-  const drawProb = 0.24;
-  const adjustedHomeWin = homeWinProb * (1 - drawProb);
-  const adjustedAwayWin = (1 - drawProb) * (1 - homeWinProb);
+  // Possession probability based on midfield
+  const homePossChance = homeMid / (homeMid + awayMid);
 
-  const roll = Math.random();
-  let result;
-  if (roll < adjustedHomeWin) result = 'home';
-  else if (roll < adjustedHomeWin + drawProb) result = 'draw';
-  else result = 'away';
-
-  // Variance from tactics (direct passing / fast tempo = more goals)
+  // Chance creation rate per possession minute (base = ~10 shots/team over 90min)
   const homeTactics = gameState?.tactics?.[homeTeamId] || {};
   const awayTactics = gameState?.tactics?.[awayTeamId] || {};
-  const variance = (
-    (homeTactics.passingStyle === 'direct' ? 0.15 : 0) +
-    (awayTactics.passingStyle === 'direct' ? 0.15 : 0) +
-    (homeTactics.tempo === 'fast' ? 0.1 : 0) +
-    (awayTactics.tempo === 'fast' ? 0.1 : 0)
-  );
+  let homeChanceRate = 0.14;
+  let awayChanceRate = 0.14;
 
-  const homeGoals = generateGoals(homeAtk, awayDef, result === 'home', result === 'draw', variance);
-  const awayGoals = generateGoals(awayAtk, homeDef, result === 'away', result === 'draw', variance);
+  if (homeTactics.mentality === 'attacking')  homeChanceRate *= 1.12;
+  if (homeTactics.mentality === 'defensive')  homeChanceRate *= 0.88;
+  if (homeTactics.tempo === 'fast')         { homeChanceRate *= 1.08; awayChanceRate *= 1.04; }
+  if (homeTactics.tempo === 'slow')           homeChanceRate *= 0.90;
+  if (homeTactics.passingStyle === 'direct')  homeChanceRate *= 1.06;
 
-  const events = generateMatchEvents(home, away, homeGoals, awayGoals, gameState);
+  if (awayTactics.mentality === 'attacking')  awayChanceRate *= 1.12;
+  if (awayTactics.mentality === 'defensive')  awayChanceRate *= 0.88;
+  if (awayTactics.tempo === 'fast')           awayChanceRate *= 1.08;
+  if (awayTactics.passingStyle === 'direct')  awayChanceRate *= 1.06;
+
+  // Player pools for goal events
+  const FWD_POS   = ['ST','CF','CAM','LW','RW'];
+  const ASSIST_POS = ['CAM','CM','LW','RW','RM','LM','CDM'];
+
+  const homeFwdAll = home.squad.filter(p => FWD_POS.includes(p.pos) && !p.injuredWeeks).sort((a, b) => b.shooting - a.shooting);
+  const homeFwd    = homeFwdAll.length ? homeFwdAll : [...home.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.shooting - a.shooting);
+  const homeAssAll = home.squad.filter(p => ASSIST_POS.includes(p.pos) && !p.injuredWeeks).sort((a, b) => b.passing - a.passing);
+  const homeAss    = homeAssAll.length ? homeAssAll : homeFwd;
+
+  const awayFwdAll = away.squad.filter(p => FWD_POS.includes(p.pos) && !p.injuredWeeks).sort((a, b) => b.shooting - a.shooting);
+  const awayFwd    = awayFwdAll.length ? awayFwdAll : [...away.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.shooting - a.shooting);
+  const awayAssAll = away.squad.filter(p => ASSIST_POS.includes(p.pos) && !p.injuredWeeks).sort((a, b) => b.passing - a.passing);
+  const awayAss    = awayAssAll.length ? awayAssAll : awayFwd;
+
+  // Match state
+  let homeGoals = 0, awayGoals = 0;
+  let homeShots = 0, awayShots = 0;
+  let homeXG = 0, awayXG = 0;
+  let homePoss = 0, awayPoss = 0;
+  let homeBigChances = 0, awayBigChances = 0;
+  let homeMomentum = 0, awayMomentum = 0;
+  const events = [];
+
+  // Pre-compute mid dominance for chance type calculations
+  const homeMidDom = homeMid / (homeMid + awayMid);
+  const awayMidDom = 1 - homeMidDom;
+
+  // ── 90-minute loop ──
+  for (let min = 1; min <= 90; min++) {
+    if (Math.random() < homePossChance) {
+      // Home possession
+      homePoss++;
+      const atkBoost = homeMomentum > 0 ? 1.1 : 1.0;
+      if (homeMomentum > 0) homeMomentum--;
+
+      if (Math.random() < homeChanceRate) {
+        homeShots++;
+        const shotQ = (homeAtk * atkBoost) / (homeAtk * atkBoost + awayDef);
+        const chanceType = getChanceType(shotQ, homeTactics, homeMidDom);
+        const xg = getXGForType(chanceType, shotQ);
+        homeXG += xg;
+        if (chanceType === 'big') homeBigChances++;
+
+        if (Math.random() < xg) {
+          homeGoals++;
+          homeMomentum = 5;
+          const scorer   = pickWeighted(homeFwd, p => p.shooting);
+          const assPool  = homeAss.filter(p => p !== scorer);
+          const assister = pickWeighted(assPool.length ? assPool : homeAss, p => p.passing);
+          scorer.goals++;
+          assister.assists++;
+          scorer.appearances = (scorer.appearances || 0) + 1;
+          events.push({ type: 'goal', min, team: 'home', player: scorer.name, assist: assister.name, chanceType, goalType: getGoalType(chanceType) });
+        }
+      }
+    } else {
+      // Away possession
+      awayPoss++;
+      const atkBoost = awayMomentum > 0 ? 1.1 : 1.0;
+      if (awayMomentum > 0) awayMomentum--;
+
+      if (Math.random() < awayChanceRate) {
+        awayShots++;
+        const shotQ = (awayAtk * atkBoost) / (awayAtk * atkBoost + homeDef);
+        const chanceType = getChanceType(shotQ, awayTactics, awayMidDom);
+        const xg = getXGForType(chanceType, shotQ);
+        awayXG += xg;
+        if (chanceType === 'big') awayBigChances++;
+
+        if (Math.random() < xg) {
+          awayGoals++;
+          awayMomentum = 5;
+          const scorer   = pickWeighted(awayFwd, p => p.shooting);
+          const assPool  = awayAss.filter(p => p !== scorer);
+          const assister = pickWeighted(assPool.length ? assPool : awayAss, p => p.passing);
+          scorer.goals++;
+          assister.assists++;
+          scorer.appearances = (scorer.appearances || 0) + 1;
+          events.push({ type: 'goal', min, team: 'away', player: scorer.name, assist: assister.name, chanceType, goalType: getGoalType(chanceType) });
+        }
+      }
+    }
+  }
+
+  // ── Penalties ──
+  [['home', 0.22, homeFwd], ['away', 0.18, awayFwd]].forEach(([side, prob, pool]) => {
+    if (Math.random() < prob) {
+      const min = Math.floor(Math.random() * 85) + 3;
+      const scorer = pickWeighted(pool, p => p.shooting);
+      if (Math.random() < 0.75) {
+        if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.75; homeBigChances++; }
+        else                 { awayGoals++; awayShots++; awayXG += 0.75; awayBigChances++; }
+        scorer.goals++;
+        scorer.appearances = (scorer.appearances || 0) + 1;
+        events.push({ type: 'goal', min, team: side, player: scorer.name, assist: null, goalType: 'penalty', chanceType: 'big' });
+      } else {
+        events.push({ type: 'penalty_miss', min, team: side, player: scorer.name });
+      }
+    }
+  });
+
+  // ── Free kicks ──
+  [['home', 0.14, home.squad], ['away', 0.11, away.squad]].forEach(([side, prob, squad]) => {
+    if (Math.random() < prob) {
+      const min = Math.floor(Math.random() * 85) + 3;
+      const fkPool = squad.filter(p => !p.injuredWeeks && ['CM','CAM','LW','RW','ST','CDM'].includes(p.pos));
+      const taker = fkPool.length ? pickWeighted(fkPool, p => Math.round((p.passing + p.shooting) / 2)) : squad[0];
+      if (taker && Math.random() < 0.15) {
+        if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.15; }
+        else                 { awayGoals++; awayShots++; awayXG += 0.15; }
+        taker.goals++;
+        taker.appearances = (taker.appearances || 0) + 1;
+        events.push({ type: 'goal', min, team: side, player: taker.name, assist: null, goalType: 'free_kick', chanceType: 'medium' });
+      }
+    }
+  });
+
+  // Cards
+  if (Math.random() < 0.4) {
+    const p = home.squad[Math.floor(Math.random() * home.squad.length)];
+    events.push({ type: 'yellow', min: Math.floor(Math.random() * 90) + 1, team: 'home', player: p.name });
+  }
+  if (Math.random() < 0.4) {
+    const p = away.squad[Math.floor(Math.random() * away.squad.length)];
+    events.push({ type: 'yellow', min: Math.floor(Math.random() * 90) + 1, team: 'away', player: p.name });
+  }
+
+  events.sort((a, b) => a.min - b.min);
+
+  // Clean sheets
+  if (homeGoals === 0) { const gk = away.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
+  if (awayGoals === 0) { const gk = home.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
+
+  // Injuries
   const newlyInjured = generateMatchInjuries(home, away);
-
-  // Track player-team injuries for hub notification
   if (gameState?.playerTeam && newlyInjured.length) {
-    const playerInjuries = newlyInjured.filter(p => p.teamId === gameState.playerTeam);
-    if (playerInjuries.length) {
+    const playerInj = newlyInjured.filter(p => p.teamId === gameState.playerTeam);
+    if (playerInj.length) {
       if (!gameState.newInjuries) gameState.newInjuries = [];
-      gameState.newInjuries.push(...playerInjuries);
+      gameState.newInjuries.push(...playerInj);
     }
   }
 
   const attendance = Math.floor(home.capacity * (0.7 + Math.random() * 0.3));
-  // Gate receipts go directly to home team
   if (gameState?.budgets) {
     gameState.budgets[homeTeamId] = (gameState.budgets[homeTeamId] || 0) + Math.round(attendance * 2);
   }
 
-  return { homeTeam: homeTeamId, awayTeam: awayTeamId, homeGoals, awayGoals, events, attendance };
+  const totalPoss = homePoss + awayPoss || 90;
+
+  return {
+    homeTeam: homeTeamId,
+    awayTeam: awayTeamId,
+    homeGoals,
+    awayGoals,
+    events,
+    attendance,
+    possession:  { home: Math.round(homePoss / totalPoss * 100), away: Math.round(awayPoss / totalPoss * 100) },
+    xG:          { home: +homeXG.toFixed(1), away: +awayXG.toFixed(1) },
+    shots:       { home: homeShots, away: awayShots },
+    bigChances:  { home: homeBigChances, away: awayBigChances }
+  };
 }
 
-function generateGoals(attStr, defStr, isWinner, isDraw, variance = 0) {
-  const ratio = attStr / (attStr + defStr);
-  let baseGoals;
-  if (isWinner) baseGoals = 1.5 + ratio * 1.5;
-  else if (isDraw) baseGoals = 0.8 + ratio * 0.8;
-  else baseGoals = 0.5 + ratio * 0.8;
-  baseGoals += variance;
-  return Math.max(0, Math.min(8, poissonRandom(baseGoals)));
-}
+// ── League table ──────────────────────────────────────────────────────────────
 
-function poissonRandom(lambda) {
-  let L = Math.exp(-lambda), k = 0, p = 1;
-  do { k++; p *= Math.random(); } while (p > L);
-  return k - 1;
-}
-
-function generateMatchEvents(home, away, homeGoals, awayGoals, gameState) {
-  const events = [];
-  const minutes = [];
-
-  // Generate random minutes for goals
-  for (let i = 0; i < homeGoals; i++) minutes.push({ team: 'home', min: Math.floor(Math.random() * 90) + 1 });
-  for (let i = 0; i < awayGoals; i++) minutes.push({ team: 'away', min: Math.floor(Math.random() * 90) + 1 });
-
-  // Occasionally add cards
-  const homeCards = Math.random() < 0.4 ? 1 : 0;
-  const awayCards = Math.random() < 0.4 ? 1 : 0;
-  for (let i = 0; i < homeCards; i++) minutes.push({ team: 'home', type: 'yellow', min: Math.floor(Math.random() * 90) + 1 });
-  for (let i = 0; i < awayCards; i++) minutes.push({ team: 'away', type: 'yellow', min: Math.floor(Math.random() * 90) + 1 });
-
-  minutes.sort((a, b) => a.min - b.min);
-
-  // Assign scorers — fall back to full squad if no forwards found
-  const FWD_POS = ['ST', 'CF', 'CAM', 'LW', 'RW'];
-  const homeFwdPool = home.squad.filter(p => FWD_POS.includes(p.pos)).sort((a, b) => b.shooting - a.shooting);
-  const homeFwd = homeFwdPool.length ? homeFwdPool : [...home.squad].sort((a, b) => b.shooting - a.shooting);
-  const awayFwdPool = away.squad.filter(p => FWD_POS.includes(p.pos)).sort((a, b) => b.shooting - a.shooting);
-  const awayFwd = awayFwdPool.length ? awayFwdPool : [...away.squad].sort((a, b) => b.shooting - a.shooting);
-
-  let hgi = 0, agi = 0;
-  for (const ev of minutes) {
-    if (!ev.type) {
-      // goal
-      if (ev.team === 'home') {
-        const scorer = homeFwd[hgi % homeFwd.length];
-        const assist = homeFwd[(hgi + 1) % homeFwd.length];
-        events.push({ type: 'goal', min: ev.min, team: 'home', player: scorer.name, assist: assist.name });
-        scorer.goals++;
-        if (assist) assist.assists++;
-        scorer.appearances = (scorer.appearances || 0) + 1;
-        hgi++;
-      } else {
-        const scorer = awayFwd[agi % awayFwd.length];
-        const assist = awayFwd[(agi + 1) % awayFwd.length];
-        events.push({ type: 'goal', min: ev.min, team: 'away', player: scorer.name, assist: assist.name });
-        scorer.goals++;
-        if (assist) assist.assists++;
-        scorer.appearances = (scorer.appearances || 0) + 1;
-        agi++;
-      }
-    } else {
-      const squad = ev.team === 'home' ? home.squad : away.squad;
-      const player = squad[Math.floor(Math.random() * squad.length)];
-      events.push({ type: ev.type, min: ev.min, team: ev.team, player: player.name });
-    }
-  }
-
-  // Update GK clean sheets
-  if (homeGoals === 0) {
-    const gk = away.squad.find(p => p.pos === 'GK');
-    if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1;
-  }
-  if (awayGoals === 0) {
-    const gk = home.squad.find(p => p.pos === 'GK');
-    if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1;
-  }
-
-  return events;
-}
-
-// Calculate league table from results
 function calculateTable(teamIds, results) {
   const table = {};
   teamIds.forEach(id => {
@@ -234,23 +422,20 @@ function calculateTable(teamIds, results) {
   );
 }
 
-// Generate all fixtures for a league season (home & away)
+// ── Fixtures ──────────────────────────────────────────────────────────────────
+
 function generateFixtures(teamIds) {
   const fixtures = [];
   const n = teamIds.length;
-  const rounds = (n - 1) * 2;
   const teams = [...teamIds];
 
-  // Round-robin algorithm
   for (let round = 0; round < n - 1; round++) {
     for (let i = 0; i < n / 2; i++) {
       fixtures.push({ home: teams[i], away: teams[n - 1 - i], round, played: false });
     }
-    // Rotate
     teams.splice(1, 0, teams.pop());
   }
 
-  // Return fixtures (away fixtures)
   const returnFixtures = fixtures.map(f => ({
     home: f.away, away: f.home, round: f.round + (n - 1), played: false
   }));
@@ -258,9 +443,8 @@ function generateFixtures(teamIds) {
   return [...fixtures, ...returnFixtures].sort((a, b) => a.round - b.round);
 }
 
-// Transfer value calculation
-// Uses cubic curve on (ovr - 55) so separation between 65 and 90 is massive
-// ovr=94 age=23 → ~£150M | ovr=85 age=22 → ~£80M | ovr=75 age=28 → ~£18M | ovr=65 age=25 → ~£3M
+// ── Player / team utilities ───────────────────────────────────────────────────
+
 function calculateTransferValue(player) {
   const ageMult = player.age <= 20 ? 1.7 : player.age <= 23 ? 1.4 : player.age <= 26 ? 1.1 :
                   player.age <= 29 ? 1.0 : player.age <= 31 ? 0.75 : player.age <= 33 ? 0.5 : 0.25;
@@ -268,12 +452,10 @@ function calculateTransferValue(player) {
   return Math.round(Math.pow(base, 3) * 1800 * ageMult);
 }
 
-// Check if a team can afford a player
 function canAfford(teamId, amount, gameState) {
   return (gameState.budgets[teamId] || 0) >= amount;
 }
 
-// Form streak: returns -3 to +3 based on last 3 results
 function getFormStreak(teamId, gameState) {
   const leagueId = ['premier', 'championship'].find(lid =>
     (gameState.leagueTeams?.[lid] || []).includes(teamId)
@@ -282,38 +464,33 @@ function getFormStreak(teamId, gameState) {
     .filter(r => r.homeTeam === teamId || r.awayTeam === teamId)
     .slice(-3);
   return all.reduce((s, r) => {
-    const won = (r.homeTeam === teamId && r.homeGoals > r.awayGoals) ||
-                (r.awayTeam === teamId && r.awayGoals > r.homeGoals);
+    const won  = (r.homeTeam === teamId && r.homeGoals > r.awayGoals) ||
+                 (r.awayTeam === teamId && r.awayGoals > r.homeGoals);
     const lost = (r.homeTeam === teamId && r.homeGoals < r.awayGoals) ||
                  (r.awayTeam === teamId && r.awayGoals < r.homeGoals);
     return s + (won ? 1 : lost ? -1 : 0);
   }, 0);
 }
 
-// Morale system — enhanced with form streak
 function updateMorale(teamId, result, gameState) {
   let change = result === 'win' ? 5 : result === 'draw' ? 1 : -4;
   const streak = getFormStreak(teamId, gameState);
-  if (result === 'win' && streak >= 2) change += 2;   // win streak bonus
-  if (result === 'loss' && streak <= -2) change -= 2; // losing streak punishment
+  if (result === 'win'  && streak >= 2)  change += 2;
+  if (result === 'loss' && streak <= -2) change -= 2;
   const current = gameState.morale[teamId] || 70;
   gameState.morale[teamId] = Math.max(20, Math.min(100, current + change));
 }
 
-// Fitness recovery between matches
 function recoverFitness(gameState) {
   for (const teamId in gameState.fitness) {
     gameState.fitness[teamId] = Math.min(100, (gameState.fitness[teamId] || 85) + 3);
   }
 }
 
-// After a match, reduce fitness
 function applyMatchFatigue(teamId, gameState) {
   gameState.fitness[teamId] = Math.max(50, (gameState.fitness[teamId] || 85) - 8);
 }
 
-// Injuries: small chance per match per team, 1–3 weeks out
-// Returns array of newly injured { name, pos, weeks, teamId }
 function generateMatchInjuries(home, away) {
   const newlyInjured = [];
   [home, away].forEach(team => {
@@ -328,14 +505,12 @@ function generateMatchInjuries(home, away) {
   return newlyInjured;
 }
 
-// Decrement injury counters each matchweek
 function decrementInjuries(gameState) {
   getAllTeams().forEach(team => {
     team.squad.forEach(p => { if (p.injuredWeeks > 0) p.injuredWeeks--; });
   });
 }
 
-// Weekly wage cost for a team (safe formula — won't bankrupt teams)
 function getWeeklyWageCost(team) {
   return team.squad.reduce((sum, p) => sum + Math.round(Math.max(0, p.overall - 50) * 60), 0);
 }
