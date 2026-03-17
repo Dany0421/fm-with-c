@@ -764,18 +764,12 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 .rep-label { color: #a78bfa; }
 .hof-rep .hof-count { font-size: 16px; }
 
-/* ── YOUTH GRADUATES (end-season) ───────────────────────────── */
-.youth-graduates {
-  background: var(--bg2); border: 1px solid #065f46;
-  border-radius: var(--radius); padding: 16px; margin: 16px 0;
+/* ── YOUTH PAGE ──────────────────────────────────────────────── */
+.youth-table .youth-pot { color: #34d399; font-weight: 700; }
+.youth-empty {
+  text-align: center; padding: 48px 24px; color: var(--muted);
 }
-.youth-graduates h3 { font-size: 13px; letter-spacing: 1.5px; color: #34d399; margin-bottom: 12px; }
-.youth-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.youth-card {
-  background: var(--bg3); border: 1px solid #065f46;
-  border-radius: 6px; padding: 8px 12px;
-  display: flex; align-items: center; gap: 8px; font-size: 13px;
-}
+.youth-empty p:first-child { font-size: 15px; color: var(--fg); margin-bottom: 8px; }
 .youth-name { font-weight: 600; }
 .youth-pot { color: var(--accent2); font-size: 12px; }
 

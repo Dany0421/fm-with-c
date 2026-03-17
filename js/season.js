@@ -57,6 +57,17 @@ function getActiveLeagues(gameState) {
 
 // ─── INIT SEASON ─────────────────────────────────────────────────────────────
 function initSeason(gameState) {
+  // _nextPid MUST be initialized before generateYouthMarket (players need valid ids)
+  if (!gameState._nextPid) {
+    let maxId = 0;
+    getAllTeams().forEach(t => t.squad.forEach(p => { if (p.id > maxId) maxId = p.id; }));
+    gameState._nextPid = maxId + 1;
+  }
+
+  // Init youth system on first load / old saves
+  if (!gameState.youthSquad) gameState.youthSquad = [];
+  if (!gameState.youthMarket || !gameState.youthMarket[0]?.youthPrice) generateYouthMarket(gameState);
+
   // Seed leagueTeams for all known leagues (handles both fresh start and old saves)
   if (!gameState.leagueTeams) gameState.leagueTeams = {};
   Object.keys(LEAGUES).forEach(lid => {
@@ -106,13 +117,6 @@ function initSeason(gameState) {
   // Backward compat: faCupWins → domesticCupWins
   const hof = gameState.career.hallOfFame;
   if (hof.faCupWins && !hof.domesticCupWins) hof.domesticCupWins = hof.faCupWins;
-
-  // Track next player id for regens
-  if (!gameState._nextPid) {
-    let maxId = 0;
-    getAllTeams().forEach(t => t.squad.forEach(p => { if (p.id > maxId) maxId = p.id; }));
-    gameState._nextPid = maxId + 1;
-  }
 
   gameState.transferWindowOpen = true;
   initDomesticCup(gameState);
@@ -408,9 +412,6 @@ function endSeason(gameState) {
   if ((playerTableRow.won || 0) > (playerTableRow.played || 1) * 0.55) repChange += 2;
   gameState.managerReputation = Math.max(0, Math.min(100, (gameState.managerReputation || 50) + repChange));
 
-  // Youth academy graduates
-  const youthGraduates = generateYouthPlayers(gameState);
-
   // endOfSeasonData must be set BEFORE Europa init (crash safety)
   const faCupWinnerId = gameState.faCup?.winner;
   gameState.endOfSeasonData = {
@@ -419,7 +420,7 @@ function endSeason(gameState) {
     playoffWinner, champPlayoff: div2PlayoffTeams, champRelegated: div2Relegated,
     leagueWinner: { teamId: leagueWinner?.id, teamName: leagueWinnerTeam?.name || leagueWinner?.id || '—' },
     faCupWinner: faCupWinnerId ? getTeam(faCupWinnerId)?.name || faCupWinnerId : null,
-    topScorerLeague, managerOfSeason, myTopScorer, playerResult, youthGraduates,
+    topScorerLeague, managerOfSeason, myTopScorer, playerResult,
     div1Name: LEAGUES[div1Id]?.name || 'First Division',
     div2Name: div2Id ? (LEAGUES[div2Id]?.name || 'Second Division') : null,
     country
@@ -523,6 +524,22 @@ function processRetirements(gameState) {
   });
 
   gameState.lastRetired = retiredPlayers;
+
+  // Age youth squad players and grow them towards potential
+  if (gameState.youthSquad) {
+    gameState.youthSquad.forEach(p => {
+      p.age++;
+      const gap = (p.potential || 75) - p.overall;
+      if (gap > 0) {
+        const growth = Math.min(gap, Math.floor(Math.random() * 3) + 1);
+        p.overall = Math.min(p.potential, p.overall + growth);
+        const statKeys = ['pace','shooting','passing','defending','physical','dribbling'];
+        statKeys.forEach(k => {
+          if (Math.random() < 0.4) p[k] = Math.min(99, p[k] + 1);
+        });
+      }
+    });
+  }
 }
 
 // ─── TIER-3 TEAM POOLS (replacement teams for relegated div2 spots) ───────────
@@ -640,39 +657,79 @@ function simulateToLastMatchweek(gameState) {
   return simulated;
 }
 
-// ─── START NEW SEASON ────────────────────────────────────────────────────────
-// ─── YOUTH ACADEMY ───────────────────────────────────────────────────────────
-function generateYouthPlayers(gameState) {
-  const team = getTeam(gameState.playerTeam);
-  if (!team || team.squad.length >= 24) return [];
-
-  const count = Math.floor(Math.random() * 2) + 1; // 1 or 2
+// ─── YOUTH SYSTEM ────────────────────────────────────────────────────────────
+function generateYouthMarket(gameState) {
   const positions = ['ST','CM','CB','GK','LW','RW','RB','LB','CDM','CAM'];
-  const youths = [];
+  const count = 30 + Math.floor(Math.random() * 20); // 30-49 prospects per season
+  const market = [];
 
   for (let i = 0; i < count; i++) {
-    if (team.squad.length >= 24) break;
+    // Age: 14=5%, 15=20%, 16=45%, 17=30%
+    const rAge = Math.random();
+    const age = rAge < 0.05 ? 14 : rAge < 0.25 ? 15 : rAge < 0.70 ? 16 : 17;
     const pos = positions[Math.floor(Math.random() * positions.length)];
-    const age = Math.floor(Math.random() * 3) + 16; // 16-18
-    const prestigeMod = Math.round(team.prestige * 0.3); // scales with club quality
-    const potential = Math.min(92, Math.max(62, 55 + prestigeMod + Math.floor(Math.random() * 15)));
-    const ovr = Math.min(67, Math.max(48, 46 + Math.floor(Math.random() * 14) + Math.round((potential - 75) * 0.15)));
 
-    const youth = makePlayer(
-      gameState._nextPid++,
-      regenName(),
-      pos,
-      age,
-      Math.min(67, ovr),
-      regenNation()
-    );
-    youth.fromAcademy = true;
-    youth.potential = potential;
-    team.squad.push(youth);
-    youths.push({ name: youth.name, pos: youth.pos, age: youth.age, ovr: youth.overall, potential: youth.potential });
+    // OVR: age-appropriate base, then rare-low / normal / rare-high
+    const ageBase = { 14: 44, 15: 49, 16: 54, 17: 58 }[age];
+    const rOvr = Math.random();
+    let ovr;
+    if (rOvr < 0.12) ovr = ageBase - 4 + Math.floor(Math.random() * 3);      // rare low: -4 to -2
+    else if (rOvr < 0.80) ovr = ageBase + Math.floor(Math.random() * 7);      // normal: +0 to +6 → 58-64 range for 16yo
+    else ovr = ageBase + 7 + Math.floor(Math.random() * 4);                   // rare high: +7 to +10 → 65-67 for 16yo
+    ovr = Math.max(40, Math.min(70, ovr));
+
+    // Potential distribution: 60% normal (62-79), 25% good (80-86), 10% high (87-90), 5% exceptional (91-93)
+    const rPot = Math.random();
+    let potential;
+    if (rPot < 0.60) potential = 62 + Math.floor(Math.random() * 18);   // 62-79
+    else if (rPot < 0.85) potential = 80 + Math.floor(Math.random() * 7); // 80-86
+    else if (rPot < 0.95) potential = 87 + Math.floor(Math.random() * 4); // 87-90
+    else potential = 91 + Math.floor(Math.random() * 3);                   // 91-93
+
+    const p = makePlayer(gameState._nextPid++, regenName(), pos, age, ovr, regenNation());
+    p.potential = potential;
+    p.isYouth = true;
+    p.youthPrice = Math.round((Math.max(0, potential - 60) * 60000) + 80000);
+    market.push(p);
   }
 
-  return youths;
+  gameState.youthMarket = market;
+}
+
+function graduateYouthPlayers(gameState) {
+  // Move youth squad players who turned 18 to free agents
+  if (!gameState.youthSquad) { gameState.youthSquad = []; return; }
+  const graduated = [];
+  gameState.youthSquad = gameState.youthSquad.filter(p => {
+    if (p.age >= 18) { graduated.push(p); return false; }
+    return true;
+  });
+  graduated.forEach(p => {
+    p.isYouth = false;
+    p.fromAcademy = true;
+    FREE_AGENTS.push(p);
+  });
+  if (graduated.length) {
+    const names = graduated.map(p => p.name).join(', ');
+    gameState.notification = (gameState.notification ? gameState.notification + ' | ' : '') +
+      `🎓 ${names} graduated from academy — now free agent${graduated.length > 1 ? 's' : ''}`;
+  }
+}
+
+function cleanupFreeAgents() {
+  // First remove anyone 45+
+  for (let i = FREE_AGENTS.length - 1; i >= 0; i--) {
+    if (FREE_AGENTS[i].age >= 45) FREE_AGENTS.splice(i, 1);
+  }
+  // Age everyone up
+  FREE_AGENTS.forEach(p => p.age++);
+  // If still over 90, trim oldest first, then random
+  while (FREE_AGENTS.length > 90) {
+    const sorted = [...FREE_AGENTS].sort((a, b) => b.age - a.age);
+    const target = sorted[Math.floor(Math.random() * Math.min(10, sorted.length))];
+    const idx = FREE_AGENTS.indexOf(target);
+    if (idx !== -1) FREE_AGENTS.splice(idx, 1);
+  }
 }
 
 // ─── LOAN RETURNS ────────────────────────────────────────────────────────────
@@ -719,6 +776,11 @@ function startNewSeason(gameState) {
       p.goals = 0; p.assists = 0; p.appearances = 0; p.cleanSheets = 0;
     });
   });
+
+  // Youth system: graduate 18-year-olds → free agents, generate new market, cleanup FA pool
+  graduateYouthPlayers(gameState);
+  generateYouthMarket(gameState);
+  cleanupFreeAgents();
 
   initSeason(gameState);
 }

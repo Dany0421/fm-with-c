@@ -42,6 +42,15 @@ function showPlayerModal(playerId) {
     const p = team.squad.find(q => q.id === playerId);
     if (p) { player = p; teamName = team.name; break; }
   }
+  // Also search youth squad and market
+  if (!player && gameState.youthSquad) {
+    player = gameState.youthSquad.find(p => p.id === playerId);
+    if (player) teamName = 'Youth Academy';
+  }
+  if (!player && gameState.youthMarket) {
+    player = gameState.youthMarket.find(p => p.id === playerId);
+    if (player) teamName = 'Youth Market';
+  }
   if (!player) return;
 
   const val = calculateTransferValue(player);
@@ -142,6 +151,7 @@ function showScreen(screen, data) {
     case 'match-result':    renderMatchResult(app, data); break;
     case 'table':           renderTable(app); break;
     case 'transfers':       renderTransfers(app); break;
+    case 'youth':           renderYouth(app); break;
     case 'fixtures':        renderFixtures(app); break;
     case 'stats':           renderStats(app); break;
     case 'end-season':      renderEndSeason(app); break;
@@ -396,6 +406,7 @@ function renderHub(app) {
         <button onclick="showScreen('table')">📊 Table</button>
         <button onclick="showScreen('fixtures')">📅 Fixtures</button>
         <button onclick="showScreen('transfers')">💰 Transfers</button>
+        <button onclick="showScreen('youth')">🌱 Youth</button>
         <button onclick="showScreen('stats')">🏆 Stats</button>
         <button onclick="showScreen('career')">📖 Career</button>
         ${gameState.seasonEnded ? `<button onclick="showScreen('end-season')" class="btn-alert">🏁 Season End</button>` : ''}
@@ -1142,6 +1153,198 @@ function renderFreeAgentsTab(windowOpen) {
   `;
 }
 
+// ─── YOUTH ───────────────────────────────────────────────────────────────────
+let youthTab = 'academy'; // 'academy' | 'market'
+
+function renderYouth(app) {
+  const budget = gameState.budgets[gameState.playerTeam];
+  const youthSquad = gameState.youthSquad || [];
+  // Regenerate market if missing or from old save (no youthPrice = old format)
+  if (!gameState.youthMarket || !gameState.youthMarket.length || !gameState.youthMarket[0]?.youthPrice) {
+    generateYouthMarket(gameState);
+  }
+  const youthMarket = gameState.youthMarket || [];
+
+  app.innerHTML = `
+    <div class="transfers-screen">
+      <div class="screen-header">
+        <button class="btn-back" onclick="showScreen('hub')">← Back</button>
+        <h2>🌱 YOUTH</h2>
+      </div>
+      <div class="budget-bar">
+        Available Budget: <strong>${formatMoney(budget)}</strong>
+        · Youth Squad: <strong>${youthSquad.length}/15</strong>
+      </div>
+      <div class="transfer-tabs">
+        <button class="transfer-tab-btn ${youthTab==='academy'?'active':''}" onclick="youthTab='academy';showScreen('youth')">Academy (${youthSquad.length})</button>
+        <button class="transfer-tab-btn ${youthTab==='market'?'active':''}" onclick="youthTab='market';showScreen('youth')">Youth Market (${youthMarket.length})</button>
+      </div>
+      ${youthTab === 'academy' ? renderYouthAcademy(youthSquad) : renderYouthMarket(youthMarket)}
+    </div>
+  `;
+}
+
+function renderYouthAcademy(youthSquad) {
+  if (!youthSquad.length) return `
+    <div class="youth-empty">
+      <p>No players in your academy.</p>
+      <p class="muted">Sign prospects from the Youth Market tab. They'll develop here until you promote them or they turn 18.</p>
+    </div>
+  `;
+
+  return `
+    <div style="padding:8px 0 4px;color:var(--muted);font-size:12px">
+      Players develop each season. Train them to accelerate growth. Promote to main squad when ready. At age 18 they become free agents if not promoted.
+    </div>
+    <table class="squad-table youth-table">
+      <tr><th>POS</th><th>Name</th><th>Age</th><th>OVR</th><th>POT</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>DRI</th><th></th><th></th></tr>
+      ${youthSquad.map(p => {
+        const nearCeiling = p.overall >= p.potential - 3;
+        const trainCost = Math.round(40000 + (p.overall - 40) * 8000);
+        const mainSquad = getTeam(gameState.playerTeam);
+        const canPromote = mainSquad && mainSquad.squad.length < 24;
+        return `
+        <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
+          <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
+          <td>${p.name}</td>
+          <td>${p.age}</td>
+          <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
+          <td class="youth-pot">${p.potential}</td>
+          <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td><td>${p.dribbling}</td>
+          <td>
+            <button class="btn-sm ${nearCeiling?'btn-disabled':'btn-secondary'}"
+              onclick="event.stopPropagation();youthTrain(${p.id})"
+              title="Train: ${formatMoney(trainCost)}"
+              ${nearCeiling?'disabled':''}>
+              🏃 ${formatMoney(trainCost)}
+            </button>
+          </td>
+          <td>
+            <button class="btn-sm ${canPromote?'btn-primary':'btn-disabled'}"
+              onclick="event.stopPropagation();youthPromote(${p.id})"
+              ${canPromote?'':'disabled'}>
+              ⬆ Promote
+            </button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </table>
+  `;
+}
+
+function renderYouthMarket(youthMarket) {
+  if (!youthMarket.length) return `
+    <div class="youth-empty">
+      <p>Youth market refreshes each season.</p>
+      <p class="muted">No prospects available right now.</p>
+    </div>
+  `;
+
+  const posFilter = transferFilters.youthPos || '';
+  const filtered = posFilter ? youthMarket.filter(p => p.pos === posFilter) : youthMarket;
+  const sorted = [...filtered].sort((a, b) => b.potential - a.potential);
+
+  return `
+    <div style="padding:8px 0 4px;color:var(--muted);font-size:12px">
+      Young prospects aged 14–17. Pay once to sign them to your academy. Market refreshes every season.
+    </div>
+    <div class="transfer-filters">
+      <select onchange="transferFilters.youthPos=this.value;showScreen('youth')">
+        <option value="">All Positions</option>
+        ${['GK','CB','RB','LB','CDM','CM','CAM','RW','LW','ST'].map(p=>`<option ${posFilter===p?'selected':''}>${p}</option>`).join('')}
+      </select>
+    </div>
+    <table class="squad-table youth-table">
+      <tr><th>POS</th><th>Name</th><th>Nat</th><th>Age</th><th>OVR</th><th>POT</th><th>Price</th><th></th></tr>
+      ${sorted.map(p => {
+        const youthSquad = gameState.youthSquad || [];
+        const full = youthSquad.length >= 15;
+        const canAffordIt = (gameState.budgets[gameState.playerTeam] || 0) >= p.youthPrice;
+        return `
+        <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
+          <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
+          <td>${p.name}</td>
+          <td class="muted">${p.nation || '—'}</td>
+          <td>${p.age}</td>
+          <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
+          <td class="youth-pot">${p.potential}</td>
+          <td class="green">${formatMoney(p.youthPrice)}</td>
+          <td>
+            <button class="btn-sm ${canAffordIt&&!full?'btn-primary':'btn-disabled'}"
+              onclick="event.stopPropagation();youthSignConfirm(${p.id})">
+              Sign
+            </button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </table>
+  `;
+}
+
+function youthSignConfirm(playerId) {
+  const market = gameState.youthMarket || [];
+  const p = market.find(pl => pl.id === playerId);
+  if (!p) return;
+  showModal({
+    title: 'Sign Youth Prospect',
+    body: `
+      <div class="modal-player">
+        <span class="pos-badge pos-${p.pos}">${p.pos}</span>
+        <strong>${p.name}</strong>
+        <span class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</span>
+      </div>
+      <div class="modal-stats-row">
+        <div><span class="muted">Age</span><br><strong>${p.age}</strong></div>
+        <div><span class="muted">Potential</span><br><strong class="green">${p.potential}</strong></div>
+        <div><span class="muted">Cost</span><br><strong class="green">${formatMoney(p.youthPrice)}</strong></div>
+        <div><span class="muted">Budget</span><br><strong>${formatMoney(gameState.budgets[gameState.playerTeam])}</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:8px">Player goes to your academy. Develop and promote when ready.</p>
+    `,
+    confirm: 'Sign Prospect',
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = signYouthPlayer(gameState, playerId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('youth');
+    }
+  });
+}
+
+function youthTrain(playerId) {
+  const r = trainYouthPlayer(gameState, playerId);
+  showToast(r.message, r.success ? 'success' : 'error');
+  if (r.success) showScreen('youth');
+}
+
+function youthPromote(playerId) {
+  const p = (gameState.youthSquad || []).find(pl => pl.id === playerId);
+  if (!p) return;
+  showModal({
+    title: 'Promote to First Team',
+    body: `
+      <div class="modal-player">
+        <span class="pos-badge pos-${p.pos}">${p.pos}</span>
+        <strong>${p.name}</strong>
+        <span class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</span>
+      </div>
+      <div class="modal-stats-row">
+        <div><span class="muted">Age</span><br><strong>${p.age}</strong></div>
+        <div><span class="muted">OVR</span><br><strong>${p.overall}</strong></div>
+        <div><span class="muted">Potential</span><br><strong class="green">${p.potential}</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:8px">Moves to main squad permanently. No cost.</p>
+    `,
+    confirm: 'Promote',
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = promoteYouthPlayer(gameState, playerId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('youth');
+    }
+  });
+}
+
 function loanConfirm(playerId, fromTeamId) {
   const allPlayers = getAllTeams().flatMap(t => t.squad);
   const player = allPlayers.find(p => p.id === playerId);
@@ -1259,7 +1462,7 @@ function renderEndSeason(app) {
   if (!data) { showScreen('hub'); return; }
   const { plTable, champTable, plRelegated, champPromoted, playoffWinner, champPlayoff,
           leagueWinner, faCupWinner, topScorerLeague, managerOfSeason, myTopScorer, playerResult,
-          youthGraduates, div1Name, div2Name } = data;
+          div1Name, div2Name } = data;
 
   const retired = gameState.lastRetired || [];
   const myRetired = retired.filter(p => {
@@ -1347,23 +1550,6 @@ function renderEndSeason(app) {
           </div>
         </div>
 
-        ${youthGraduates?.length ? `
-          <div class="youth-graduates">
-            <h3>🌱 YOUTH ACADEMY GRADUATES</h3>
-            <div class="youth-list">
-              ${youthGraduates.map(p => `
-                <div class="youth-card">
-                  <span class="pos-badge pos-${p.pos}">${p.pos}</span>
-                  <span class="youth-name">${p.name}</span>
-                  <span class="muted">Age ${p.age}</span>
-                  <span class="ovr-cell ovr-${ovrClass(p.ovr)}">${p.ovr}</span>
-                  <span class="youth-pot">POT <strong>${p.potential}</strong></span>
-                </div>
-              `).join('')}
-            </div>
-            <div class="muted" style="font-size:11px;margin-top:6px">These players have joined your squad from the academy.</div>
-          </div>
-        ` : ''}
 
         ${gameState.championsLeague && !gameState.championsLeague.playerEliminated && gameState.championsLeague.phase !== 'complete' ? `
           <button class="btn btn-primary btn-xl" onclick="showScreen('champions-league')" style="background:linear-gradient(135deg,#1d4ed8,#92400e);margin-bottom:12px">

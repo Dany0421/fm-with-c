@@ -124,6 +124,76 @@ function getFreeAgents(filters = {}) {
   }).sort((a, b) => b.overall - a.overall);
 }
 
+// ─── YOUTH MANAGEMENT ────────────────────────────────────────────────────────
+function signYouthPlayer(gameState, playerId) {
+  if (!gameState.youthMarket) return { success: false, message: 'No youth market available.' };
+  const idx = gameState.youthMarket.findIndex(p => p.id === playerId);
+  if (idx === -1) return { success: false, message: 'Player not found.' };
+  const p = gameState.youthMarket[idx];
+
+  const youthSquad = gameState.youthSquad || [];
+  if (youthSquad.length >= 15) return { success: false, message: 'Youth squad full (max 15).' };
+
+  const cost = p.youthPrice || 100000;
+  if (!canAfford(gameState.playerTeam, cost, gameState)) {
+    return { success: false, message: `Need €${(cost/1e6).toFixed(2)}M — not enough budget.` };
+  }
+
+  gameState.budgets[gameState.playerTeam] -= cost;
+  gameState.youthMarket.splice(idx, 1);
+  gameState.youthSquad = youthSquad;
+  youthSquad.push(p);
+  return { success: true, message: `${p.name} signed to youth academy!` };
+}
+
+function promoteYouthPlayer(gameState, playerId) {
+  if (!gameState.youthSquad) return { success: false, message: 'No youth squad.' };
+  const idx = gameState.youthSquad.findIndex(p => p.id === playerId);
+  if (idx === -1) return { success: false, message: 'Player not found.' };
+  const p = gameState.youthSquad[idx];
+
+  const team = getTeam(gameState.playerTeam);
+  if (!team) return { success: false, message: 'Team not found.' };
+  if (team.squad.length >= 24) return { success: false, message: 'Main squad full (max 24).' };
+
+  gameState.youthSquad.splice(idx, 1);
+  p.isYouth = false;
+  p.fromAcademy = true;
+  team.squad.push(p);
+  return { success: true, message: `${p.name} promoted to first team!` };
+}
+
+function trainYouthPlayer(gameState, playerId) {
+  if (!gameState.youthSquad) return { success: false, message: 'No youth squad.' };
+  const p = gameState.youthSquad.find(pl => pl.id === playerId);
+  if (!p) return { success: false, message: 'Player not found.' };
+
+  // Cost scales with current OVR
+  const cost = Math.round(40000 + (p.overall - 40) * 8000);
+  if (!canAfford(gameState.playerTeam, cost, gameState)) {
+    return { success: false, message: `Training costs €${(cost/1000).toFixed(0)}K — not enough budget.` };
+  }
+
+  // Cap: can't train past (potential - 3)
+  if (p.overall >= p.potential - 3) return { success: false, message: `${p.name} is near their ceiling.` };
+
+  gameState.budgets[gameState.playerTeam] -= cost;
+  p.overall = Math.min(p.potential - 2, p.overall + 1);
+
+  // Boost a key stat based on position
+  const statBoosts = {
+    ST: ['shooting','pace'], CF: ['shooting','dribbling'], LW: ['pace','dribbling'],
+    RW: ['pace','dribbling'], CAM: ['dribbling','passing'], CM: ['passing','physical'],
+    CDM: ['defending','physical'], LB: ['pace','defending'], RB: ['pace','defending'],
+    CB: ['defending','physical'], GK: ['defending','physical']
+  };
+  const keys = statBoosts[p.pos] || ['physical','passing'];
+  const stat = keys[Math.floor(Math.random() * keys.length)];
+  p[stat] = Math.min(99, (p[stat] || 50) + 1);
+
+  return { success: true, message: `${p.name} trained! +1 OVR, +1 ${stat}.` };
+}
+
 function attemptTransfer(gameState, playerId, fromTeamId) {
   const playerTeam = getTeam(gameState.playerTeam);
   let player, fromTeam;
