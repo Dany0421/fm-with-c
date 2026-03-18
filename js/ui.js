@@ -92,8 +92,48 @@ function showPlayerModal(playerId) {
         ${statBar('DRI', player.dribbling)}
       </div>
       ${player.injuredWeeks ? `<div style="margin-top:10px;background:#3b1010;border:1px solid var(--danger);border-radius:6px;padding:8px 12px;font-size:12px;color:#fca5a5">🤕 Injured — out for <strong>${player.injuredWeeks}w</strong></div>` : ''}
-      ${player.onLoan ? `<div style="margin-top:8px;background:#0f2a4a;border:1px solid #2563eb;border-radius:6px;padding:6px 12px;font-size:12px;color:#60a5fa">🔄 On loan</div>` : ''}
+      ${player.onLoan ? `<div style="margin-top:8px;background:#0f2a4a;border:1px solid #2563eb;border-radius:6px;padding:6px 12px;font-size:12px;color:#60a5fa">🔄 On loan from ${player.loanFromTeamName || 'another club'}</div>` : ''}
+      ${player.outOnLoan ? `<div style="margin-top:8px;background:#1a2e1a;border:1px solid #16a34a;border-radius:6px;padding:6px 12px;font-size:12px;color:#86efac">📤 Out on loan — returns next season (+1 OVR)</div>` : ''}
+      ${(() => {
+        const isOwnPlayer = (() => {
+          const team = getTeam(gameState.playerTeam);
+          return team?.squad.some(q => q.id === player.id);
+        })();
+        if (!isOwnPlayer || player.onLoan || player.outOnLoan || player.injuredWeeks) return '';
+        return `<div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-secondary" style="flex:1;font-size:12px" onclick="loanOutPlayer(${player.id})">📤 Send on Loan</button>
+        </div>`;
+      })()}
     `
+  });
+}
+
+function loanOutPlayer(playerId) {
+  const team = getTeam(gameState.playerTeam);
+  const p = team?.squad.find(pl => pl.id === playerId);
+  if (!p) return;
+  showModal({
+    title: '📤 Send on Loan',
+    body: `
+      <div class="modal-player">
+        <span class="pos-badge pos-${p.pos}">${p.pos}</span>
+        <strong>${p.name}</strong>
+        <span class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</span>
+      </div>
+      <div class="modal-stats-row">
+        <div><span class="muted">Age</span><br><strong>${p.age}</strong></div>
+        <div><span class="muted">OVR</span><br><strong>${p.overall}</strong></div>
+        <div><span class="muted">On return</span><br><strong class="green">+1 OVR</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:8px">Player won't be available this season. Returns next season with +1 OVR from loan experience.</p>
+    `,
+    confirm: 'Send on Loan',
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = sendPlayerOnLoan(gameState, playerId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('squad');
+    }
   });
 }
 
@@ -481,14 +521,15 @@ function renderSquad(app) {
           <th></th>
         </tr>
         ${squad.map(p => `
-          <tr class="${p.injuredWeeks ? 'player-injured' : p.onLoan ? 'player-loaned' : ''}" onclick="showPlayerModal(${p.id})" style="cursor:pointer">
+          <tr class="${p.injuredWeeks ? 'player-injured' : p.onLoan ? 'player-loaned' : p.outOnLoan ? 'player-out-loan' : ''}" onclick="showPlayerModal(${p.id})" style="cursor:pointer">
             <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
             <td class="p-name">
               ${p.name}
               ${p.injuredWeeks ? `<span class="injury-badge">🤕 ${p.injuredWeeks}w</span>` : ''}
               ${p.onLoan ? `<span class="loan-badge">LOAN</span>` : ''}
+              ${p.outOnLoan ? `<span class="loan-badge" style="background:#16a34a">OUT LOAN</span>` : ''}
               ${p.fromAcademy ? `<span class="academy-badge">🌱</span>` : ''}
-              ${!p.injuredWeeks && p.overall >= 74 && (p.matchesWithoutPlay || 0) >= 5 ? `<span class="unhappy-badge">😤</span>` : ''}
+              ${!p.injuredWeeks && !p.outOnLoan && p.overall >= 74 && (p.matchesWithoutPlay || 0) >= 5 ? `<span class="unhappy-badge">😤</span>` : ''}
             </td>
             <td>${p.age}</td>
             <td>${p.nation}</td>
@@ -639,10 +680,79 @@ function renderTactics(app) {
             ${spSelect('cornerTaker', '🚩 Corner Taker')}
           </div>
 
+          <div class="tactic-section-title" style="margin-top:18px">TEAM TRAINING</div>
+          ${renderTrainingSection()}
+
         </div>
       </div>
     </div>
   `;
+}
+
+function renderTrainingSection() {
+  const active = gameState.activeTraining;
+  if (active) {
+    const drill = TRAINING_DRILLS.find(d => d.id === active.drillId);
+    const done = active.totalWeeks - active.weeksLeft;
+    const pct = Math.round((done / active.totalWeeks) * 100);
+    return `
+      <div class="training-active">
+        <div class="training-active-top">
+          <span>${drill?.icon || '🏋️'} <strong>${drill?.name || active.drillId}</strong></span>
+          <span class="muted">${active.weeksLeft}w left</span>
+        </div>
+        <div class="training-active-desc muted">${drill?.desc || ''}</div>
+        <div class="training-progress-track">
+          <div class="training-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="training-progress-label muted">${done} / ${active.totalWeeks} matchweeks</div>
+      </div>
+    `;
+  }
+  return `
+    <div class="training-note muted">Pick a drill — whole squad trains. Injured sit out. +1 OVR guaranteed on completion, rarely +2.</div>
+    <div class="training-grid">
+      ${TRAINING_DRILLS.map(d => `
+        <div class="training-card" onclick="trainingConfirm('${d.id}')">
+          <div class="training-card-top">
+            <span class="training-icon">${d.icon}</span>
+            <span class="training-name">${d.name}</span>
+          </div>
+          <div class="training-desc">${d.desc}</div>
+          <div class="training-meta">
+            <span class="training-cost">${formatMoney(d.cost)}</span>
+            <span class="training-weeks muted">${d.weeks}w</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function trainingConfirm(drillId) {
+  const drill = TRAINING_DRILLS.find(d => d.id === drillId);
+  if (!drill) return;
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  const canAffordIt = budget >= drill.cost;
+  showModal({
+    title: `${drill.icon} ${drill.name}`,
+    body: `
+      <div style="margin-bottom:12px;color:var(--muted);font-size:13px">${drill.desc}</div>
+      <div class="modal-stats-row">
+        <div><span class="muted">Cost</span><br><strong class="${canAffordIt?'green':'danger'}">${formatMoney(drill.cost)}</strong></div>
+        <div><span class="muted">Duration</span><br><strong>${drill.weeks} matchweeks</strong></div>
+        <div><span class="muted">Budget</span><br><strong>${formatMoney(budget)}</strong></div>
+      </div>
+      ${!canAffordIt ? '<p style="color:var(--danger);font-size:12px;margin-top:8px">⚠️ Not enough budget.</p>' : ''}
+    `,
+    confirm: canAffordIt ? 'Start Training' : null,
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = startTeamTraining(gameState, drillId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('tactics');
+    }
+  });
 }
 
 function renderPitchLineup(lineup, formation) {
@@ -1192,15 +1302,22 @@ function renderYouthAcademy(youthSquad) {
     </div>
   `;
 
+  const ticksUsed = gameState.youthTrainingTicks || 0;
+  const ticksLeft = 5 - ticksUsed;
+  const noTicks = ticksLeft <= 0;
+
   return `
-    <div style="padding:8px 0 4px;color:var(--muted);font-size:12px">
-      Players develop each season. Train them to accelerate growth. Promote to main squad when ready. At age 18 they become free agents if not promoted.
+    <div class="youth-ticks-bar">
+      <span>Trainings this matchweek:</span>
+      <span class="${noTicks ? 'danger' : ticksLeft <= 2 ? 'warn' : 'green'}">${ticksUsed}/5</span>
+      <span class="muted">${noTicks ? '— resets next matchweek' : `— ${ticksLeft} left`}</span>
     </div>
     <table class="squad-table youth-table">
       <tr><th>POS</th><th>Name</th><th>Age</th><th>OVR</th><th>POT</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>DRI</th><th></th><th></th></tr>
       ${youthSquad.map(p => {
         const nearCeiling = p.overall >= p.potential - 3;
         const trainCost = Math.round(40000 + (p.overall - 40) * 8000);
+        const canTrain = !nearCeiling && !noTicks;
         const mainSquad = getTeam(gameState.playerTeam);
         const canPromote = mainSquad && mainSquad.squad.length < 24;
         return `
@@ -1212,10 +1329,8 @@ function renderYouthAcademy(youthSquad) {
           <td class="youth-pot">${p.potential}</td>
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td><td>${p.dribbling}</td>
           <td>
-            <button class="btn-sm ${nearCeiling?'btn-disabled':'btn-secondary'}"
-              onclick="event.stopPropagation();youthTrain(${p.id})"
-              title="Train: ${formatMoney(trainCost)}"
-              ${nearCeiling?'disabled':''}>
+            <button class="btn-sm ${canTrain?'btn-secondary':'btn-disabled'}"
+              onclick="event.stopPropagation();youthTrain(${p.id})">
               🏃 ${formatMoney(trainCost)}
             </button>
           </td>
@@ -1974,7 +2089,9 @@ function skipReplay() {
   _replayIntervals.forEach(i => clearInterval(i));
   _replayTimeouts = [];
   _replayIntervals = [];
-  showScreen('hub');
+  const result = gameState._replayData?.matchResult;
+  if (result) goToPostMatchPress(result);
+  else showScreen('hub');
 }
 
 function renderMatchReplay(app) {

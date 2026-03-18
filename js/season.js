@@ -230,6 +230,15 @@ function advanceMatchweek(gameState) {
   const allPlayed = gameState.fixtures[gameState.playerLeague].every(f => f.played);
   if (allPlayed) endSeason(gameState);
 
+  // Reset youth training ticks each matchweek
+  gameState.youthTrainingTicks = 0;
+
+  // Tick active team training
+  if (gameState.activeTraining) {
+    gameState.activeTraining.weeksLeft--;
+    if (gameState.activeTraining.weeksLeft <= 0) completeTraining(gameState);
+  }
+
   generateAIBids(gameState);
 }
 
@@ -751,9 +760,19 @@ function returnLoanedPlayers(gameState) {
 
   playerTeam.squad = playerTeam.squad.filter(p => !p.onLoan);
 
-  if (returned.length) {
-    gameState.notification = `↩️ ${returned.join(', ')} ${returned.length === 1 ? 'has' : 'have'} returned from loan.`;
-  }
+  // Return own players sent out on loan — give +1 OVR
+  const returnedOut = [];
+  playerTeam.squad.forEach(p => {
+    if (!p.outOnLoan) return;
+    p.outOnLoan = false;
+    p.overall = Math.min((p.potential || 99) - 1, p.overall + 1);
+    returnedOut.push(p.name);
+  });
+
+  const msgs = [];
+  if (returned.length) msgs.push(`↩️ ${returned.join(', ')} ${returned.length === 1 ? 'has' : 'have'} returned from loan.`);
+  if (returnedOut.length) msgs.push(`🔄 ${returnedOut.join(', ')} returned from loan (+1 OVR).`);
+  if (msgs.length) gameState.notification = msgs.join(' ');
 }
 
 function startNewSeason(gameState) {

@@ -77,16 +77,16 @@ function getBestEleven(teamId, formation) {
   const slots = rows.flat();
 
   function pickPlayer(targetPos) {
-    // exact match first (skip injured)
-    let p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && p.pos === targetPos);
+    // exact match first (skip injured + out on loan)
+    let p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && !p.outOnLoan && p.pos === targetPos);
     if (!p) {
       for (const alt of (POS_FALLBACKS[targetPos] || [])) {
-        p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && p.pos === alt);
+        p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && !p.outOnLoan && p.pos === alt);
         if (p) break;
       }
     }
-    // last resort: best remaining (including injured if no one else)
-    if (!p) p = squad.find(p => !used.has(p.id) && !p.injuredWeeks);
+    // last resort: best remaining (skip only out on loan)
+    if (!p) p = squad.find(p => !used.has(p.id) && !p.outOnLoan && !p.injuredWeeks);
     if (!p) p = squad.find(p => !used.has(p.id));
     if (p) { used.add(p.id); return { ...p, slot: targetPos }; }
     return null;
@@ -168,16 +168,21 @@ function trainYouthPlayer(gameState, playerId) {
   const p = gameState.youthSquad.find(pl => pl.id === playerId);
   if (!p) return { success: false, message: 'Player not found.' };
 
+  // 5 ticks total across all youth players per season
+  const ticksUsed = gameState.youthTrainingTicks || 0;
+  if (ticksUsed >= 5) return { success: false, message: 'No training sessions left this season (5/5 used).' };
+
   // Cost scales with current OVR
   const cost = Math.round(40000 + (p.overall - 40) * 8000);
   if (!canAfford(gameState.playerTeam, cost, gameState)) {
-    return { success: false, message: `Training costs €${(cost/1000).toFixed(0)}K — not enough budget.` };
+    return { success: false, message: `Training costs ${formatMoney(cost)} — not enough budget.` };
   }
 
   // Cap: can't train past (potential - 3)
   if (p.overall >= p.potential - 3) return { success: false, message: `${p.name} is near their ceiling.` };
 
   gameState.budgets[gameState.playerTeam] -= cost;
+  gameState.youthTrainingTicks = ticksUsed + 1;
   p.overall = Math.min(p.potential - 2, p.overall + 1);
 
   // Boost a key stat based on position
@@ -191,7 +196,21 @@ function trainYouthPlayer(gameState, playerId) {
   const stat = keys[Math.floor(Math.random() * keys.length)];
   p[stat] = Math.min(99, (p[stat] || 50) + 1);
 
-  return { success: true, message: `${p.name} trained! +1 OVR, +1 ${stat}.` };
+  const left = 5 - (gameState.youthTrainingTicks);
+  return { success: true, message: `${p.name} trained! +1 OVR, +1 ${stat}. ${left} session${left!==1?'s':''} left this season.` };
+}
+
+function sendPlayerOnLoan(gameState, playerId) {
+  const team = getTeam(gameState.playerTeam);
+  if (!team) return { success: false, message: 'Team not found.' };
+  const p = team.squad.find(pl => pl.id === playerId);
+  if (!p) return { success: false, message: 'Player not found.' };
+  if (p.outOnLoan) return { success: false, message: `${p.name} is already out on loan.` };
+  if (p.onLoan) return { success: false, message: `${p.name} is a loaned player — can't re-loan.` };
+  if (p.injuredWeeks) return { success: false, message: `${p.name} is injured.` };
+
+  p.outOnLoan = true;
+  return { success: true, message: `${p.name} sent on loan. Returns next season with +1 OVR.` };
 }
 
 function attemptTransfer(gameState, playerId, fromTeamId) {
@@ -296,6 +315,96 @@ function formatMoney(amount) {
   if (amount >= 1000000) return `£${(amount / 1000000).toFixed(1)}M`;
   if (amount >= 1000) return `£${(amount / 1000).toFixed(0)}K`;
   return `£${amount}`;
+}
+
+// ─── TEAM TRAINING ───────────────────────────────────────────────────────────
+const TRAINING_DRILLS = [
+  {
+    id: 'finishing', name: 'Finishing', icon: '🎯', cost: 450000, weeks: 6,
+    desc: 'Shooting ↑ for FWD/CAM, Pace ↑ for wide',
+    apply(p) {
+      if (['ST','CF','CAM','LW','RW'].includes(p.pos)) p.shooting = Math.min(99, p.shooting + (Math.random()<0.35?2:1));
+      else if (['CM'].includes(p.pos)) p.shooting = Math.min(99, p.shooting + 1);
+      if (['LW','RW'].includes(p.pos)) p.pace = Math.min(99, p.pace + 1);
+    }
+  },
+  {
+    id: 'defense', name: 'Defensive Shape', icon: '🛡️', cost: 400000, weeks: 7,
+    desc: 'Defending ↑ for DEF/CDM, Physical ↑ all',
+    apply(p) {
+      p.physical = Math.min(99, p.physical + 1);
+      if (['CB','LB','RB','CDM','LWB','RWB'].includes(p.pos)) p.defending = Math.min(99, p.defending + (Math.random()<0.35?2:1));
+    }
+  },
+  {
+    id: 'sprint', name: 'Sprint Work', icon: '⚡', cost: 350000, weeks: 5,
+    desc: 'Pace ↑ for all, extra boost for wide & strikers',
+    apply(p) {
+      const bonus = ['LW','RW','ST','LB','RB'].includes(p.pos) ? (Math.random()<0.35?2:1) : 1;
+      p.pace = Math.min(99, p.pace + bonus);
+    }
+  },
+  {
+    id: 'passing', name: 'Passing Clinic', icon: '⚽', cost: 380000, weeks: 6,
+    desc: 'Passing ↑ for all, extra for midfielders',
+    apply(p) {
+      const bonus = ['CM','CAM','CDM','LM','RM'].includes(p.pos) ? (Math.random()<0.35?2:1) : 1;
+      p.passing = Math.min(99, p.passing + bonus);
+    }
+  },
+  {
+    id: 'strength', name: 'Strength Camp', icon: '💪', cost: 320000, weeks: 5,
+    desc: 'Physical ↑↑ across the whole squad equally',
+    apply(p) {
+      p.physical = Math.min(99, p.physical + (Math.random()<0.35?2:1));
+    }
+  },
+  {
+    id: 'technical', name: 'Ball Mastery', icon: '🎭', cost: 420000, weeks: 7,
+    desc: 'Dribbling ↑ for FWD/MID, Passing ↑ for MID',
+    apply(p) {
+      if (['ST','CAM','LW','RW','CM'].includes(p.pos)) p.dribbling = Math.min(99, p.dribbling + (Math.random()<0.35?2:1));
+      if (['CM','CAM','CDM'].includes(p.pos)) p.passing = Math.min(99, p.passing + 1);
+    }
+  },
+];
+
+function startTeamTraining(gameState, drillId) {
+  const drill = TRAINING_DRILLS.find(d => d.id === drillId);
+  if (!drill) return { success: false, message: 'Training not found.' };
+  if (gameState.activeTraining) return { success: false, message: 'Training already in progress.' };
+  if (!canAfford(gameState.playerTeam, drill.cost, gameState)) {
+    return { success: false, message: `Not enough budget — need ${formatMoney(drill.cost)}.` };
+  }
+  gameState.budgets[gameState.playerTeam] -= drill.cost;
+  gameState.activeTraining = { drillId, weeksLeft: drill.weeks, totalWeeks: drill.weeks };
+  return { success: true, message: `${drill.name} started — ${drill.weeks} matchweeks to go.` };
+}
+
+function completeTraining(gameState) {
+  const training = gameState.activeTraining;
+  if (!training) return;
+  const drill = TRAINING_DRILLS.find(d => d.id === training.drillId);
+  if (!drill) { gameState.activeTraining = null; return; }
+
+  const team = getTeam(gameState.playerTeam);
+  if (!team) { gameState.activeTraining = null; return; }
+
+  let ovrGains = 0;
+  team.squad.forEach(p => {
+    if (p.injuredWeeks) return; // injured sit out
+    drill.apply(p);
+    // Always +1 OVR, very rarely +2 (~8% chance)
+    const gain = Math.random() < 0.08 ? 2 : 1;
+    const cap = (p.potential || 99) - 1;
+    if (p.overall < cap) {
+      p.overall = Math.min(cap, p.overall + gain);
+      ovrGains += gain;
+    }
+  });
+
+  gameState.activeTraining = null;
+  gameState.notification = `🏋️ ${drill.name} complete! Squad OVR +${ovrGains} total.`;
 }
 
 function executeLoan(gameState, playerId, fromTeamId) {

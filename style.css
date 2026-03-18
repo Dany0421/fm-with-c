@@ -764,6 +764,35 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 .rep-label { color: #a78bfa; }
 .hof-rep .hof-count { font-size: 16px; }
 
+/* ── TEAM TRAINING (tactics page) ───────────────────────────── */
+.training-note { font-size: 11px; margin-bottom: 10px; display: block; }
+.training-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.training-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.training-card:hover { border-color: var(--accent); background: var(--bg3); }
+.training-card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.training-icon { font-size: 16px; }
+.training-name { font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+.training-desc { font-size: 11px; color: var(--muted); margin-bottom: 5px; line-height: 1.4; }
+.training-cost { font-size: 12px; color: var(--accent2); font-weight: 600; }
+.training-meta { display: flex; justify-content: space-between; align-items: center; }
+.training-weeks { font-size: 11px; }
+.training-active {
+  background: var(--bg2); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 12px 14px;
+}
+.training-active-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13px; }
+.training-active-desc { font-size: 11px; margin-bottom: 10px; }
+.training-progress-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.training-progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+.training-progress-label { font-size: 11px; margin-top: 5px; text-align: right; }
+
+/* ── OUT ON LOAN (squad) ─────────────────────────────────────── */
+.player-out-loan { background: rgba(22,163,74,0.07); }
+
 /* ── YOUTH PAGE ──────────────────────────────────────────────── */
 .youth-table .youth-pot { color: #34d399; font-weight: 700; }
 .youth-empty {
@@ -771,6 +800,10 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 }
 .youth-empty p:first-child { font-size: 15px; color: var(--fg); margin-bottom: 8px; }
 .youth-name { font-weight: 600; }
+.youth-ticks-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; font-size: 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
 .youth-pot { color: var(--accent2); font-size: 12px; }
 
 /* ── SCOUT REPORT (modal body) ──────────────────────────────── */
