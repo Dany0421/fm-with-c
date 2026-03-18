@@ -130,6 +130,26 @@ function showPlayerModal(playerId) {
           </div>
           ${buttons.length ? `<div style="margin-top:8px;display:flex;gap:8px">${buttons.join('')}</div>` : ''}`;
       })()}
+      ${(() => {
+        const isYouthMarket = (gameState.youthMarket || []).some(q => q.id === player.id);
+        if (!isYouthMarket) return '';
+        const youthSquad = gameState.youthSquad || [];
+        const full = youthSquad.length >= 15;
+        const canAffordIt = (gameState.budgets[gameState.playerTeam] || 0) >= (player.youthPrice || 0);
+        const budget = gameState.budgets[gameState.playerTeam] || 0;
+        return `
+          <div style="margin-top:10px;background:#111;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:12px">
+            <span>💰 Price: <strong class="green">${formatMoney(player.youthPrice)}</strong></span>
+            <span class="muted">Budget: <strong>${formatMoney(budget)}</strong></span>
+            ${full ? '<span style="color:var(--danger)">Squad full (15/15)</span>' : ''}
+          </div>
+          <div style="margin-top:8px">
+            <button class="btn ${canAffordIt && !full ? 'btn-primary' : 'btn-disabled'}" style="width:100%;font-size:13px"
+              onclick="document.querySelector('.modal-overlay')?.remove();youthSignConfirm(${player.id})">
+              ✍️ Sign to Youth Academy
+            </button>
+          </div>`;
+      })()}
     `
   });
 }
