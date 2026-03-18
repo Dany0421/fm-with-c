@@ -1814,7 +1814,7 @@ function youthSignConfirm(playerId) {
       </div>
       <div class="modal-stats-row">
         <div><span class="muted">Age</span><br><strong>${p.age}</strong></div>
-        <div><span class="muted">Potential</span><br><strong class="green">${p.potential}</strong></div>
+        <div><span class="muted">Potential</span><br><strong class="green">${getScoutedPotential(p.potential, gameState)}</strong></div>
         <div><span class="muted">Cost</span><br><strong class="green">${formatMoney(p.youthPrice)}</strong></div>
         <div><span class="muted">Budget</span><br><strong>${formatMoney(gameState.budgets[gameState.playerTeam])}</strong></div>
       </div>
