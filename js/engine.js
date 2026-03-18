@@ -218,8 +218,13 @@ function pickWeighted(pool, statFn) {
 }
 
 // ── Main match simulation (minute-by-minute) ──────────────────────────────────
+// opts: { minStart=1, minEnd=90, initScore={home,away}, prevEvents=[] }
+// When splitting into halves: call with minEnd=45 for 1st half, then minEnd=90+initScore for 2nd half.
+// AI matches (no opts) run full 90 unchanged.
 
-function simulateMatch(homeTeamId, awayTeamId, gameState) {
+function simulateMatch(homeTeamId, awayTeamId, gameState, opts = {}) {
+  const { minStart = 1, minEnd = 90, initScore = { home: 0, away: 0 }, prevEvents = [] } = opts;
+
   const home = getTeam(homeTeamId);
   const away = getTeam(awayTeamId);
 
@@ -244,7 +249,7 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
   // Possession probability based on midfield
   const homePossChance = homeMid / (homeMid + awayMid);
 
-  // Chance creation rate per possession minute (base = ~10 shots/team over 90min)
+  // Chance creation rate per possession minute
   const homeTactics = gameState?.tactics?.[homeTeamId] || {};
   const awayTactics = gameState?.tactics?.[awayTeamId] || {};
   let homeChanceRate = 0.14;
@@ -275,8 +280,8 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
   const awayAssAll = away.squad.filter(p => ASSIST_POS.includes(p.pos) && !p.injuredWeeks).sort((a, b) => b.passing - a.passing);
   const awayAss    = awayAssAll.length ? awayAssAll : awayFwd;
 
-  // Match state
-  let homeGoals = 0, awayGoals = 0;
+  // Match state — start from initScore for split-half support
+  let homeGoals = initScore.home, awayGoals = initScore.away;
   let homeShots = 0, awayShots = 0;
   let homeXG = 0, awayXG = 0;
   let homePoss = 0, awayPoss = 0;
@@ -284,21 +289,48 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
   let homeMomentum = 0, awayMomentum = 0;
   const events = [];
 
-  // Pre-compute mid dominance for chance type calculations
+  // Yellow card tracking (player name → count). Seeded from prevEvents for cross-half 2nd yellow detection.
+  const homeYellows = new Map();
+  const awayYellows = new Map();
+  const homeReds = new Set();
+  const awayReds = new Set();
+  for (const ev of prevEvents) {
+    if (ev.type === 'yellow') {
+      const map = ev.team === 'home' ? homeYellows : awayYellows;
+      map.set(ev.player, (map.get(ev.player) || 0) + 1);
+    }
+    if (ev.type === 'red') {
+      (ev.team === 'home' ? homeReds : awayReds).add(ev.player);
+    }
+  }
+
+  // Red card attack/defense multipliers (decrease when a player is sent off)
+  let homeRedMult = 1.0;
+  let awayRedMult = 1.0;
+
+  // Pre-compute mid dominance
   const homeMidDom = homeMid / (homeMid + awayMid);
   const awayMidDom = 1 - homeMidDom;
 
-  // ── 90-minute loop ──
-  for (let min = 1; min <= 90; min++) {
+  // ── minute loop ──
+  for (let min = minStart; min <= minEnd; min++) {
+    // Effective rates with red card penalties applied per minute
+    const effHomeChance = homeChanceRate * homeRedMult;
+    const effAwayChance = awayChanceRate * awayRedMult;
+    const effHomeAtk = homeAtk * homeRedMult;
+    const effHomeDef = homeDef * homeRedMult;
+    const effAwayAtk = awayAtk * awayRedMult;
+    const effAwayDef = awayDef * awayRedMult;
+
     if (Math.random() < homePossChance) {
       // Home possession
       homePoss++;
       const atkBoost = homeMomentum > 0 ? 1.1 : 1.0;
       if (homeMomentum > 0) homeMomentum--;
 
-      if (Math.random() < homeChanceRate) {
+      if (Math.random() < effHomeChance) {
         homeShots++;
-        const shotQ = (homeAtk * atkBoost) / (homeAtk * atkBoost + awayDef);
+        const shotQ = (effHomeAtk * atkBoost) / (effHomeAtk * atkBoost + effAwayDef);
         const chanceType = getChanceType(shotQ, homeTactics, homeMidDom);
         const xg = getXGForType(chanceType, shotQ);
         homeXG += xg;
@@ -322,9 +354,9 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
       const atkBoost = awayMomentum > 0 ? 1.1 : 1.0;
       if (awayMomentum > 0) awayMomentum--;
 
-      if (Math.random() < awayChanceRate) {
+      if (Math.random() < effAwayChance) {
         awayShots++;
-        const shotQ = (awayAtk * atkBoost) / (awayAtk * atkBoost + homeDef);
+        const shotQ = (effAwayAtk * atkBoost) / (effAwayAtk * atkBoost + effHomeDef);
         const chanceType = getChanceType(shotQ, awayTactics, awayMidDom);
         const xg = getXGForType(chanceType, shotQ);
         awayXG += xg;
@@ -343,92 +375,117 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
         }
       }
     }
+
+    // ── Cards (per minute, both teams, independent of possession) ──
+    // ~0.7% per min per team = ~0.63 yellows/team/90min; double yellow → red
+    [[home, 'home', homeYellows, homeReds], [away, 'away', awayYellows, awayReds]].forEach(([team, side, yellows, reds]) => {
+      if (Math.random() < 0.007) {
+        const eligible = team.squad.filter(p => !p.injuredWeeks && !reds.has(p.name));
+        if (!eligible.length) return;
+        const p = eligible[Math.floor(Math.random() * eligible.length)];
+        const prev = yellows.get(p.name) || 0;
+        if (prev >= 1) {
+          // Second yellow → red card
+          events.push({ type: 'red', min, team: side, player: p.name });
+          reds.add(p.name);
+          if (side === 'home') homeRedMult = Math.max(0.78, homeRedMult - 0.1);
+          else                 awayRedMult = Math.max(0.78, awayRedMult - 0.1);
+        } else {
+          yellows.set(p.name, prev + 1);
+          events.push({ type: 'yellow', min, team: side, player: p.name });
+        }
+      }
+      // Direct red (rare — violent foul, etc.)
+      if (Math.random() < 0.0005) {
+        const eligible = team.squad.filter(p => !p.injuredWeeks && !reds.has(p.name));
+        if (!eligible.length) return;
+        const p = eligible[Math.floor(Math.random() * eligible.length)];
+        events.push({ type: 'red', min, team: side, player: p.name });
+        reds.add(p.name);
+        if (side === 'home') homeRedMult = Math.max(0.78, homeRedMult - 0.1);
+        else                 awayRedMult = Math.max(0.78, awayRedMult - 0.1);
+      }
+    });
   }
 
-  // ── Penalties ──
-  const spCoachQ = gameState?.staff?.setPieceCoach?.quality || 0;
-  const homeGK = home.squad.find(p => p.pos === 'GK' && !p.injuredWeeks);
-  const awayGK = away.squad.find(p => p.pos === 'GK' && !p.injuredWeeks);
-  [['home', 0.22, homeFwd, home.id, awayGK], ['away', 0.18, awayFwd, away.id, homeGK]].forEach(([side, prob, pool, teamId, oppGK]) => {
-    if (Math.random() < prob) {
-      const min = Math.floor(Math.random() * 85) + 3;
-      const scorer = pickWeighted(pool, p => p.shooting);
-      // Set piece coach boosts conversion for player's team; pkstopper GK trait reduces it
-      let conv = teamId === gameState?.playerTeam ? Math.min(0.92, 0.75 + spCoachQ / 400) : 0.75;
-      if (oppGK?.traits?.includes('pkstopper')) conv = Math.min(conv, 0.58);
-      if (Math.random() < conv) {
-        if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.75; homeBigChances++; }
-        else                 { awayGoals++; awayShots++; awayXG += 0.75; awayBigChances++; }
-        scorer.goals++;
-        scorer.appearances = (scorer.appearances || 0) + 1;
-        events.push({ type: 'goal', min, team: side, player: scorer.name, assist: null, goalType: 'penalty', chanceType: 'big' });
-      } else {
-        events.push({ type: 'penalty_miss', min, team: side, player: scorer.name });
+  // ── Penalties, free kicks, injuries, clean sheets, attendance ──
+  // Only computed once per full match (minEnd >= 90) to avoid doubling up
+  let attendance = 0;
+  if (minEnd >= 90) {
+    const spCoachQ = gameState?.staff?.setPieceCoach?.quality || 0;
+    const homeGK = home.squad.find(p => p.pos === 'GK' && !p.injuredWeeks);
+    const awayGK = away.squad.find(p => p.pos === 'GK' && !p.injuredWeeks);
+    [['home', 0.22, homeFwd, home.id, awayGK], ['away', 0.18, awayFwd, away.id, homeGK]].forEach(([side, prob, pool, teamId, oppGK]) => {
+      if (Math.random() < prob) {
+        const min = Math.floor(Math.random() * 85) + 3;
+        const scorer = pickWeighted(pool, p => p.shooting);
+        let conv = teamId === gameState?.playerTeam ? Math.min(0.92, 0.75 + spCoachQ / 400) : 0.75;
+        if (oppGK?.traits?.includes('pkstopper')) conv = Math.min(conv, 0.58);
+        if (Math.random() < conv) {
+          if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.75; homeBigChances++; }
+          else                 { awayGoals++; awayShots++; awayXG += 0.75; awayBigChances++; }
+          scorer.goals++;
+          scorer.appearances = (scorer.appearances || 0) + 1;
+          events.push({ type: 'goal', min, team: side, player: scorer.name, assist: null, goalType: 'penalty', chanceType: 'big' });
+        } else {
+          events.push({ type: 'penalty_miss', min, team: side, player: scorer.name });
+        }
+      }
+    });
+
+    [['home', 0.14, home.squad, home.id], ['away', 0.11, away.squad, away.id]].forEach(([side, prob, squad, teamId]) => {
+      if (Math.random() < prob) {
+        const min = Math.floor(Math.random() * 85) + 3;
+        const fkPool = squad.filter(p => !p.injuredWeeks && ['CM','CAM','LW','RW','ST','CDM'].includes(p.pos));
+        const taker = fkPool.length ? pickWeighted(fkPool, p => Math.round((p.passing + p.shooting) / 2)) : squad[0];
+        const spCoachQ = gameState?.staff?.setPieceCoach?.quality || 0;
+        const fkRate = teamId === gameState?.playerTeam ? Math.min(0.35, 0.15 + spCoachQ / 500) : 0.15;
+        if (taker && Math.random() < fkRate) {
+          if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.15; }
+          else                 { awayGoals++; awayShots++; awayXG += 0.15; }
+          taker.goals++;
+          taker.appearances = (taker.appearances || 0) + 1;
+          events.push({ type: 'goal', min, team: side, player: taker.name, assist: null, goalType: 'free_kick', chanceType: 'medium' });
+        }
+      }
+    });
+
+    // Clean sheets (based on full match goals, counting initScore)
+    const finalHomeGoals = homeGoals;
+    const finalAwayGoals = awayGoals;
+    if (finalHomeGoals === 0) { const gk = away.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
+    if (finalAwayGoals === 0) { const gk = home.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
+
+    // Injuries
+    const newlyInjured = generateMatchInjuries(home, away, gameState);
+    if (gameState?.playerTeam && newlyInjured.length) {
+      const playerInj = newlyInjured.filter(p => p.teamId === gameState.playerTeam);
+      if (playerInj.length) {
+        if (!gameState.newInjuries) gameState.newInjuries = [];
+        gameState.newInjuries.push(...playerInj);
       }
     }
-  });
 
-  // ── Free kicks ──
-  [['home', 0.14, home.squad, home.id], ['away', 0.11, away.squad, away.id]].forEach(([side, prob, squad, teamId]) => {
-    if (Math.random() < prob) {
-      const min = Math.floor(Math.random() * 85) + 3;
-      const fkPool = squad.filter(p => !p.injuredWeeks && ['CM','CAM','LW','RW','ST','CDM'].includes(p.pos));
-      const taker = fkPool.length ? pickWeighted(fkPool, p => Math.round((p.passing + p.shooting) / 2)) : squad[0];
-      const fkRate = teamId === gameState?.playerTeam ? Math.min(0.35, 0.15 + spCoachQ / 500) : 0.15;
-      if (taker && Math.random() < fkRate) {
-        if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.15; }
-        else                 { awayGoals++; awayShots++; awayXG += 0.15; }
-        taker.goals++;
-        taker.appearances = (taker.appearances || 0) + 1;
-        events.push({ type: 'goal', min, team: side, player: taker.name, assist: null, goalType: 'free_kick', chanceType: 'medium' });
-      }
+    const isPlayerHome = homeTeamId === gameState?.playerTeam;
+    const effectiveCapacity = isPlayerHome ? getStadiumCapacity(gameState) : (home.capacity || 30000);
+    const mktCampaign = gameState?.marketing?.activeCampaign;
+    const attBoost = (isPlayerHome && mktCampaign?.effect?.type === 'attendance') ? mktCampaign.effect.value : 0;
+    attendance = Math.floor(effectiveCapacity * (0.7 + Math.random() * 0.3) * (1 + attBoost));
+    if (gameState?.budgets) {
+      gameState.budgets[homeTeamId] = (gameState.budgets[homeTeamId] || 0) + Math.round(attendance * 2);
     }
-  });
-
-  // Cards
-  if (Math.random() < 0.4) {
-    const p = home.squad[Math.floor(Math.random() * home.squad.length)];
-    events.push({ type: 'yellow', min: Math.floor(Math.random() * 90) + 1, team: 'home', player: p.name });
-  }
-  if (Math.random() < 0.4) {
-    const p = away.squad[Math.floor(Math.random() * away.squad.length)];
-    events.push({ type: 'yellow', min: Math.floor(Math.random() * 90) + 1, team: 'away', player: p.name });
   }
 
   events.sort((a, b) => a.min - b.min);
 
-  // Clean sheets
-  if (homeGoals === 0) { const gk = away.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
-  if (awayGoals === 0) { const gk = home.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
-
-  // Injuries
-  const newlyInjured = generateMatchInjuries(home, away, gameState);
-  if (gameState?.playerTeam && newlyInjured.length) {
-    const playerInj = newlyInjured.filter(p => p.teamId === gameState.playerTeam);
-    if (playerInj.length) {
-      if (!gameState.newInjuries) gameState.newInjuries = [];
-      gameState.newInjuries.push(...playerInj);
-    }
-  }
-
-  const isPlayerHome = homeTeamId === gameState?.playerTeam;
-  const effectiveCapacity = isPlayerHome ? getStadiumCapacity(gameState) : (home.capacity || 30000);
-  // Marketing attendance boost
-  const mktCampaign = gameState?.marketing?.activeCampaign;
-  const attBoost = (isPlayerHome && mktCampaign?.effect?.type === 'attendance') ? mktCampaign.effect.value : 0;
-  const attendance = Math.floor(effectiveCapacity * (0.7 + Math.random() * 0.3) * (1 + attBoost));
-  if (gameState?.budgets) {
-    gameState.budgets[homeTeamId] = (gameState.budgets[homeTeamId] || 0) + Math.round(attendance * 2);
-  }
-
-  const totalPoss = homePoss + awayPoss || 90;
+  const totalPoss = homePoss + awayPoss || (minEnd - minStart + 1);
 
   return {
     homeTeam: homeTeamId,
     awayTeam: awayTeamId,
     homeGoals,
     awayGoals,
-    events,
+    events: [...prevEvents, ...events],
     attendance,
     possession:  { home: Math.round(homePoss / totalPoss * 100), away: Math.round(awayPoss / totalPoss * 100) },
     xG:          { home: +homeXG.toFixed(1), away: +awayXG.toFixed(1) },

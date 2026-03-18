@@ -939,6 +939,7 @@ function startNewSeason(gameState) {
   // europaLeague and championsLeague are intentionally preserved — they were
   // initialized at end of previous season and run throughout this season
   gameState.aiBids = []; // clear pending bids
+  gameState.negotiations = []; // clear pending negotiations
 
   // Reset player stats for new season
   getAllTeams().forEach(team => {

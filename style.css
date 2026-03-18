@@ -1738,3 +1738,168 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   .tp-status-col { min-width: unset; width: 100%; }
   .tp-prog-footer { flex-wrap: wrap; gap: 8px; }
 }
+
+/* ─── HALFTIME SCREEN ─────────────────────────────────────────────────────── */
+/* ─── HALFTIME SCREEN ─────────────────────────────────────────────────────── */
+.halftime-screen {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ht-header {
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+}
+.ht-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.ht-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.ht-team { font-size: 14px; font-weight: 700; line-height: 1.3; max-width: 130px; }
+.ht-score-num { font-size: 40px; font-weight: 900; color: var(--accent); line-height: 1; }
+.ht-events {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.ht-events h4 { margin: 0 0 8px; font-size: 10px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+.ht-event {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+.ht-event.mine { background: rgba(34,197,94,0.08); }
+.ht-event.opp  { background: rgba(239,68,68,0.08); }
+.ht-min { font-size: 10px; color: var(--muted); min-width: 24px; flex-shrink: 0; }
+/* ─── PITCH SECTION ── */
+.ht-pitch-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.ht-pitch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ht-pitch-header h4 { margin: 0; font-size: 10px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+.ht-formation-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ht-formation-bar .tactic-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.ht-formation-select {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+}
+.ht-pitch-section .pitch {
+  min-height: 380px;
+  max-width: 100%;
+  border-radius: 8px;
+  padding: 12px 8px;
+}
+/* Sub-on player slot styling */
+.pp-sub-on {
+  border-color: var(--green) !important;
+  background: rgba(34,197,94,0.18) !important;
+}
+.pp-sub-on .pp-name,
+.pp-sub-on .pp-ovr { color: #86efac; }
+/* ─── TACTICS SECTION ── */
+.ht-tactics {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.ht-subs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.ht-subs-header h4 { margin: 0; font-size: 10px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+.ht-tactic-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ht-tactic-row .tactic-label {
+  min-width: 72px;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.ht-tactic-row .btn-group { flex: 1; gap: 4px; }
+.ht-tactic-row .tactic-btn { padding: 5px 8px; font-size: 11px; }
+/* event-sub icon */
+.event-sub .event-icon { opacity: 0.9; }
+
+/* ─── MOBILE HALFTIME ── */
+@media (max-width: 480px) {
+  .halftime-screen { padding: 10px 8px; gap: 10px; }
+  .ht-header { padding: 14px 10px; border-radius: 10px; }
+  .ht-score-num { font-size: 32px; }
+  .ht-team { font-size: 12px; max-width: 100px; }
+  .ht-events { max-height: 140px; padding: 10px; }
+  .ht-event { font-size: 11px; padding: 4px 6px; gap: 5px; }
+  .ht-pitch-section { padding: 10px 8px; }
+  .ht-pitch-section .pitch { min-height: 300px; padding: 8px 4px; }
+  .ht-tactics { padding: 10px; gap: 8px; }
+  .ht-tactic-row { gap: 6px; }
+  .ht-tactic-row .tactic-label { min-width: 58px; font-size: 10px; }
+  .ht-tactic-row .tactic-btn { padding: 5px 6px; font-size: 10px; }
+  .ht-formation-select { font-size: 12px; padding: 6px 8px; }
+}
+@media (max-width: 360px) {
+  .ht-tactic-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .ht-tactic-row .tactic-label { min-width: unset; }
+  .ht-tactic-row .btn-group { width: 100%; }
+  .ht-score { gap: 8px; }
+  .ht-team { font-size: 11px; max-width: 85px; }
+}

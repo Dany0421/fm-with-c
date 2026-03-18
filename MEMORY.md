@@ -1,6 +1,6 @@
 # MEMORY.md — Project State
 
-*Last updated: 2026-03-19 (Sessão 12 — completa)*
+*Last updated: 2026-03-18 (Sessão 13 — completa)*
 
 -----
 
@@ -14,7 +14,7 @@ Football Manager no browser — Premier League + Championship com promoção/rel
 
 ## Current state
 
-Sessão 12 completa. Player Training System, GK stats próprios, OVR recalculado de stats, Manual Starting XI, Player Instructions, Mobile CSS.
+Sessão 13 completa. Half-Time Substitutions (pitch interativo, max 5 subs), Red Cards, Halftime Tactics Panel (formação + player instructions no intervalo).
 
 -----
 
@@ -77,6 +77,31 @@ Sessão 12 completa. Player Training System, GK stats próprios, OVR recalculado
 #### Stat multipliers atualizados (dataEPL.js)
 - Todos os primários subidos para 1.02–1.06 para stats refletirem melhor o OVR
 - ST shooting×1.06, LW/RW pace+drib×1.04, CAM pass+drib×1.02, etc.
+
+### Sessão 13 — Half-Time Substitutions + Red Cards + Tactics Panel
+
+#### simulateMatch split (engine.js)
+- Aceita `opts = { minStart, minEnd, initScore, prevEvents }` — default full 1-90 (AI matches intactos)
+- Yellow/red cards agora dentro do loop por minuto (não no fim)
+- Red: double yellow → red; direct red 0.05%/min; `homeRedMult`/`awayRedMult` penalizam eficácia pelo resto do jogo
+- Cross-half yellow tracking: prevEvents seeded nos Maps → 2º amarelo na 2ª parte gera red
+- `minEnd >= 90` gate para penalties, free kicks, injuries, clean sheets, attendance
+
+#### manager.js
+- `getBestEleven`: filtra `_benchedForMatch` flag
+- `getBenchPlayers(teamId, formation, gameState)` — top 7 do banco por OVR
+
+#### Halftime Flow (ui.js)
+- Liga: 1st half (1-45) → halftime screen → 2nd half (46-90) → result
+- Cup/CL/Europa: full 90 sem halftime interativo
+- `renderHalftimeScreen`: score + eventos 1ª parte (scrollable) + pitch interativo + tactics panel + Continue
+- Pitch: `renderHalftimePitchHTML` — sub-on player no slot com borda verde + 🔄
+- Click num slot → modal "🔄 Sub Off" / "📋 Instructions" / "✕ Cancel Sub"
+- `confirmSubHalftime`, `cancelSubHalftime`, `assignInstructionHalftime` (não faz re-render da tela de táticas)
+- `updateFormationHalftime` — reset subs ao mudar formação
+- `continueSecondHalf`: aplica `_benchedForMatch`, merge stats (possession averaged, resto somado)
+- Max 5 subs. Evento `{ type: 'sub', min: 45, playerOff, playerOn }` → 🔄 em match result e replay
+- Mobile CSS: `@media 480px` e `@media 360px` breakpoints, `.pp-sub-on` borda verde
 
 ### Sessão 11 — Contracts + Recall + Infraestrutura + Patrocínios + Marketing
 

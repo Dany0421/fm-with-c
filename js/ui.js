@@ -278,6 +278,7 @@ function showScreen(screen, data) {
     case 'match-replay':    renderMatchReplay(app); break;
     case 'match-preview':   renderMatchPreview(app); break;
     case 'match-result':    renderMatchResult(app, data); break;
+    case 'halftime':        renderHalftimeScreen(app); break;
     case 'table':           renderTable(app); break;
     case 'transfers':       renderTransfers(app); break;
     case 'youth':           renderYouth(app); break;
@@ -490,6 +491,7 @@ function renderHub(app) {
       <div class="hub-body">
         <div class="hub-left">
           ${renderAIBidsCard(gameState)}
+          ${renderActiveNegotiationsCard(gameState)}
           ${renderContractDemandsCard(gameState)}
           <div class="hub-card hub-position">
             <div class="pos-number">${pos}${ordinal(pos)}</div>
@@ -1331,6 +1333,16 @@ function renderMatchResult(app, data) {
               </div>
               <span class="event-team">${teamName}</span>
             </div>`;
+          if (ev.type === 'sub') return `
+            <div class="event-row event-sub event-${isMine ? 'mine' : 'opp'}">
+              <span class="event-min">${ev.min}'</span>
+              <span class="event-icon">🔄</span>
+              <div class="event-goal-info">
+                <span class="event-player">${ev.playerOn} on</span>
+                <div class="event-goal-meta"><span class="event-assist">↓ ${ev.playerOff} off</span></div>
+              </div>
+              <span class="event-team">${teamName}</span>
+            </div>`;
           return `
             <div class="event-row event-${ev.type} event-${isMine ? 'mine' : 'opp'}">
               <span class="event-min">${ev.min}'</span>
@@ -1564,7 +1576,7 @@ function renderTransferMarketTab(windowOpen) {
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
           <td>${p.teamId ? formatMoney(p.value) : 'Free'}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
-            ${windowOpen?`onclick="event.stopPropagation();buyConfirm(${p.id},'${p.teamId||''}')"`:''}>Sign</button></td>
+            ${windowOpen?`onclick="event.stopPropagation();${p.teamId ? `openNegotiationModal(${p.id},'${p.teamId}')` : `buyConfirm(${p.id},'')`}"`:''}>Sign</button></td>
         </tr>`;
       }).join('')}
     </table>
@@ -2287,6 +2299,196 @@ function loanConfirm(playerId, fromTeamId) {
       showScreen('transfers');
     }
   });
+}
+
+// ─── ACTIVE NEGOTIATIONS CARD ────────────────────────────────────────────────
+function renderActiveNegotiationsCard(gameState) {
+  const negs = gameState.negotiations;
+  if (!negs?.length) return '';
+  return `
+    <div class="hub-card ai-bids-card">
+      <h4>📋 ACTIVE NEGOTIATIONS</h4>
+      ${negs.map(neg => `
+        <div class="bid-item" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <span class="pos-badge pos-${neg.playerPos}">${neg.playerPos}</span>
+              <strong>${neg.playerName}</strong>
+              <span class="muted" style="font-size:12px"> · ${neg.playerOvr} OVR · ${neg.fromTeamName}</span>
+            </div>
+            <span class="muted" style="font-size:11px">Round ${neg.round}/3</span>
+          </div>
+          <div style="font-size:12px;margin:4px 0;color:var(--muted)">
+            Your offer: <strong>${formatMoney(neg.yourLastOffer)}</strong> &nbsp;|&nbsp; Their ask: <strong style="color:var(--warn)">${formatMoney(neg.theirAsk)}</strong>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn-sm btn-primary" onclick="openNegotiationModal(${neg.playerId},'${neg.fromTeamId}','${neg.id}')">Counter</button>
+            <button class="btn-sm btn-secondary" onclick="negAcceptDirect('${neg.id}')">Accept ${formatMoney(neg.theirAsk)}</button>
+            <button class="btn-sm btn-danger" onclick="negAbandonDirect('${neg.id}')">Walk Away</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function negAcceptDirect(negId) {
+  const neg = (gameState.negotiations || []).find(n => n.id === negId);
+  if (!neg) return;
+  const result = respondToNegotiation(gameState, negId, neg.theirAsk);
+  saveGame();
+  showToast(result.message, result.success ? 'success' : 'error');
+  showScreen('hub');
+}
+
+function negAbandonDirect(negId) {
+  abandonNegotiation(gameState, negId);
+  saveGame();
+  showToast('Talks abandoned.', 'info');
+  showScreen('hub');
+}
+
+// ─── NEGOTIATION MODAL ───────────────────────────────────────────────────────
+function openNegotiationModal(playerId, fromTeamId, negId) {
+  const existing = document.getElementById('fm-modal');
+  if (existing) existing.remove();
+
+  const fromTeam = getTeam(fromTeamId);
+  const player = fromTeam?.squad.find(p => p.id === playerId);
+  if (!player) return;
+
+  const fairValue = calculateTransferValue(player);
+  const step = player.overall >= 85 ? 10_000_000 : player.overall >= 80 ? 5_000_000 : player.overall >= 70 ? 2_000_000 : 500_000;
+  let neg = negId ? (gameState.negotiations || []).find(n => n.id === negId) : null;
+  let offer = neg ? neg.theirAsk : Math.round(fairValue * 0.90 / step) * step;
+
+  const close = () => {
+    const m = document.getElementById('fm-modal');
+    if (m) { m.classList.remove('modal-visible'); setTimeout(() => m.remove(), 200); }
+  };
+
+  const modal = document.createElement('div');
+  modal.id = 'fm-modal';
+  modal.className = 'modal-overlay';
+
+  const counterSection = () => neg ? `
+    <div style="text-align:center;padding:8px;background:rgba(251,191,36,0.08);border-radius:6px;border:1px solid rgba(251,191,36,0.3);margin-bottom:12px">
+      <span class="muted" style="font-size:12px">THEIR ASK</span><br>
+      <strong style="color:var(--warn);font-size:18px">${formatMoney(neg.theirAsk)}</strong>
+      <span class="muted" style="font-size:12px"> · Round ${neg.round}/3</span>
+    </div>` : '';
+
+  const initialActions = () => neg ? `
+    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="neg-accept">Accept ${formatMoney(neg.theirAsk)}</button>
+    <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="neg-counter-btn">Counter Offer</button>
+    <button class="btn btn-danger" style="width:100%" id="neg-walk">Walk Away</button>
+  ` : `
+    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="neg-submit">Make Offer</button>
+    <button class="btn btn-secondary" style="width:100%" id="neg-cancel">Cancel</button>
+  `;
+
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:380px">
+      <div class="modal-title">
+        <span class="pos-badge pos-${player.pos}">${player.pos}</span>
+        ${player.name} <span class="muted" style="font-weight:normal"> · ${player.overall} OVR · ${player.age}y</span>
+        <div class="muted" style="font-size:13px;font-weight:normal;margin-top:2px">${fromTeam.name}</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-stats-row" style="margin-bottom:12px">
+          <div><span class="muted">Fair Value</span><br><strong>${formatMoney(fairValue)}</strong></div>
+          <div><span class="muted">Your Budget</span><br><strong id="neg-budget-val" style="color:${budget >= offer ? 'var(--green)' : 'var(--danger)'}">${formatMoney(budget)}</strong></div>
+        </div>
+        <div id="neg-counter-section">${counterSection()}</div>
+        <div id="neg-msg" style="font-size:13px;margin-bottom:10px;min-height:18px"></div>
+        <div class="muted" style="font-size:12px;text-align:center;margin-bottom:8px">YOUR OFFER</div>
+        <div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">
+          <button class="btn btn-secondary" style="font-size:12px;padding:4px 8px" id="neg-minus2">−${formatMoney(step*2)}</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:4px 8px" id="neg-minus1">−${formatMoney(step)}</button>
+          <strong id="neg-offer-val" style="font-size:18px;color:var(--primary);min-width:90px;text-align:center">${formatMoney(offer)}</strong>
+          <button class="btn btn-secondary" style="font-size:12px;padding:4px 8px" id="neg-plus1">+${formatMoney(step)}</button>
+          <button class="btn btn-secondary" style="font-size:12px;padding:4px 8px" id="neg-plus2">+${formatMoney(step*2)}</button>
+        </div>
+        <div id="neg-actions">${initialActions()}</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('modal-visible'));
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  function updateDisplay() {
+    const budgetNow = gameState.budgets[gameState.playerTeam] || 0;
+    modal.querySelector('#neg-offer-val').textContent = formatMoney(offer);
+    const bel = modal.querySelector('#neg-budget-val');
+    if (bel) bel.style.color = budgetNow >= offer ? 'var(--green)' : 'var(--danger)';
+  }
+
+  function showMsg(html, color) {
+    const el = modal.querySelector('#neg-msg');
+    if (el) { el.innerHTML = html; el.style.color = color || ''; }
+  }
+
+  modal.querySelector('#neg-minus2').onclick = () => { offer = Math.max(0, offer - step * 2); updateDisplay(); };
+  modal.querySelector('#neg-minus1').onclick = () => { offer = Math.max(0, offer - step); updateDisplay(); };
+  modal.querySelector('#neg-plus1').onclick = () => { offer += step; updateDisplay(); };
+  modal.querySelector('#neg-plus2').onclick = () => { offer += step * 2; updateDisplay(); };
+
+  function handleResult(result) {
+    if (result.negotiationResult === 'accepted') {
+      showMsg(`✅ ${result.message}`, 'var(--green)');
+      modal.querySelector('#neg-actions').innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="document.getElementById('fm-modal').remove();showScreen('squad')">View Squad</button>`;
+      saveGame();
+    } else if (result.negotiationResult === 'counter') {
+      neg = (gameState.negotiations || []).find(n => n.playerId === playerId);
+      offer = neg ? neg.theirAsk : offer;
+      modal.querySelector('#neg-counter-section').innerHTML = counterSection();
+      modal.querySelector('#neg-actions').innerHTML = `
+        <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="neg-accept">Accept ${formatMoney(neg.theirAsk)}</button>
+        <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" id="neg-counter-btn">Counter Offer</button>
+        <button class="btn btn-danger" style="width:100%" id="neg-walk">Walk Away</button>
+      `;
+      updateDisplay();
+      showMsg(result.message, 'var(--warn)');
+      bindCounterButtons();
+      saveGame();
+    } else {
+      showMsg(`❌ ${result.message}`, 'var(--danger)');
+      modal.querySelector('#neg-actions').innerHTML = `<button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('fm-modal').remove()">Close</button>`;
+      saveGame();
+    }
+  }
+
+  function bindCounterButtons() {
+    modal.querySelector('#neg-accept')?.addEventListener('click', () => {
+      handleResult(respondToNegotiation(gameState, neg.id, neg.theirAsk));
+    });
+    modal.querySelector('#neg-counter-btn')?.addEventListener('click', () => {
+      handleResult(respondToNegotiation(gameState, neg.id, offer));
+    });
+    modal.querySelector('#neg-walk')?.addEventListener('click', () => {
+      abandonNegotiation(gameState, neg.id);
+      saveGame();
+      showMsg('Talks abandoned.', 'var(--muted)');
+      modal.querySelector('#neg-actions').innerHTML = `<button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('fm-modal').remove()">Close</button>`;
+    });
+  }
+
+  if (neg) {
+    bindCounterButtons();
+  } else {
+    modal.querySelector('#neg-submit').onclick = () => {
+      const result = initiateNegotiation(gameState, playerId, fromTeamId, offer);
+      if (result.negotiationResult || !result.success) {
+        handleResult(result);
+      } else {
+        showMsg(`❌ ${result.message}`, 'var(--danger)');
+      }
+    };
+    modal.querySelector('#neg-cancel').onclick = close;
+  }
 }
 
 function buyConfirm(playerId, fromTeamId) {
@@ -3108,7 +3310,13 @@ function startReplayAnimation(data, isHome) {
           </div>`;
         feed.appendChild(row);
         requestAnimationFrame(() => row.classList.add('ev-visible'));
-      } else {
+      } else if (ev.type === 'sub') {
+        const row = document.createElement('div');
+        row.className = `replay-event ev-card ${isMyTeam ? 'ev-mine' : 'ev-opp'}`;
+        row.innerHTML = `<span class="ev-min">${ev.min}'</span><span class="ev-icon">🔄</span><span class="ev-player">${ev.playerOn} ↑ / ${ev.playerOff} ↓</span>`;
+        feed.appendChild(row);
+        requestAnimationFrame(() => row.classList.add('ev-visible'));
+      } else if (ev.type === 'yellow' || ev.type === 'red') {
         const row = document.createElement('div');
         row.className = `replay-event ev-card ${isMyTeam ? 'ev-mine' : 'ev-opp'}`;
         row.innerHTML = `<span class="ev-min">${ev.min}'</span><span class="ev-icon">${ev.type === 'yellow' ? '🟨' : '🟥'}</span><span class="ev-player">${ev.player}</span>`;
@@ -3723,8 +3931,11 @@ function choosePostMatchAnswer(moraleChange) {
   advanceAndRefresh();
 }
 
+// ─── HALFTIME STATE ───────────────────────────────────────────────────────────
+let _halftimeState = null;
+let _pendingSubs = []; // [{offId, onId}]
+
 // ─── MATCH PREVIEW — handle FA Cup / Europa ───────────────────────────────────
-// Override playMatch to handle cup matches
 function playMatch() {
   const tactics = getManagerTactics(gameState);
   const starting11 = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
@@ -3770,28 +3981,388 @@ function playMatch() {
     return;
   }
 
-  const data = simulatePlayerMatch(gameState, tactics);
-  if (!data) { showScreen('hub'); return; }
-  updatePlayerGameTime(gameState.playerTeam, starting11, gameState);
+  // ── League match: 2-half interactive flow ──
+  const leagueId = gameState.playerLeague;
+  const round = gameState.currentRound[leagueId];
+  const fixture = gameState.fixtures[leagueId].find(
+    f => f.round === round && !f.played &&
+    (f.home === gameState.playerTeam || f.away === gameState.playerTeam)
+  );
+  if (!fixture) { showScreen('hub'); return; }
 
-  // Store replay data for Watch Replay feature
-  gameState._replayData = {
-    events: data.result.events,
-    homeGoals: data.result.homeGoals,
-    awayGoals: data.result.awayGoals,
-    homeTeamId: data.fixture.home,
-    awayTeamId: data.fixture.away,
-    isHome: data.isHome,
-    matchResult: data.matchResult,
-    possession: data.result.possession,
-    xG: data.result.xG,
-    shots: data.result.shots,
-    bigChances: data.result.bigChances
+  if (!gameState.tactics) gameState.tactics = {};
+  gameState.tactics[gameState.playerTeam] = tactics;
+
+  const firstHalf = simulateMatch(fixture.home, fixture.away, gameState, { minStart: 1, minEnd: 45 });
+  const isHome = fixture.home === gameState.playerTeam;
+
+  _halftimeState = { fixture, firstHalf, isHome };
+  showScreen('halftime');
+}
+
+// ─── HALFTIME SCREEN ──────────────────────────────────────────────────────────
+function renderHalftimeScreen(app) {
+  if (!_halftimeState) { showScreen('hub'); return; }
+  const { fixture, firstHalf, isHome } = _halftimeState;
+  const myTeam = getTeam(gameState.playerTeam);
+  const oppTeam = getTeam(isHome ? fixture.away : fixture.home);
+  const myGoals = isHome ? firstHalf.homeGoals : firstHalf.awayGoals;
+  const oppGoals = isHome ? firstHalf.awayGoals : firstHalf.homeGoals;
+  const playerSide = isHome ? 'home' : 'away';
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+
+  _pendingSubs = [];
+
+  function tacBtn(key, options, labels) {
+    return `<div class="btn-group">
+      ${options.map((val, i) => `
+        <button class="tactic-btn ${tactics[key]===val?'active':''}" onclick="applyTactic('${key}','${val}',this)">${labels[i]}</button>
+      `).join('')}
+    </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="halftime-screen">
+      <div class="ht-header">
+        <div class="ht-badge">HALF TIME</div>
+        <div class="ht-score">
+          <span class="ht-team">${myTeam.name}</span>
+          <span class="ht-score-num">${myGoals} – ${oppGoals}</span>
+          <span class="ht-team">${oppTeam.name}</span>
+        </div>
+      </div>
+
+      <div class="ht-events">
+        <h4>FIRST HALF</h4>
+        ${firstHalf.events.length === 0 ? '<p class="muted">No notable events.</p>' : ''}
+        ${firstHalf.events.map(ev => {
+          const isMine = ev.team === playerSide;
+          const icon = ev.type === 'goal' ? '⚽' : ev.type === 'yellow' ? '🟨' : ev.type === 'red' ? '🟥' : '🔄';
+          const detail = ev.type === 'goal' ? (ev.assist ? ` (↪ ${ev.assist})` : '') : '';
+          const name = ev.type === 'sub' ? `${ev.playerOff} ↓ ${ev.playerOn} ↑` : ev.player;
+          return `<div class="ht-event ${isMine ? 'mine' : 'opp'}">
+            <span class="ht-min">${ev.min}'</span><span>${icon}</span>
+            <span>${name}${detail}</span>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="ht-pitch-section">
+        <div class="ht-pitch-header">
+          <h4>LINEUP &amp; SUBS</h4>
+          <span class="muted" id="ht-sub-counter">0 / 5 subs</span>
+        </div>
+        <div class="ht-formation-bar">
+          <span class="tactic-label">Formation</span>
+          <select class="ht-formation-select" onchange="updateFormationHalftime(this.value)">
+            ${Object.keys(FORMATION_DISPLAY).map(f => `<option ${f===tactics.formation?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="pitch" id="ht-pitch">
+          ${renderHalftimePitchHTML(lineup, tactics.formation)}
+        </div>
+        <p class="muted" style="font-size:11px;text-align:center;margin-top:6px">Tap a player to sub or change instructions</p>
+      </div>
+
+      <div class="ht-tactics">
+        <div class="ht-subs-header"><h4>TACTICS</h4></div>
+        <div class="ht-tactic-row">
+          <div class="tactic-label">Mentality</div>
+          ${tacBtn('mentality', ['attacking','balanced','defensive'], ['⚔️ Attacking','⚖️ Balanced','🛡️ Defensive'])}
+        </div>
+        <div class="ht-tactic-row">
+          <div class="tactic-label">Def. Line</div>
+          ${tacBtn('defensiveLine', ['high','medium','low'], ['High','Medium','Low'])}
+        </div>
+        <div class="ht-tactic-row">
+          <div class="tactic-label">Pressing</div>
+          ${tacBtn('pressing', ['high','medium','low'], ['High','Medium','Low'])}
+        </div>
+        <div class="ht-tactic-row">
+          <div class="tactic-label">Width</div>
+          ${tacBtn('width', ['wide','normal','narrow'], ['Wide','Normal','Narrow'])}
+        </div>
+        <div class="ht-tactic-row">
+          <div class="tactic-label">Passing</div>
+          ${tacBtn('passingStyle', ['direct','mixed','short'], ['Direct','Mixed','Short'])}
+        </div>
+        <div class="ht-tactic-row">
+          <div class="tactic-label">Tempo</div>
+          ${tacBtn('tempo', ['fast','normal','slow'], ['Fast','Normal','Slow'])}
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="confirmHalftime()" style="margin-top:4px;width:100%">
+        Continue to 2nd Half →
+      </button>
+    </div>
+  `;
+}
+
+function renderHalftimePitchHTML(lineup, formation) {
+  const rows = FORMATION_DISPLAY[formation] || FORMATION_DISPLAY['4-4-2'];
+  const team = getTeam(gameState.playerTeam);
+  const tactics = getManagerTactics(gameState);
+  const subbedOffIds = new Set(_pendingSubs.map(s => s.offId));
+
+  let slotIdx = 0;
+  return rows.map(row => {
+    const rowStart = slotIdx;
+    return `<div class="pitch-row">${row.map((slot, i) => {
+      const si = rowStart + i;
+      slotIdx++;
+      const p = lineup[si];
+      if (!p) return `<div class="pitch-player pp-empty"></div>`;
+
+      const isSubbedOff = subbedOffIds.has(p.id);
+      let displayPlayer = p;
+      if (isSubbedOff) {
+        const sub = _pendingSubs.find(s => s.offId === p.id);
+        const subOn = sub ? team.squad.find(x => x.id === sub.onId) : null;
+        if (subOn) displayPlayer = subOn;
+      }
+      const instrId = !isSubbedOff ? tactics.playerInstructions?.[p.id] : null;
+      const instr = instrId ? PLAYER_INSTRUCTIONS?.find(x => x.id === instrId) : null;
+
+      return `<div class="pitch-player pp-interactive ${isSubbedOff ? 'pp-sub-on' : ''} ${instr ? 'pp-has-instr' : ''}"
+          onclick="openPlayerMenuHalftime(${si}, '${slot}')">
+        <div class="pp-badge pos-${p.pos}">${p.slot || slot}</div>
+        <div class="pp-name">${displayPlayer.name.split(' ').pop()}</div>
+        <div class="pp-ovr">${displayPlayer.overall}</div>
+        ${isSubbedOff ? `<div class="pp-instr">🔄</div>` : (instr ? `<div class="pp-instr">${instr.icon}</div>` : '')}
+      </div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function refreshHalftimePitch() {
+  const pitchEl = document.getElementById('ht-pitch');
+  const counterEl = document.getElementById('ht-sub-counter');
+  if (!pitchEl) return;
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  pitchEl.innerHTML = renderHalftimePitchHTML(lineup, tactics.formation);
+  if (counterEl) counterEl.textContent = `${_pendingSubs.length} / 5 subs`;
+}
+
+function openPlayerMenuHalftime(slotIdx, slotPos) {
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  const player = lineup[slotIdx];
+  if (!player) return;
+
+  const existingSub = _pendingSubs.find(s => s.offId === player.id);
+  const team = getTeam(gameState.playerTeam);
+  const subOnPlayer = existingSub ? team.squad.find(p => p.id === existingSub.onId) : null;
+  const instrId = tactics.playerInstructions?.[player.id];
+  const instr = instrId ? PLAYER_INSTRUCTIONS?.find(i => i.id === instrId) : null;
+  const morale = player.morale ?? 70;
+  const moraleColor = morale > 70 ? 'var(--green)' : morale > 45 ? 'var(--warn)' : 'var(--danger)';
+
+  showModal({
+    title: false,
+    cancel: 'Close',
+    confirm: false,
+    body: `
+      <div class="player-menu-header">
+        <span class="pos-badge pos-${player.pos}">${player.pos}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px">${player.name}</div>
+          <div class="muted" style="font-size:12px">OVR <strong>${player.overall}</strong> · Morale <strong style="color:${moraleColor}">${morale}</strong></div>
+          ${existingSub && subOnPlayer
+            ? `<div style="font-size:12px;color:var(--green);margin-top:4px">🔄 → ${subOnPlayer.name} (${subOnPlayer.pos} · ${subOnPlayer.overall})</div>`
+            : (instr ? `<div style="margin-top:4px;font-size:12px;color:var(--accent)">${instr.icon} ${instr.name}</div>` : '')}
+        </div>
+      </div>
+      <div class="player-menu-actions">
+        ${existingSub
+          ? `<button class="btn btn-secondary" style="flex:1" onclick="cancelSubHalftime(${player.id})">✕ Cancel Sub</button>`
+          : `<button class="btn btn-secondary" style="flex:1" ${_pendingSubs.length >= 5 ? 'disabled' : ''}
+              onclick="document.getElementById('fm-modal').remove();openSubPickerHalftime(${slotIdx},${player.id})">
+              🔄 Sub Off${_pendingSubs.length >= 5 ? ' (max)' : ''}
+            </button>`
+        }
+        <button class="btn btn-primary" style="flex:1"
+          onclick="document.getElementById('fm-modal').remove();openInstructionPickerHalftime(${slotIdx})">
+          📋 Instructions${instr ? ` <span style="opacity:.7">· ${instr.icon}</span>` : ''}
+        </button>
+      </div>
+    `
+  });
+}
+
+function openSubPickerHalftime(slotIdx, offPlayerId) {
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  const offPlayer = lineup[slotIdx];
+  const bench = getBenchPlayers(gameState.playerTeam, tactics.formation, gameState);
+  const usedOnIds = new Set(_pendingSubs.map(s => s.onId));
+  const available = bench.filter(p => !usedOnIds.has(p.id));
+
+  showModal({
+    title: `🔄 Sub Off: ${offPlayer?.name || '?'}`,
+    cancel: 'Cancel',
+    confirm: false,
+    body: available.length ? `
+      <div class="slot-picker-list">
+        ${available.map(p => `
+          <div class="slot-picker-row" onclick="confirmSubHalftime(${offPlayerId}, ${p.id})">
+            <span class="pos-badge pos-${p.pos}">${p.pos}</span>
+            <div class="slot-picker-info">
+              <span class="slot-picker-name">${p.name}</span>
+              <span class="slot-picker-sub muted">OVR ${p.overall}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : `<p class="muted" style="padding:12px 0">No bench players available.</p>`
+  });
+}
+
+function confirmSubHalftime(offPlayerId, onPlayerId) {
+  document.getElementById('fm-modal')?.remove();
+  _pendingSubs = _pendingSubs.filter(s => s.offId !== offPlayerId && s.onId !== onPlayerId);
+  if (_pendingSubs.length < 5) {
+    _pendingSubs.push({ offId: offPlayerId, onId: onPlayerId });
+  }
+  refreshHalftimePitch();
+}
+
+function cancelSubHalftime(offPlayerId) {
+  document.getElementById('fm-modal')?.remove();
+  _pendingSubs = _pendingSubs.filter(s => s.offId !== offPlayerId);
+  refreshHalftimePitch();
+}
+
+function openInstructionPickerHalftime(slotIdx) {
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  const player = lineup[slotIdx];
+  if (!player) return;
+
+  const available = getPlayerInstructions(player.pos);
+  const currentId = tactics.playerInstructions?.[player.id];
+
+  showModal({
+    title: `📋 ${player.name} — Instructions`,
+    cancel: 'Cancel',
+    confirm: false,
+    body: `
+      <div class="slot-picker-list">
+        <div class="slot-picker-row ${!currentId ? 'slot-current' : ''}" onclick="assignInstructionHalftime(${player.id}, null)">
+          <span style="font-size:18px;min-width:28px;text-align:center">✕</span>
+          <div class="slot-picker-info">
+            <span class="slot-picker-name">No Instruction</span>
+            <span class="slot-picker-sub muted">Default behaviour</span>
+          </div>
+        </div>
+        ${available.map(i => {
+          const isCurrent = i.id === currentId;
+          const atkUp = i.atkMod > 1, atkDown = i.atkMod < 1;
+          const defUp = i.defMod > 1, defDown = i.defMod < 1;
+          return `
+            <div class="slot-picker-row ${isCurrent ? 'slot-current' : ''}" onclick="assignInstructionHalftime(${player.id}, '${i.id}')">
+              <span style="font-size:20px;min-width:28px;text-align:center">${i.icon}</span>
+              <div class="slot-picker-info">
+                <span class="slot-picker-name">${i.name}</span>
+                <span class="slot-picker-sub muted">${i.desc}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:11px">
+                <span style="color:${atkUp?'var(--green)':atkDown?'var(--danger)':'var(--muted)'}">${atkUp?'▲':atkDown?'▼':'●'} ATK</span>
+                <span style="color:${defUp?'var(--accent)':defDown?'var(--danger)':'var(--muted)'}">${defUp?'▲':defDown?'▼':'●'} DEF</span>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    `
+  });
+}
+
+function assignInstructionHalftime(playerId, instructionId) {
+  setPlayerInstruction(gameState, playerId, instructionId);
+  saveGame();
+  document.getElementById('fm-modal')?.remove();
+  refreshHalftimePitch();
+}
+
+function confirmHalftime() {
+  continueSecondHalf(_pendingSubs.filter(s => s.offId && s.onId));
+}
+
+function updateFormationHalftime(f) {
+  setTactics(gameState, { formation: f, startingXI: null });
+  saveGame();
+  _pendingSubs = [];
+  refreshHalftimePitch();
+}
+
+
+function continueSecondHalf(subs) {
+  const { fixture, firstHalf, isHome } = _halftimeState;
+  const team = getTeam(gameState.playerTeam);
+
+  // Apply subs: flag subbed-out players so getBestEleven naturally excludes them
+  const benchedPlayers = [];
+  subs.forEach(sub => {
+    const off = team.squad.find(p => p.id === sub.offId);
+    if (off) { off._benchedForMatch = true; benchedPlayers.push(off); }
+  });
+
+  // Build sub events at min 45 to insert between halves
+  const subEvents = subs.map(s => {
+    const off = team.squad.find(p => p.id === s.offId);
+    const on  = team.squad.find(p => p.id === s.onId);
+    return { type: 'sub', min: 45, team: isHome ? 'home' : 'away', playerOff: off?.name || '?', playerOn: on?.name || '?' };
+  });
+
+  // Run 2nd half (prevEvents = 1st half + sub announcements)
+  const secondHalf = simulateMatch(fixture.home, fixture.away, gameState, {
+    minStart: 46, minEnd: 90,
+    initScore: { home: firstHalf.homeGoals, away: firstHalf.awayGoals },
+    prevEvents: [...firstHalf.events, ...subEvents]
+  });
+
+  // Clear benched flags
+  benchedPlayers.forEach(p => { delete p._benchedForMatch; });
+
+  // Merge stats (sum both halves)
+  const fullResult = {
+    ...secondHalf,
+    possession: {
+      home: Math.round((firstHalf.possession.home + secondHalf.possession.home) / 2),
+      away: Math.round((firstHalf.possession.away + secondHalf.possession.away) / 2)
+    },
+    xG:         { home: +(firstHalf.xG.home + secondHalf.xG.home).toFixed(1), away: +(firstHalf.xG.away + secondHalf.xG.away).toFixed(1) },
+    shots:      { home: firstHalf.shots.home + secondHalf.shots.home, away: firstHalf.shots.away + secondHalf.shots.away },
+    bigChances: { home: firstHalf.bigChances.home + secondHalf.bigChances.home, away: firstHalf.bigChances.away + secondHalf.bigChances.away }
   };
 
-  gameState._postMatchResult = data.matchResult;
+  // Record match result (same as simulatePlayerMatch)
+  const playerGoals = isHome ? fullResult.homeGoals : fullResult.awayGoals;
+  const oppGoals    = isHome ? fullResult.awayGoals : fullResult.homeGoals;
+  const matchResult = playerGoals > oppGoals ? 'win' : playerGoals === oppGoals ? 'draw' : 'loss';
+
+  fixture.played = true;
+  fixture.result = fullResult;
+  gameState.results[gameState.playerLeague].push(fullResult);
+  updateMorale(gameState.playerTeam, matchResult, gameState);
+  applyMatchFatigue(gameState.playerTeam, gameState);
+  applyMatchFatigue(isHome ? fixture.away : fixture.home, gameState);
+
+  const tactics = getManagerTactics(gameState);
+  updatePlayerGameTime(gameState.playerTeam, getBestEleven(gameState.playerTeam, tactics.formation, gameState), gameState);
+
+  gameState._replayData = {
+    events: fullResult.events, homeGoals: fullResult.homeGoals, awayGoals: fullResult.awayGoals,
+    homeTeamId: fixture.home, awayTeamId: fixture.away, isHome, matchResult,
+    possession: fullResult.possession, xG: fullResult.xG, shots: fullResult.shots, bigChances: fullResult.bigChances
+  };
+  gameState._postMatchResult = matchResult;
+
+  _halftimeState = null;
   saveGame();
-  showScreen('match-result', data);
+  showScreen('match-result', { fixture, result: fullResult, isHome, matchResult });
 }
 
 function resolveFaCupAndRefresh(playerWon) {

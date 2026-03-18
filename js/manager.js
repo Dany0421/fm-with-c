@@ -67,11 +67,13 @@ function getSquadByPosition(teamId) {
 }
 
 // Get best 11 for a formation
+// _benchedForMatch flag is used during halftime sub flow to temporarily exclude players
 function getBestEleven(teamId, formation, gameState) {
   const team = getTeam(teamId);
   const squad = [...team.squad].sort((a, b) => b.overall - a.overall);
   const rows = FORMATION_DISPLAY[formation] || FORMATION_DISPLAY['4-4-2'];
   const slots = rows.flat();
+  const isAvail = p => !p.injuredWeeks && !p.outOnLoan && !p._benchedForMatch;
 
   // Use manual lineup if set and valid length
   const manual = gameState?.tactics?.[teamId]?.startingXI;
@@ -79,17 +81,17 @@ function getBestEleven(teamId, formation, gameState) {
     const used = new Set();
     return slots.map((slot, i) => {
       const pid = manual[i];
-      let p = squad.find(pl => pl.id === pid && !pl.injuredWeeks && !pl.outOnLoan);
+      let p = squad.find(pl => pl.id === pid && isAvail(pl));
       if (p && !used.has(p.id)) { used.add(p.id); return { ...p, slot }; }
       // Player unavailable — auto-fill this slot
-      p = squad.find(pl => !used.has(pl.id) && !pl.injuredWeeks && !pl.outOnLoan && pl.pos === slot);
+      p = squad.find(pl => !used.has(pl.id) && isAvail(pl) && pl.pos === slot);
       if (!p) {
         for (const alt of (POS_FALLBACKS[slot] || [])) {
-          p = squad.find(pl => !used.has(pl.id) && !pl.injuredWeeks && !pl.outOnLoan && pl.pos === alt);
+          p = squad.find(pl => !used.has(pl.id) && isAvail(pl) && pl.pos === alt);
           if (p) break;
         }
       }
-      if (!p) p = squad.find(pl => !used.has(pl.id) && !pl.injuredWeeks && !pl.outOnLoan);
+      if (!p) p = squad.find(pl => !used.has(pl.id) && isAvail(pl));
       if (!p) p = squad.find(pl => !used.has(pl.id));
       if (p) { used.add(p.id); return { ...p, slot }; }
       return null;
@@ -99,19 +101,29 @@ function getBestEleven(teamId, formation, gameState) {
   // Auto-pick
   const used = new Set();
   function pickPlayer(targetPos) {
-    let p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && !p.outOnLoan && p.pos === targetPos);
+    let p = squad.find(p => !used.has(p.id) && isAvail(p) && p.pos === targetPos);
     if (!p) {
       for (const alt of (POS_FALLBACKS[targetPos] || [])) {
-        p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && !p.outOnLoan && p.pos === alt);
+        p = squad.find(p => !used.has(p.id) && isAvail(p) && p.pos === alt);
         if (p) break;
       }
     }
-    if (!p) p = squad.find(p => !used.has(p.id) && !p.outOnLoan && !p.injuredWeeks);
+    if (!p) p = squad.find(p => !used.has(p.id) && isAvail(p));
     if (!p) p = squad.find(p => !used.has(p.id));
     if (p) { used.add(p.id); return { ...p, slot: targetPos }; }
     return null;
   }
   return slots.map(slot => pickPlayer(slot)).filter(Boolean);
+}
+
+// Get bench players (squad members not in starting XI, available to sub on)
+function getBenchPlayers(teamId, formation, gameState) {
+  const team = getTeam(teamId);
+  const startingIds = new Set(getBestEleven(teamId, formation, gameState).map(p => p.id));
+  return team.squad
+    .filter(p => !startingIds.has(p.id) && !p.injuredWeeks && !p.outOnLoan && !p._benchedForMatch)
+    .sort((a, b) => b.overall - a.overall)
+    .slice(0, 7);
 }
 
 function setManualLineup(gameState, slotIdx, playerId) {
@@ -440,6 +452,104 @@ function attemptTransfer(gameState, playerId, fromTeamId) {
     player: newPlayer,
     spent: value
   };
+}
+
+// ─── TRANSFER NEGOTIATION ────────────────────────────────────────────────────
+
+function getAITransferResponse(fromTeam, player, offerAmount, round, gameState) {
+  const fairValue = calculateTransferValue(player);
+  const myPrestige = getTeam(gameState.playerTeam)?.prestige || 50;
+  const prestigeGap = fromTeam.prestige - myPrestige;
+
+  // Not for sale — only truly elite players at the very top clubs (OVR 90+ at prestige 85+)
+  if (fromTeam.prestige >= 85 && player.overall >= 90 && round === 1) {
+    if (Math.random() < 0.20) return { result: 'not_for_sale' };
+  }
+
+  // Their minimum: 85% of fair value
+  const minimum = Math.round(fairValue * 0.85);
+  // Their asking: fair value + prestige premium (0–30%)
+  const premiumMult = 1 + Math.max(0, prestigeGap) / 100;
+  const asking = Math.round(fairValue * Math.min(1.30, premiumMult));
+
+  if (offerAmount >= asking) return { result: 'accepted' };
+  if (offerAmount < minimum) return { result: 'rejected', reason: 'too_low', minimum };
+
+  // Counter: ask drops 10–20% each round toward minimum
+  const dropPct = 0.10 + Math.random() * 0.10;
+  const counter = Math.max(minimum, Math.round(asking * (1 - dropPct * round)));
+  return { result: 'counter', theirAsk: counter };
+}
+
+function executeDeal(gameState, player, fromTeam, amount) {
+  const playerTeam = getTeam(gameState.playerTeam);
+  gameState.budgets[gameState.playerTeam] -= amount;
+  fromTeam.squad = fromTeam.squad.filter(p => p.id !== player.id);
+  gameState.budgets[fromTeam.id] = (gameState.budgets[fromTeam.id] || 0) + amount;
+  playerTeam.squad.push({ ...player });
+  return { success: true, negotiationResult: 'accepted', message: `${player.name} signed for ${formatMoney(amount)}!` };
+}
+
+function initiateNegotiation(gameState, playerId, fromTeamId, offerAmount) {
+  if (!gameState.transferWindowOpen) return { success: false, message: 'Transfer window is closed.' };
+  const playerTeam = getTeam(gameState.playerTeam);
+  if (playerTeam.squad.length >= 25) return { success: false, message: 'Squad is full.' };
+  if (!canAfford(gameState.playerTeam, offerAmount, gameState)) return { success: false, message: 'Not enough budget.' };
+
+  const fromTeam = getTeam(fromTeamId);
+  const player = fromTeam?.squad.find(p => p.id === playerId);
+  if (!player) return { success: false, message: 'Player not found.' };
+
+  if ((gameState.negotiations || []).find(n => n.playerId === playerId))
+    return { success: false, message: 'Already negotiating for this player.' };
+
+  const response = getAITransferResponse(fromTeam, player, offerAmount, 1, gameState);
+
+  if (response.result === 'not_for_sale') {
+    return { success: false, negotiationResult: 'not_for_sale', message: `${fromTeam.name} have rejected your approach — ${player.name} is not for sale.` };
+  }
+  if (response.result === 'rejected') {
+    return { success: false, negotiationResult: 'rejected', message: `Offer rejected. ${fromTeam.name} want significantly more for ${player.name}.` };
+  }
+  if (response.result === 'accepted') {
+    return executeDeal(gameState, player, fromTeam, offerAmount);
+  }
+  // Counter
+  if (!gameState.negotiations) gameState.negotiations = [];
+  gameState.negotiations.push({
+    id: `neg_${Date.now()}`, playerId, playerName: player.name, playerPos: player.pos,
+    playerOvr: player.overall, playerAge: player.age,
+    fromTeamId, fromTeamName: fromTeam.name,
+    yourLastOffer: offerAmount, theirAsk: response.theirAsk, round: 1,
+    status: 'pending_your_response'
+  });
+  return { success: true, negotiationResult: 'counter', theirAsk: response.theirAsk, message: `${fromTeam.name} want ${formatMoney(response.theirAsk)} for ${player.name}.` };
+}
+
+function respondToNegotiation(gameState, negotiationId, newOffer) {
+  const neg = (gameState.negotiations || []).find(n => n.id === negotiationId);
+  if (!neg) return { success: false, message: 'Negotiation not found.' };
+  if (!canAfford(gameState.playerTeam, newOffer, gameState)) return { success: false, message: 'Not enough budget.' };
+
+  const fromTeam = getTeam(neg.fromTeamId);
+  const player = fromTeam?.squad.find(p => p.id === neg.playerId);
+  if (!player) { abandonNegotiation(gameState, negotiationId); return { success: false, message: 'Player no longer available.' }; }
+
+  const nextRound = neg.round + 1;
+  const response = getAITransferResponse(fromTeam, player, newOffer, nextRound, gameState);
+
+  gameState.negotiations = gameState.negotiations.filter(n => n.id !== negotiationId);
+
+  if (response.result === 'accepted') return executeDeal(gameState, player, fromTeam, newOffer);
+  if (response.result === 'rejected' || nextRound > 3) {
+    return { success: false, negotiationResult: 'collapsed', message: `Talks with ${neg.fromTeamName} have broken down.` };
+  }
+  gameState.negotiations.push({ ...neg, yourLastOffer: newOffer, theirAsk: response.theirAsk, round: nextRound });
+  return { success: true, negotiationResult: 'counter', theirAsk: response.theirAsk, message: `${neg.fromTeamName} come back with ${formatMoney(response.theirAsk)}.` };
+}
+
+function abandonNegotiation(gameState, negotiationId) {
+  gameState.negotiations = (gameState.negotiations || []).filter(n => n.id !== negotiationId);
 }
 
 function sellPlayer(gameState, playerId) {
