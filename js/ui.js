@@ -106,16 +106,31 @@ function showPlayerModal(playerId) {
         </div>` : ''}
       ${player.injuredWeeks ? `<div style="margin-top:10px;background:#3b1010;border:1px solid var(--danger);border-radius:6px;padding:8px 12px;font-size:12px;color:#fca5a5">🤕 Injured — out for <strong>${player.injuredWeeks}w</strong></div>` : ''}
       ${player.onLoan ? `<div style="margin-top:8px;background:#0f2a4a;border:1px solid #2563eb;border-radius:6px;padding:6px 12px;font-size:12px;color:#60a5fa">🔄 On loan from ${player.loanFromTeamName || 'another club'}</div>` : ''}
-      ${player.outOnLoan ? `<div style="margin-top:8px;background:#1a2e1a;border:1px solid #16a34a;border-radius:6px;padding:6px 12px;font-size:12px;color:#86efac">📤 Out on loan — returns next season (+1 OVR)</div>` : ''}
+      ${player.outOnLoan ? `<div style="margin-top:8px;background:#1a2e1a;border:1px solid #16a34a;border-radius:6px;padding:6px 12px;font-size:12px;color:#86efac;display:flex;align-items:center;justify-content:space-between">
+        <span>📤 Out on loan — returns next season (+1 OVR)</span>
+        <button class="btn-sm btn-secondary" style="margin-left:10px;white-space:nowrap" onclick="recallFromLoan(${player.id})">↩️ Recall</button>
+      </div>` : ''}
       ${(() => {
-        const isOwnPlayer = (() => {
-          const team = getTeam(gameState.playerTeam);
-          return team?.squad.some(q => q.id === player.id);
-        })();
-        if (!isOwnPlayer || player.onLoan || player.outOnLoan || player.injuredWeeks) return '';
-        return `<div style="margin-top:12px;display:flex;gap:8px">
-          <button class="btn btn-secondary" style="flex:1;font-size:12px" onclick="loanOutPlayer(${player.id})">📤 Send on Loan</button>
-        </div>`;
+        const team = getTeam(gameState.playerTeam);
+        const isOwnPlayer = team?.squad.some(q => q.id === player.id);
+        if (!isOwnPlayer) return '';
+        const buttons = [];
+        if (!player.onLoan && !player.outOnLoan && !player.injuredWeeks)
+          buttons.push(`<button class="btn btn-secondary" style="flex:1;font-size:12px" onclick="loanOutPlayer(${player.id})">📤 Send on Loan</button>`);
+        // Contract info
+        const contract = player.contract ?? 1;
+        const contractColor = contract <= 1 ? 'var(--danger)' : contract <= 2 ? 'var(--warn)' : 'var(--green)';
+        const contractLabel = contract <= 0 ? 'Expired' : `${contract}yr`;
+        const wage = player.wage || Math.round(Math.max(0, player.overall - 50) * 60);
+        if (contract <= 2 && !player.onLoan && !player.outOnLoan)
+          buttons.push(`<button class="btn btn-primary" style="flex:1;font-size:12px" onclick="renewConfirm(${player.id})">📋 Renew Contract</button>`);
+        return `
+          <div style="margin-top:10px;background:#111;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:12px">
+            <span>📋 Contract: <strong style="color:${contractColor}">${contractLabel}</strong></span>
+            <span class="muted">Wage: <strong>${formatMoney(wage)}/wk</strong></span>
+            <span class="muted">Morale: <strong style="color:${(player.morale||70)>70?'var(--green)':(player.morale||70)>45?'var(--warn)':'var(--danger)'}">${(player.morale||70)}</strong></span>
+          </div>
+          ${buttons.length ? `<div style="margin-top:8px;display:flex;gap:8px">${buttons.join('')}</div>` : ''}`;
       })()}
     `
   });
@@ -144,6 +159,49 @@ function loanOutPlayer(playerId) {
     cancel: 'Cancel',
     onConfirm: () => {
       const r = sendPlayerOnLoan(gameState, playerId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('squad');
+    }
+  });
+}
+
+function recallFromLoan(playerId) {
+  const team = getTeam(gameState.playerTeam);
+  const p = team?.squad.find(pl => pl.id === playerId);
+  if (!p) return;
+  const fee = calculateRecallFee(p, gameState);
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  const canAfford = budget >= fee;
+
+  const leagueId = gameState.playerLeague;
+  const totalWeeks = gameState.fixtures?.[leagueId]
+    ? Math.round(gameState.fixtures[leagueId].length / (LEAGUES[leagueId].teams.length / 2))
+    : 38;
+  const currentWeek = gameState.currentRound?.[leagueId] ?? 0;
+  const weeksLeft = Math.max(0, totalWeeks - currentWeek);
+
+  showModal({
+    title: `↩️ Recall from Loan — ${p.name}`,
+    body: `
+      <div class="modal-player">
+        <span class="pos-badge pos-${p.pos}">${p.pos}</span>
+        <strong>${p.name}</strong>
+        <span class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</span>
+      </div>
+      <div class="modal-stats-row" style="margin-top:12px">
+        <div><span class="muted">Weeks left on loan</span><br><strong>${weeksLeft}w</strong></div>
+        <div><span class="muted">Recall fee</span><br><strong style="color:var(--warn)">${formatMoney(fee)}</strong></div>
+        <div><span class="muted">Your budget</span><br><strong style="color:${canAfford ? 'var(--green)' : 'var(--danger)'}">${formatMoney(budget)}</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:10px">
+        Recalling early costs a fee. Player returns immediately but <strong>won't get the +1 OVR</strong> from completing the loan.
+        ${!canAfford ? `<br><span style="color:var(--danger)">Not enough budget to recall.</span>` : ''}
+      </p>
+    `,
+    confirm: canAfford ? 'Recall' : false,
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = recallPlayerFromLoan(gameState, playerId);
       showToast(r.message, r.success ? 'success' : 'error');
       if (r.success) showScreen('squad');
     }
@@ -411,6 +469,7 @@ function renderHub(app) {
       <div class="hub-body">
         <div class="hub-left">
           ${renderAIBidsCard(gameState)}
+          ${renderContractDemandsCard(gameState)}
           <div class="hub-card hub-position">
             <div class="pos-number">${pos}${ordinal(pos)}</div>
             <div class="pos-label">in the ${LEAGUES[leagueId].name}</div>
@@ -532,7 +591,7 @@ function renderSquad(app) {
           <th>POS</th><th>Name</th><th>Age</th><th>Nat</th>
           <th title="Overall">OVR</th><th title="Potential">POT</th><th title="Pace">PAC</th><th title="Shooting">SHO</th>
           <th title="Passing">PAS</th><th title="Defending">DEF</th><th title="Physical">PHY</th>
-          <th title="Dribbling">DRI</th><th>Goals</th><th>Assists</th><th>Value</th>
+          <th title="Dribbling">DRI</th><th>Goals</th><th>Assists</th><th title="Contract">CTR</th><th>Value</th>
           <th></th>
         </tr>
         ${squad.map(p => `
@@ -553,6 +612,7 @@ function renderSquad(app) {
             <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td>
             <td>${p.defending}</td><td>${p.physical}</td><td>${p.dribbling}</td>
             <td>${p.goals}</td><td>${p.assists}</td>
+            <td>${(() => { const c = p.contract ?? 1; return `<span class="contract-badge ${c <= 0 ? 'contract-expired' : c === 1 ? 'contract-warn' : ''}">${c <= 0 ? 'EXP' : c + 'yr'}</span>`; })()}</td>
             <td class="muted">${formatMoney(calculateTransferValue(p))}</td>
             <td><button class="btn-sm btn-danger" onclick="event.stopPropagation();sellConfirm(${p.id})">Sell</button></td>
           </tr>
@@ -2657,6 +2717,111 @@ function renderAIBidsCard(gameState) {
       `).join('')}
     </div>
   `;
+}
+
+// ─── CONTRACT DEMANDS CARD ───────────────────────────────────────────────────
+function renderContractDemandsCard(gameState) {
+  const demands = gameState.contractDemands;
+  if (!demands?.length) return '';
+  return `
+    <div class="hub-card contract-demands-card">
+      <h4>📋 PLAYER DEMANDS (${demands.length})</h4>
+      ${demands.map(d => {
+        const isTransfer = d.type === 'transfer';
+        return `
+          <div class="bid-row">
+            <span class="pos-badge pos-${d.playerPos}">${d.playerPos}</span>
+            <div class="bid-info">
+              <span class="bid-player">${d.playerName}</span>
+              <span class="bid-from muted">${isTransfer ? '🚪 Transfer request' : `💰 Wants +${formatMoney(d.wageIncrease)}/wk`}</span>
+            </div>
+            <span class="bid-amount" style="font-size:11px;color:var(--warn)">OVR ${d.playerOvr}</span>
+            <div class="bid-actions">
+              <button class="btn-sm btn-primary" onclick="handleDemand('${d.id}','accept')">Accept</button>
+              <button class="btn-sm btn-secondary" onclick="handleDemand('${d.id}','reject')">Reject</button>
+              <button class="btn-sm btn-danger" onclick="handleDemand('${d.id}','sell')">Sell</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function handleDemand(demandId, action) {
+  const demand = (gameState.contractDemands || []).find(d => d.id === demandId);
+  if (!demand) return;
+
+  if (action === 'accept') {
+    if (demand.type === 'transfer') {
+      // Accept transfer request: put player on market for reduced price
+      showModal({
+        title: `🚪 Transfer Request — ${demand.playerName}`,
+        body: `<p>${demand.playerName} wants to leave. If you accept, he'll be listed at 80% value and you'll get the fee.</p>`,
+        confirm: 'List for Transfer',
+        onConfirm: () => {
+          const result = sellUnhappyPlayer(gameState, demand.playerId);
+          showToast(result.message || `${demand.playerName} transferred.`);
+          showScreen('hub');
+        }
+      });
+    } else {
+      // Accept wage demand
+      const result = acceptWageDemand(gameState, demandId);
+      showToast(result.message || `${demand.playerName} wage updated.`);
+      showScreen('hub');
+    }
+  } else if (action === 'reject') {
+    const result = rejectWageDemand(gameState, demandId);
+    showToast(result.message || `${demand.playerName}'s demand rejected. Morale drops.`, 'warn');
+    showScreen('hub');
+  } else if (action === 'sell') {
+    showModal({
+      title: `Sell ${demand.playerName}`,
+      body: `<p>Sell ${demand.playerName} to end this situation? You'll receive market value.</p>`,
+      confirm: 'Sell',
+      onConfirm: () => {
+        const result = sellUnhappyPlayer(gameState, demand.playerId);
+        showToast(result.message || `${demand.playerName} sold.`);
+        showScreen('hub');
+      }
+    });
+  }
+}
+
+function renewConfirm(playerId) {
+  const team = getTeam(gameState.playerTeam);
+  const player = team?.squad.find(p => p.id === playerId);
+  if (!player) return;
+  const offer = getContractRenewalOffer(player);
+  const currentWage = player.wage || Math.round(Math.max(0, player.overall - 50) * 60);
+  showModal({
+    title: `📋 Renew Contract — ${player.name}`,
+    body: `
+      <div class="modal-player">
+        <span class="pos-badge pos-${player.pos}">${player.pos}</span>
+        <strong>${player.name}</strong>
+        <span class="ovr-cell ovr-${ovrClass(player.overall)}">${player.overall}</span>
+      </div>
+      <div class="modal-stats-row" style="margin-top:12px">
+        <div><span class="muted">New contract</span><br><strong>${offer.contractYears} years</strong></div>
+        <div><span class="muted">Current wage</span><br><strong>${formatMoney(currentWage)}/wk</strong></div>
+        <div><span class="muted">New wage</span><br><strong style="color:var(--green)">${formatMoney(offer.newWage)}/wk</strong></div>
+        <div><span class="muted">Signing bonus</span><br><strong style="color:var(--warn)">${formatMoney(offer.signingBonus)}</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:10px">Signing bonus is paid immediately from budget.</p>
+    `,
+    confirm: 'Sign',
+    onConfirm: () => {
+      const result = renewContract(gameState, playerId);
+      if (result.success) {
+        showToast(`✅ ${player.name} signed for ${offer.contractYears} years.`);
+      } else {
+        showToast(result.message || 'Could not renew.', 'error');
+      }
+      showScreen('hub');
+    }
+  });
 }
 
 function acceptBid(bidId) {

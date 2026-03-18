@@ -224,7 +224,51 @@ function sendPlayerOnLoan(gameState, playerId) {
   if (p.injuredWeeks) return { success: false, message: `${p.name} is injured.` };
 
   p.outOnLoan = true;
+  p.loanWeek = gameState.currentRound?.[gameState.playerLeague] ?? 0;
   return { success: true, message: `${p.name} sent on loan. Returns next season with +1 OVR.` };
+}
+
+function calculateRecallFee(player, gameState) {
+  const leagueId = gameState.playerLeague;
+  const totalWeeks = gameState.fixtures?.[leagueId]
+    ? Math.round(gameState.fixtures[leagueId].length / (LEAGUES[leagueId].teams.length / 2))
+    : 38;
+  const currentWeek = gameState.currentRound?.[leagueId] ?? 0;
+  const loanWeek = player.loanWeek ?? 0;
+  const weeksRemaining = Math.max(0, totalWeeks - currentWeek);
+  const loanDuration = Math.max(1, totalWeeks - loanWeek);
+  // How much of the loan is still left (0 = done, 1 = just sent)
+  const remainingRatio = weeksRemaining / loanDuration;
+
+  // Base fee by OVR tier
+  let base;
+  const ovr = player.overall;
+  if (ovr >= 88)      base = 1_200_000;
+  else if (ovr >= 83) base = 700_000;
+  else if (ovr >= 78) base = 350_000;
+  else if (ovr >= 73) base = 160_000;
+  else if (ovr >= 68) base = 70_000;
+  else                base = 25_000;
+
+  const fee = Math.round(base * remainingRatio * 1.1 / 5000) * 5000;
+  return Math.max(5000, fee);
+}
+
+function recallPlayerFromLoan(gameState, playerId) {
+  const team = getTeam(gameState.playerTeam);
+  if (!team) return { success: false, message: 'Team not found.' };
+  const p = team.squad.find(pl => pl.id === playerId);
+  if (!p || !p.outOnLoan) return { success: false, message: 'Player not on loan.' };
+
+  const fee = calculateRecallFee(p, gameState);
+  if ((gameState.budgets[gameState.playerTeam] || 0) < fee)
+    return { success: false, message: `Not enough budget. Recall fee: ${fee}.` };
+
+  gameState.budgets[gameState.playerTeam] -= fee;
+  p.outOnLoan = false;
+  delete p.loanWeek;
+  // No +1 OVR — didn't finish the loan
+  return { success: true, fee, message: `${p.name} recalled. Fee paid: £${fee.toLocaleString()}.` };
 }
 
 function attemptTransfer(gameState, playerId, fromTeamId) {
@@ -627,10 +671,15 @@ function updatePlayerGameTime(teamId, startingEleven, gameState) {
   const playingIds = new Set(startingEleven.map(p => p.id));
 
   team.squad.forEach(p => {
+    if (p.morale === undefined) p.morale = 70; // init individual morale for old saves
     if (playingIds.has(p.id)) {
       p.matchesWithoutPlay = 0;
+      p.morale = Math.min(95, p.morale + 2); // happy playing
     } else {
       p.matchesWithoutPlay = (p.matchesWithoutPlay || 0) + 1;
+      // Morale drops faster for key players who expect to start
+      const drop = p.overall >= 74 ? 4 : p.overall >= 65 ? 2 : 1;
+      p.morale = Math.max(10, p.morale - drop);
       // Notify when a key player first hits unhappy threshold
       if (p.overall >= 74 && p.matchesWithoutPlay === 5) {
         if (!gameState.unhappyNotifications) gameState.unhappyNotifications = [];
@@ -638,6 +687,77 @@ function updatePlayerGameTime(teamId, startingEleven, gameState) {
       }
     }
   });
+}
+
+// ─── CONTRACT SYSTEM ──────────────────────────────────────────────────────────
+function getContractRenewalOffer(player) {
+  const currentWage = player.wage || Math.round(Math.max(0, player.overall - 50) * 60);
+  // Wage increase is small — scales gently with OVR
+  const wageIncrease = Math.round(Math.max(0, player.overall - 50) * 4);
+  // Signing bonus = 4 weeks of their current wage (tiny)
+  const signingBonus = currentWage * 4;
+  const newWage = currentWage + wageIncrease;
+  // Unhappy players sign shorter contracts and demand more
+  const unhappy = (player.morale || 70) < 45;
+  const contractYears = unhappy ? 2 : 3;
+  const unhappyExtra = unhappy ? Math.round(wageIncrease * 1.5) : 0;
+  return { wageIncrease: wageIncrease + unhappyExtra, newWage: newWage + unhappyExtra, signingBonus, contractYears };
+}
+
+function renewContract(gameState, playerId) {
+  const team = getTeam(gameState.playerTeam);
+  const player = team?.squad.find(p => p.id === playerId);
+  if (!player) return { success: false, message: 'Player not found.' };
+  const offer = getContractRenewalOffer(player);
+  if (!canAfford(gameState.playerTeam, offer.signingBonus, gameState))
+    return { success: false, message: `Can't afford signing bonus (${formatMoney(offer.signingBonus)}).` };
+  gameState.budgets[gameState.playerTeam] -= offer.signingBonus;
+  player.wage  = offer.newWage;
+  player.contract = offer.contractYears;
+  player.morale   = Math.min(95, (player.morale || 70) + 15);
+  // Remove any pending demand for this player
+  if (gameState.contractDemands)
+    gameState.contractDemands = gameState.contractDemands.filter(d => d.playerId !== playerId);
+  return { success: true, message: `${player.name} renewed for ${offer.contractYears} years at ${formatMoney(offer.newWage)}/wk.` };
+}
+
+function acceptWageDemand(gameState, demandId) {
+  if (!gameState.contractDemands) return { success: false, message: 'No demands pending.' };
+  const demand = gameState.contractDemands.find(d => d.id === demandId);
+  if (!demand) return { success: false, message: 'Demand not found.' };
+  const team = getTeam(gameState.playerTeam);
+  const player = team?.squad.find(p => p.id === demand.playerId);
+  if (!player) {
+    gameState.contractDemands = gameState.contractDemands.filter(d => d.id !== demandId);
+    return { success: false, message: 'Player not found.' };
+  }
+  player.wage = (player.wage || Math.round(Math.max(0, player.overall - 50) * 60)) + demand.wageIncrease;
+  player.morale = Math.min(90, (player.morale || 70) + 25);
+  player.matchesWithoutPlay = 0;
+  gameState.contractDemands = gameState.contractDemands.filter(d => d.id !== demandId);
+  return { success: true, message: `${player.name} happy with +${formatMoney(demand.wageIncrease)}/wk raise.` };
+}
+
+function rejectWageDemand(gameState, demandId) {
+  if (!gameState.contractDemands) return { success: false };
+  const demand = gameState.contractDemands.find(d => d.id === demandId);
+  if (!demand) return { success: false };
+  const team = getTeam(gameState.playerTeam);
+  const player = team?.squad.find(p => p.id === demand.playerId);
+  if (player) {
+    player.morale = Math.max(10, (player.morale || 70) - 20);
+    // Escalate: next check will generate a transfer request
+  }
+  gameState.contractDemands = gameState.contractDemands.filter(d => d.id !== demandId);
+  return { success: true };
+}
+
+function sellUnhappyPlayer(gameState, playerId) {
+  // Quick sell at market value — same as sellPlayer but removes demand
+  const result = sellPlayer(gameState, playerId);
+  if (result.success && gameState.contractDemands)
+    gameState.contractDemands = gameState.contractDemands.filter(d => d.playerId !== playerId);
+  return result;
 }
 
 function getLoanablePlayers(gameState) {

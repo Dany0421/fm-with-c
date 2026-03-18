@@ -1373,3 +1373,26 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 @media (max-width: 600px) {
   .staff-role-effect { display: none; }
 }
+
+/* ── CONTRACT BADGES ─────────────────────────────────────────── */
+.contract-badge {
+  display: inline-block;
+  background: #1a2e1a; color: var(--green);
+  border: 1px solid var(--green); border-radius: 4px;
+  font-size: 10px; font-weight: 700; padding: 1px 5px;
+  letter-spacing: 0.3px;
+}
+.contract-badge.contract-warn {
+  background: #2d2010; color: var(--warn); border-color: var(--warn);
+}
+.contract-badge.contract-expired {
+  background: #3b1010; color: var(--danger); border-color: var(--danger);
+}
+
+/* ── CONTRACT DEMANDS CARD ───────────────────────────────────── */
+.contract-demands-card {
+  border-color: #d97706 !important;
+  background: linear-gradient(135deg, #1a1000, var(--bg2)) !important;
+  margin-bottom: 12px;
+}
+.contract-demands-card h4 { color: #fbbf24; }

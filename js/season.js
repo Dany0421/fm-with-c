@@ -72,6 +72,9 @@ function initSeason(gameState) {
   if (!gameState.staff) gameState.staff = {};
   if (!gameState.staffMarket || !gameState.staffMarket.length) generateStaffMarket(gameState);
 
+  // Init contract demands
+  if (!gameState.contractDemands) gameState.contractDemands = [];
+
   // One-time trait migration: assign traits to any player that doesn't have them yet
   getAllTeams().forEach(t => t.squad.forEach(p => { if (!p.traits) assignRandomTraits(p); }));
   if (gameState.youthSquad) gameState.youthSquad.forEach(p => { if (!p.traits) assignRandomTraits(p); });
@@ -254,6 +257,7 @@ function advanceMatchweek(gameState) {
   }
 
   generateAIBids(gameState);
+  generateContractDemands(gameState);
 }
 
 // ─── AI TRANSFER BIDS ────────────────────────────────────────────────────────
@@ -552,6 +556,16 @@ function processRetirements(gameState) {
 
   gameState.lastRetired = retiredPlayers;
 
+  // Decrement contracts for player's squad
+  if (gameState.playerTeam) {
+    const playerTeam = getTeam(gameState.playerTeam);
+    if (playerTeam) {
+      playerTeam.squad.forEach(p => {
+        if (p.contract > 0) p.contract--;
+      });
+    }
+  }
+
   // Age youth squad players and grow them towards potential
   if (gameState.youthSquad) {
     gameState.youthSquad.forEach(p => {
@@ -819,6 +833,46 @@ function returnLoanedPlayers(gameState) {
   if (msgs.length) gameState.notification = msgs.join(' ');
 }
 
+// ─── CONTRACT DEMANDS ────────────────────────────────────────────────────────
+function generateContractDemands(gameState) {
+  if (!gameState.playerTeam) return;
+  if (!gameState.contractDemands) gameState.contractDemands = [];
+  const playerTeam = getTeam(gameState.playerTeam);
+  if (!playerTeam) return;
+
+  playerTeam.squad.forEach(p => {
+    if (p.injuredWeeks || p.outOnLoan || p.onLoan) return;
+    if (p.overall < 65) return;
+    const morale = p.morale ?? 70;
+    const noPlay = p.matchesWithoutPlay || 0;
+    // Already has a demand pending
+    if (gameState.contractDemands.find(d => d.playerId === p.id)) return;
+
+    // Wage demand: low morale + sitting on bench
+    if (morale < 45 && noPlay >= 5) {
+      const offer = getContractRenewalOffer(p);
+      gameState.contractDemands.push({
+        id: `demand-${p.id}-${Date.now()}`,
+        playerId: p.id,
+        playerName: p.name,
+        playerPos: p.pos,
+        playerOvr: p.overall,
+        type: 'wage',
+        wageIncrease: offer.wageIncrease,
+        newWage: offer.newWage
+      });
+    }
+    // Transfer request: very low morale + star player benched even longer
+    if (morale < 30 && noPlay >= 8 && p.overall >= 72) {
+      // Upgrade to transfer request if not already one
+      const existing = gameState.contractDemands.find(d => d.playerId === p.id);
+      if (existing) {
+        existing.type = 'transfer';
+      }
+    }
+  });
+}
+
 function startNewSeason(gameState) {
   // Return loaned players before starting new season
   returnLoanedPlayers(gameState);
@@ -847,6 +901,26 @@ function startNewSeason(gameState) {
 
   // Refresh staff market each new season
   generateStaffMarket(gameState);
+
+  // Release expired contracts
+  if (gameState.playerTeam) {
+    const playerTeam = getTeam(gameState.playerTeam);
+    if (playerTeam) {
+      const expired = playerTeam.squad.filter(p => p.contract <= 0);
+      if (expired.length) {
+        expired.forEach(p => {
+          playerTeam.squad = playerTeam.squad.filter(q => q.id !== p.id);
+          FREE_AGENTS.push(p);
+        });
+        gameState.notification = `📋 ${expired.length} player${expired.length > 1 ? 's' : ''} left on expired contracts: ${expired.map(p => p.name).join(', ')}`;
+      }
+      // Clear demands for released players
+      if (gameState.contractDemands) {
+        const releasedIds = new Set(expired.map(p => p.id));
+        gameState.contractDemands = gameState.contractDemands.filter(d => !releasedIds.has(d.playerId));
+      }
+    }
+  }
 
   initSeason(gameState);
 }
