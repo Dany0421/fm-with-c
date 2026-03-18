@@ -1251,3 +1251,125 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   font-size: 11px;
   color: var(--muted);
 }
+
+/* ── PLAYER TRAITS ───────────────────────────────────────────────── */
+.pm-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.trait-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid currentColor;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+.trait-pill:hover { opacity: 0.85; }
+.trait-pill.trait-neg { opacity: 0.9; }
+
+/* Extra small version for table rows */
+.trait-pill.trait-xs {
+  padding: 2px 6px;
+  font-size: 11px;
+  gap: 2px;
+}
+
+/* ── STAFF SCREEN ────────────────────────────────────────────────── */
+.staff-current-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.staff-role-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.staff-role-card.staff-filled {
+  border-color: #2a3d5a;
+  background: linear-gradient(90deg, rgba(59,130,246,0.04) 0%, transparent 100%);
+}
+
+.staff-role-card.staff-empty {
+  opacity: 0.6;
+}
+
+.staff-role-icon {
+  font-size: 22px;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.staff-role-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-role-name {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.staff-member-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.staff-quality {
+  font-size: 13px;
+  color: var(--warn);
+  margin: 2px 0;
+}
+
+.staff-role-effect {
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.staff-empty-label {
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+}
+
+.staff-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.staff-wage {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .staff-role-effect { display: none; }
+}

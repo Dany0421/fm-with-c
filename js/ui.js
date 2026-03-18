@@ -78,7 +78,11 @@ function showPlayerModal(playerId) {
       </div>
       <div class="pm-ovr-row">
         <div class="pm-badge"><div class="pm-badge-val ovr-${ovrClass(player.overall)}">${player.overall}</div><div class="pm-badge-lbl">OVR</div></div>
-        <div class="pm-badge"><div class="pm-badge-val muted">${player.potential || '?'}</div><div class="pm-badge-lbl">POT</div></div>
+        <div class="pm-badge"><div class="pm-badge-val muted">${(() => {
+          const team = getTeam(gameState.playerTeam);
+          const isOwn = team?.squad.some(q => q.id === player.id) || (gameState.youthSquad || []).some(q => q.id === player.id);
+          return isOwn ? (player.potential || '?') : getScoutedPotential(player.potential, gameState);
+        })()}</div><div class="pm-badge-lbl">POT</div></div>
         <div class="pm-badge"><div class="pm-badge-val green">${player.goals || 0}</div><div class="pm-badge-lbl">Goals</div></div>
         <div class="pm-badge"><div class="pm-badge-val">${player.assists || 0}</div><div class="pm-badge-lbl">Assists</div></div>
         <div class="pm-badge"><div class="pm-badge-val" style="font-size:13px;color:var(--accent2)">${formatMoney(val)}</div><div class="pm-badge-lbl">Value</div></div>
@@ -91,6 +95,15 @@ function showPlayerModal(playerId) {
         ${statBar('PHY', player.physical)}
         ${statBar('DRI', player.dribbling)}
       </div>
+      ${player.traits?.length ? `
+        <div class="pm-traits">
+          ${player.traits.map(tid => {
+            const tr = TRAITS?.[tid];
+            if (!tr) return '';
+            const isNeg = NEGATIVE_TRAITS?.includes(tid);
+            return `<span class="trait-pill ${isNeg ? 'trait-neg' : ''}" style="background:${tr.color}18;border-color:${tr.color};color:${tr.color}" title="${tr.desc}">${tr.icon} ${tr.name}</span>`;
+          }).join('')}
+        </div>` : ''}
       ${player.injuredWeeks ? `<div style="margin-top:10px;background:#3b1010;border:1px solid var(--danger);border-radius:6px;padding:8px 12px;font-size:12px;color:#fca5a5">🤕 Injured — out for <strong>${player.injuredWeeks}w</strong></div>` : ''}
       ${player.onLoan ? `<div style="margin-top:8px;background:#0f2a4a;border:1px solid #2563eb;border-radius:6px;padding:6px 12px;font-size:12px;color:#60a5fa">🔄 On loan from ${player.loanFromTeamName || 'another club'}</div>` : ''}
       ${player.outOnLoan ? `<div style="margin-top:8px;background:#1a2e1a;border:1px solid #16a34a;border-radius:6px;padding:6px 12px;font-size:12px;color:#86efac">📤 Out on loan — returns next season (+1 OVR)</div>` : ''}
@@ -192,6 +205,7 @@ function showScreen(screen, data) {
     case 'table':           renderTable(app); break;
     case 'transfers':       renderTransfers(app); break;
     case 'youth':           renderYouth(app); break;
+    case 'staff':           renderStaff(app); break;
     case 'fixtures':        renderFixtures(app); break;
     case 'stats':           renderStats(app); break;
     case 'end-season':      renderEndSeason(app); break;
@@ -447,6 +461,7 @@ function renderHub(app) {
         <button onclick="showScreen('fixtures')">📅 Fixtures</button>
         <button onclick="showScreen('transfers')">💰 Transfers</button>
         <button onclick="showScreen('youth')">🌱 Youth</button>
+        <button onclick="showScreen('staff')">👔 Staff</button>
         <button onclick="showScreen('stats')">🏆 Stats</button>
         <button onclick="showScreen('career')">📖 Career</button>
         ${gameState.seasonEnded ? `<button onclick="showScreen('end-season')" class="btn-alert">🏁 Season End</button>` : ''}
@@ -1182,20 +1197,31 @@ function renderTransferMarketTab(windowOpen) {
       </select>
     </div>
     <table class="squad-table">
-      <tr><th>POS</th><th>Name</th><th>Club</th><th>Age</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>Value</th><th></th></tr>
-      ${players.map(p => `
+      <tr><th>POS</th><th>Name</th><th>Club</th><th>Age</th><th>OVR</th><th>POT</th><th>Traits</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>Value</th><th></th></tr>
+      ${players.map(p => {
+        const scoutedPot = getScoutedPotential(p.potential, gameState);
+        const scoutQ = getStaffQuality(gameState, 'scout');
+        const traitPills = scoutQ >= 60 ? (p.traits || []).map(tid => {
+          const tr = TRAITS?.[tid];
+          if (!tr) return '';
+          const neg = NEGATIVE_TRAITS?.includes(tid);
+          return `<span class="trait-pill trait-xs ${neg?'trait-neg':''}" style="background:${tr.color}18;border-color:${tr.color};color:${tr.color}" title="${tr.desc}">${tr.icon}</span>`;
+        }).join('') || '—' : '??';
+        return `
         <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
           <td>${p.name}</td>
           <td class="muted">${p.teamName}</td>
           <td>${p.age}</td>
           <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
+          <td class="muted" style="font-size:12px">${scoutedPot}</td>
+          <td style="white-space:nowrap;font-size:12px">${traitPills}</td>
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
           <td>${p.teamId ? formatMoney(p.value) : 'Free'}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
             ${windowOpen?`onclick="event.stopPropagation();buyConfirm(${p.id},'${p.teamId||''}')"`:''}>Sign</button></td>
-        </tr>
-      `).join('')}
+        </tr>`;
+      }).join('')}
     </table>
   `;
 }
@@ -1209,20 +1235,27 @@ function renderLoansTab(windowOpen) {
       ${!windowOpen ? '<br><strong style="color:var(--danger)">Transfer window is closed.</strong>' : ''}
     </div>
     <table class="squad-table">
-      <tr><th>POS</th><th>Name</th><th>Club</th><th>Age</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>Loan Fee</th><th></th></tr>
-      ${loanable.map(p => `
+      <tr><th>POS</th><th>Name</th><th>Club</th><th>Age</th><th>OVR</th><th>Traits</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>Loan Fee</th><th></th></tr>
+      ${loanable.map(p => {
+        const scoutQ = getStaffQuality(gameState, 'scout');
+        const traitPills = scoutQ >= 60 ? (p.traits || []).map(tid => {
+          const tr = TRAITS?.[tid]; if (!tr) return '';
+          return `<span class="trait-pill trait-xs ${NEGATIVE_TRAITS?.includes(tid)?'trait-neg':''}" style="background:${tr.color}18;border-color:${tr.color};color:${tr.color}" title="${tr.desc}">${tr.icon}</span>`;
+        }).join('') || '—' : '??';
+        return `
         <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
           <td>${p.name}</td>
           <td class="muted">${p.teamName}</td>
           <td>${p.age}</td>
           <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
+          <td style="white-space:nowrap;font-size:12px">${traitPills}</td>
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
           <td>${formatMoney(Math.round(calculateTransferValue(p) * 0.15))}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
             ${windowOpen?`onclick="event.stopPropagation();loanConfirm(${p.id},'${p.teamId}')"`:''}>${windowOpen ? 'Loan' : 'Closed'}</button></td>
-        </tr>
-      `).join('')}
+        </tr>`;
+      }).join('')}
     </table>
   `;
 }
@@ -1246,19 +1279,27 @@ function renderFreeAgentsTab(windowOpen) {
       </select>
     </div>
     <table class="squad-table">
-      <tr><th>POS</th><th>Name</th><th>Nat</th><th>Age</th><th>OVR</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th></th></tr>
-      ${agents.map(p => `
+      <tr><th>POS</th><th>Name</th><th>Nat</th><th>Age</th><th>OVR</th><th>POT</th><th>Traits</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th></th></tr>
+      ${agents.map(p => {
+        const scoutQ = getStaffQuality(gameState, 'scout');
+        const traitPills = scoutQ >= 60 ? (p.traits || []).map(tid => {
+          const tr = TRAITS?.[tid]; if (!tr) return '';
+          return `<span class="trait-pill trait-xs ${NEGATIVE_TRAITS?.includes(tid)?'trait-neg':''}" style="background:${tr.color}18;border-color:${tr.color};color:${tr.color}" title="${tr.desc}">${tr.icon}</span>`;
+        }).join('') || '—' : '??';
+        return `
         <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
           <td>${p.name}</td>
           <td class="muted">${p.nation || '—'}</td>
           <td>${p.age}</td>
           <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
+          <td class="muted" style="font-size:12px">${getScoutedPotential(p.potential, gameState)}</td>
+          <td style="white-space:nowrap;font-size:12px">${traitPills}</td>
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td>
           <td><button class="btn-sm ${windowOpen?'btn-primary':'btn-disabled'}"
             ${windowOpen?`onclick="event.stopPropagation();buyConfirm(${p.id},'')"`:''}>Sign</button></td>
-        </tr>
-      `).join('')}
+        </tr>`;
+      }).join('')}
     </table>
   `;
 }
@@ -1303,23 +1344,31 @@ function renderYouthAcademy(youthSquad) {
   `;
 
   const ticksUsed = gameState.youthTrainingTicks || 0;
-  const ticksLeft = 5 - ticksUsed;
+  const ticksCap = getYouthTicksCap(gameState);
+  const ticksLeft = ticksCap - ticksUsed;
   const noTicks = ticksLeft <= 0;
 
   return `
     <div class="youth-ticks-bar">
       <span>Trainings this matchweek:</span>
-      <span class="${noTicks ? 'danger' : ticksLeft <= 2 ? 'warn' : 'green'}">${ticksUsed}/5</span>
+      <span class="${noTicks ? 'danger' : ticksLeft <= 2 ? 'warn' : 'green'}">${ticksUsed}/${ticksCap}</span>
       <span class="muted">${noTicks ? '— resets next matchweek' : `— ${ticksLeft} left`}</span>
+      ${ticksCap > 5 ? `<span class="green" style="font-size:11px">🌱 Youth Coach bonus!</span>` : ''}
     </div>
     <table class="squad-table youth-table">
-      <tr><th>POS</th><th>Name</th><th>Age</th><th>OVR</th><th>POT</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>DRI</th><th></th><th></th></tr>
+      <tr><th>POS</th><th>Name</th><th>Age</th><th>OVR</th><th>POT</th><th>Traits</th><th>PAC</th><th>SHO</th><th>PAS</th><th>DEF</th><th>PHY</th><th>DRI</th><th></th><th></th></tr>
       ${youthSquad.map(p => {
         const nearCeiling = p.overall >= p.potential - 3;
         const trainCost = Math.round(40000 + (p.overall - 40) * 8000);
         const canTrain = !nearCeiling && !noTicks;
         const mainSquad = getTeam(gameState.playerTeam);
         const canPromote = mainSquad && mainSquad.squad.length < 24;
+        const traitPills = (p.traits || []).map(tid => {
+          const tr = TRAITS?.[tid];
+          if (!tr) return '';
+          const neg = NEGATIVE_TRAITS?.includes(tid);
+          return `<span class="trait-pill trait-xs ${neg?'trait-neg':''}" style="background:${tr.color}18;border-color:${tr.color};color:${tr.color}" title="${tr.desc}">${tr.icon}</span>`;
+        }).join('') || '<span class="muted" style="font-size:11px">—</span>';
         return `
         <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
@@ -1327,6 +1376,7 @@ function renderYouthAcademy(youthSquad) {
           <td>${p.age}</td>
           <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
           <td class="youth-pot">${p.potential}</td>
+          <td style="white-space:nowrap">${traitPills}</td>
           <td>${p.pace}</td><td>${p.shooting}</td><td>${p.passing}</td><td>${p.defending}</td><td>${p.physical}</td><td>${p.dribbling}</td>
           <td>
             <button class="btn-sm ${canTrain?'btn-secondary':'btn-disabled'}"
@@ -1370,11 +1420,19 @@ function renderYouthMarket(youthMarket) {
       </select>
     </div>
     <table class="squad-table youth-table">
-      <tr><th>POS</th><th>Name</th><th>Nat</th><th>Age</th><th>OVR</th><th>POT</th><th>Price</th><th></th></tr>
+      <tr><th>POS</th><th>Name</th><th>Nat</th><th>Age</th><th>OVR</th><th>POT</th><th>Traits</th><th>Price</th><th></th></tr>
       ${sorted.map(p => {
         const youthSquad = gameState.youthSquad || [];
         const full = youthSquad.length >= 15;
         const canAffordIt = (gameState.budgets[gameState.playerTeam] || 0) >= p.youthPrice;
+        const scoutedPot = getScoutedPotential(p.potential, gameState);
+        const scoutQ = getStaffQuality(gameState, 'scout');
+        const traitPills = scoutQ >= 60 ? (p.traits || []).map(tid => {
+          const tr = TRAITS?.[tid];
+          if (!tr) return '';
+          const neg = NEGATIVE_TRAITS?.includes(tid);
+          return `<span class="trait-pill trait-xs ${neg?'trait-neg':''}" style="background:${tr.color}18;border-color:${tr.color};color:${tr.color}" title="${tr.desc}">${tr.icon}</span>`;
+        }).join('') || '<span class="muted" style="font-size:11px">—</span>' : '<span class="muted" style="font-size:11px">??</span>';
         return `
         <tr onclick="showPlayerModal(${p.id})" style="cursor:pointer">
           <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
@@ -1382,7 +1440,8 @@ function renderYouthMarket(youthMarket) {
           <td class="muted">${p.nation || '—'}</td>
           <td>${p.age}</td>
           <td class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</td>
-          <td class="youth-pot">${p.potential}</td>
+          <td class="youth-pot ${scoutedPot === '??' ? 'muted' : ''}">${scoutedPot}</td>
+          <td style="white-space:nowrap">${traitPills}</td>
           <td class="green">${formatMoney(p.youthPrice)}</td>
           <td>
             <button class="btn-sm ${canAffordIt&&!full?'btn-primary':'btn-disabled'}"
@@ -1456,6 +1515,143 @@ function youthPromote(playerId) {
       const r = promoteYouthPlayer(gameState, playerId);
       showToast(r.message, r.success ? 'success' : 'error');
       if (r.success) showScreen('youth');
+    }
+  });
+}
+
+// ─── STAFF ───────────────────────────────────────────────────────────────────
+function renderStaff(app) {
+  const budget = gameState.budgets[gameState.playerTeam];
+  const staff = gameState.staff || {};
+  const market = gameState.staffMarket || [];
+
+  function qualityStars(q) {
+    const stars = Math.round(q / 20); // 1-5 stars
+    return '★'.repeat(stars) + '☆'.repeat(5 - stars);
+  }
+
+  function currentStaffCard(role) {
+    const member = staff[role.id];
+    if (!member) {
+      return `
+        <div class="staff-role-card staff-empty">
+          <div class="staff-role-icon">${role.icon}</div>
+          <div class="staff-role-info">
+            <div class="staff-role-name">${role.name}</div>
+            <div class="staff-role-effect muted">No staff hired</div>
+          </div>
+          <span class="staff-empty-label muted">Vacant</span>
+        </div>`;
+    }
+    return `
+      <div class="staff-role-card staff-filled">
+        <div class="staff-role-icon">${role.icon}</div>
+        <div class="staff-role-info">
+          <div class="staff-role-name">${role.name}</div>
+          <div class="staff-member-name">${member.name}</div>
+          <div class="staff-quality">${qualityStars(member.quality)} <span class="muted">(${member.quality})</span></div>
+          <div class="staff-role-effect muted" style="font-size:11px">${role.effectFn(member.quality)}</div>
+        </div>
+        <div class="staff-card-actions">
+          <span class="staff-wage muted">${formatMoney(member.wage)}/wk</span>
+          <button class="btn-sm btn-danger" onclick="staffFireConfirm('${role.id}')">Fire</button>
+        </div>
+      </div>`;
+  }
+
+  const candidates = market.map(s => {
+    const role = STAFF_ROLES.find(r => r.id === s.role);
+    if (!role) return '';
+    const canAffordIt = budget >= s.hireCost;
+    const roleFilledAlready = !!staff[s.role];
+    const disabled = !canAffordIt || roleFilledAlready;
+    return `
+      <tr>
+        <td>${role.icon} <span class="muted">${role.name}</span></td>
+        <td><strong>${s.name}</strong></td>
+        <td>${qualityStars(s.quality)} <span class="muted">${s.quality}</span></td>
+        <td class="muted">${formatMoney(s.wage)}/wk</td>
+        <td class="${canAffordIt ? 'green' : 'danger'}">${formatMoney(s.hireCost)}</td>
+        <td style="font-size:11px;color:var(--muted);max-width:200px">${role.effectFn(s.quality)}</td>
+        <td>
+          <button class="btn-sm ${disabled ? 'btn-disabled' : 'btn-primary'}"
+            ${disabled ? '' : `onclick="staffHireConfirm('${s.id}')"`}>
+            ${roleFilledAlready ? 'Role Filled' : canAffordIt ? 'Hire' : 'No Budget'}
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const staffWages = Object.values(staff).reduce((sum, s) => sum + (s.wage || 0), 0);
+
+  app.innerHTML = `
+    <div class="transfers-screen">
+      <div class="screen-header">
+        <button class="btn-back" onclick="showScreen('hub')">← Back</button>
+        <h2>👔 STAFF</h2>
+      </div>
+      <div class="budget-bar">
+        Budget: <strong>${formatMoney(budget)}</strong>
+        · Staff wages: <strong class="danger">${formatMoney(staffWages)}/wk</strong>
+        · ${Object.keys(staff).length}/6 roles filled
+      </div>
+
+      <div class="staff-current-grid">
+        ${STAFF_ROLES.map(r => currentStaffCard(r)).join('')}
+      </div>
+
+      <h3 style="margin:24px 0 10px;font-size:14px;letter-spacing:1px;color:var(--muted)">AVAILABLE CANDIDATES</h3>
+      ${market.length ? `
+        <table class="squad-table">
+          <tr><th>Role</th><th>Name</th><th>Quality</th><th>Wage</th><th>Hire Cost</th><th>Effect</th><th></th></tr>
+          ${candidates}
+        </table>
+      ` : '<p class="muted" style="padding:16px">Market refreshes each season.</p>'}
+    </div>
+  `;
+}
+
+function staffHireConfirm(staffId) {
+  const candidate = (gameState.staffMarket || []).find(s => s.id === staffId);
+  if (!candidate) return;
+  const role = STAFF_ROLES.find(r => r.id === candidate.role);
+  function qualityStars(q) { const s = Math.round(q/20); return '★'.repeat(s)+'☆'.repeat(5-s); }
+  showModal({
+    title: `Hire ${candidate.name}`,
+    body: `
+      <div class="modal-stats-row">
+        <div><span class="muted">Role</span><br><strong>${role?.icon} ${role?.name}</strong></div>
+        <div><span class="muted">Quality</span><br><strong>${qualityStars(candidate.quality)} (${candidate.quality})</strong></div>
+        <div><span class="muted">Hire Fee</span><br><strong class="green">${formatMoney(candidate.hireCost)}</strong></div>
+        <div><span class="muted">Weekly Wage</span><br><strong class="danger">${formatMoney(candidate.wage)}/wk</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:10px">${role?.effectFn(candidate.quality)}</p>
+    `,
+    confirm: 'Hire',
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = hireStaff(gameState, staffId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) { saveGame(); showScreen('staff'); }
+    }
+  });
+}
+
+function staffFireConfirm(roleId) {
+  const member = gameState.staff?.[roleId];
+  if (!member) return;
+  const role = STAFF_ROLES.find(r => r.id === roleId);
+  showModal({
+    title: `Fire ${member.name}?`,
+    body: `<p>Release <strong>${member.name}</strong> from their role as ${role?.name}?</p>
+      <p class="muted" style="font-size:12px;margin-top:8px">All effects from this staff member will stop immediately. No compensation.</p>`,
+    confirm: 'Release',
+    danger: true,
+    cancel: 'Cancel',
+    onConfirm: () => {
+      const r = fireStaff(gameState, roleId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) { saveGame(); showScreen('staff'); }
     }
   });
 }

@@ -1,6 +1,6 @@
 # MEMORY.md — Project State
 
-*Last updated: 2026-03-17 (Sessão 8 — completa)*
+*Last updated: 2026-03-18 (Sessão 9 — completa)*
 
 -----
 
@@ -12,7 +12,7 @@ Football Manager no browser — Premier League + Championship com promoção/rel
 
 ## Current state
 
-Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minuto, stats ao vivo no replay, chance tiers, goal types, penaltis e free kicks. Bugfix no W/D/L das sim results.
+Sessão 9 completa. Youth Academy + Youth Market implementados. Team Training (6 drills, assíncrono, barra de progresso). Loan out de jogadores próprios. Youth training cap (5 ticks/matchweek). Bugfix skip replay não avançava matchweek.
 
 -----
 
@@ -55,7 +55,7 @@ Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minu
 - [x] **Player happiness** — `p.matchesWithoutPlay` counter. Após cada jogo, starting 11 (via `getBestEleven`) reseta o counter; bench incrementa. OVR ≥74 + counter ≥5 → badge 😤 na squad, notificação no hub. `updatePlayerGameTime` em manager.js, chamado em `playMatch()`.
 - [x] **Match replay** — Botão "▶ Watch Replay" no match-result (liga). Screen `match-replay` com scoreline live, barra de progresso, eventos com fade-in no minuto certo (setTimeout cascade, 14s total). Clock ticker via setInterval. Botão "⏩ Skip" cancela todos os timeouts. Continua para post-match press após FT.
 - [x] **Scouting report** — Botão "🔍 Scout" na match-preview. Abre modal com: form dots últimos 5 jogos, avg OVR XI, prestige, top scorer, top 3 jogadores com OVR + golos, stadium + capacity.
-- [x] **Youth academy** — `generateYouthPlayers` em season.js gera 1-2 jovens (16-18 anos) por season com `potential` baseado no prestige do clube. Adicionados ao squad, `p.fromAcademy = true`, badge 🌱 na squad page. Secção "Youth Academy Graduates" no end-of-season.
+- [x] **Youth academy** — substituído na Sessão 9 pelo sistema completo Youth Market + Academy page.
 
 ### Sessão 3 — Features novas
 - [x] **Injury notifications** — `generateMatchInjuries` retorna jogadores lesionados. `simulateMatch` guarda em `gameState.newInjuries`. Hub mostra banner laranja "🤕 Nome (POS) injured — out for Xw" e limpa após mostrar.
@@ -64,6 +64,18 @@ Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minu
 - [x] **Europa League trophy no HoF** — `career.hallOfFame.europaWins` incrementado em `resolveEuropaAndRefresh`. Card 🌟 na career page.
 - [x] **Loan system** — Aba "Loans" nos transfers. Fee = 15% do transfer value. Badge `LOAN` azul na squad page. Row com tint azul. Retorno automático no início da season com notificação. `executeLoan` em manager.js, `returnLoanedPlayers` em season.js.
 - [x] **AI bidding** — Durante transfer window, 22% chance/matchweek de oferta por jogador ≥74 OVR. Card "📬 TRANSFER OFFERS" no hub com Accept/Reject. Accept vende ao preço da oferta (5-45% acima do valor). Máx 3 bids pendentes. Limpa no início de cada season. `generateAIBids` em season.js.
+
+### Sessão 9 — Features novas
+- [x] **Youth Market** — `generateYouthMarket(gameState)` em season.js gera 30-49 prospects por season. Ages 14-17 (14=5%, 15=20%, 16=45%, 17=30%). OVR age-appropriate (14→44base, 15→49, 16→54, 17→58) com rare-low/normal/rare-high. Potential: 60%→62-79, 25%→80-86, 10%→87-90, 5%→91-93. Custo por potential. Tab "Youth Market" na página Youth.
+- [x] **Youth Academy page** — nova screen via nav "🌱 Youth". Tabs: Academy | Market. Academy mostra youthSquad com Train + Promote buttons. Ticks counter "X/5 this matchweek". `gameState.youthSquad` (max 15). Players promovidos ficam com `fromAcademy = true`.
+- [x] **Youth training cap** — 5 ticks por matchweek para todos os youth players combinados. `gameState.youthTrainingTicks` incrementa por treino, reseta em `advanceMatchweek`. UI mostra counter com cores green/warn/danger.
+- [x] **Youth aging + graduation** — `processRetirements` também age-up youthSquad (+1 OVR por season growth). `graduateYouthPlayers` em startNewSeason: players 18+ vão para FREE_AGENTS com notificação. Youth market regenerado cada season.
+- [x] **FREE_AGENTS cleanup** — `cleanupFreeAgents()` em startNewSeason: remove 45+, age-up todos, trim até 90 max (remove os mais velhos primeiro).
+- [x] **Team Training** — 6 drills na Tactics page (Finishing 6w, Defensive Shape 7w, Sprint Work 5w, Passing Clinic 6w, Strength Camp 5w, Ball Mastery 7w). Assíncrono: `startTeamTraining` guarda `gameState.activeTraining`, `tickTraining` decrementa em cada `advanceMatchweek`. `completeTraining` aplica stats + sempre +1 OVR (8% chance +2). Durante training: barra de progresso com semanas restantes em vez dos cards. `TRAINING_DRILLS` + `startTeamTraining` + `completeTraining` em manager.js.
+- [x] **Loan out (próprios players)** — botão "📤 Send on Loan" no player modal (squad page). `sendPlayerOnLoan` em manager.js: `p.outOnLoan = true`. Badge verde "OUT LOAN" na squad, row tint verde. `getBestEleven` skip `outOnLoan`. `returnLoanedPlayers` em season.js retorna outgoing loans com +1 OVR, notificação hub.
+- [x] **Player modal melhorado** — encontra players em youthSquad e youthMarket também. Mostra badge "📤 Out on loan (+1 OVR)" se aplicável. Botão loan-out só aparece para próprios players não lesionados e não já em loan.
+- [x] **Bugfix: skip replay** — `skipReplay()` ia direto ao hub sem `advanceMatchweek`. Fix: chama `goToPostMatchPress(result)` tal como o fim normal do replay.
+- [x] **Bugfix: youth IDs NaN** — `_nextPid` inicializava DEPOIS de `generateYouthMarket` em `initSeason`. Todos os youth players ficavam com `id: NaN`, `find` falhava sempre. Fix: mover bloco `_nextPid` para antes do `generateYouthMarket` em `initSeason`.
 
 ### Sessão 8 — Features novas
 - [x] **Match engine reescrito — simulação minuto a minuto** (`engine.js` completo):
@@ -175,7 +187,7 @@ Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minu
 ## Decisions made
 
 - `FORMATION_DISPLAY` é a fonte da verdade para formações
-- `getBestEleven` flatten + pick em ordem → zero duplicados no pitch, skip injured
+- `getBestEleven` flatten + pick em ordem → zero duplicados no pitch, skip injured + skip outOnLoan
 - Attack/Defense separados no engine com position weights
 - `gameState.leagueTeams` é o array autoritativo das ligas
 - Save: squadData snapshot + extraTeams para dinâmicas
@@ -210,6 +222,10 @@ Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minu
 - chanceRate base = 0.14 (6 shots/team avg); goalProb = `0.06 + shotQ * 0.20` era o antigo, agora varia por chanceType
 - Penalty: 22%/18% por jogo, 75% conversão, no assister. Free kick: 14%/11%, 15% conversão, no assister
 - Goal types determinados por chanceType: low→long_shot/header/volley, medium→finish/header/volley/tap_in, big→tap_in/one_on_one/header/finish
+- Youth market: 5 ticks de treino por matchweek (não por season) — reseta em `advanceMatchweek`
+- Loan out: `p.outOnLoan = true`, jogador fica na squad mas skip no getBestEleven, retorna season seguinte com +1 OVR
+- Team training é assíncrono: `gameState.activeTraining = { drillId, weeksLeft, totalWeeks }`, completa quando weeksLeft=0
+- `_nextPid` deve ser inicializado ANTES de `generateYouthMarket` em `initSeason` (IDs NaN senão)
 
 -----
 
@@ -224,17 +240,11 @@ Sessão 8 completa. Match engine totalmente reescrito: simulação minuto a minu
 
 ## Next session ideas
 
-0. **PRIORIDADE — Match Engine Upgrade** (só `engine.js`, ~30 linhas). Plano detalhado em `/home/dany0421/.claude/plans/humming-wondering-wand.md`:
-   - Usar stats individuais (pace/shooting/passing/defending/dribbling/physical) no attack/defense em vez de só `overall`
-   - Dois helpers: `playerAttackContrib(p)` e `playerDefenseContrib(p)` — composite por posição, blend `contrib*0.8 + overall*0.2`
-   - Upset/variance factor `0.88–1.12` por equipa por match
-   - Formation passa a importar automaticamente como consequência
 1. Transfer negotiation — contra-oferta do clube vendedor, poder negociar preço
 2. Player aging / contract expiry warnings — jogadores a 1 season de reformar → notificação
-3. Youth Academy com mercado próprio — substituir o sistema actual (básico)
-4. Pre-season friendlies — 2-3 jogos antes da season para testar formação sem consequências
-5. News feed — ticker no hub: "X signed by Y", "Z is out injured", "Manager of the week"
-6. Champions League — top 4 de cada liga → formato mais rico (já implementado grupos, falta testar fluxo completo)
+3. Pre-season friendlies — 2-3 jogos antes da season para testar formação sem consequências
+4. News feed — ticker no hub: "X signed by Y", "Z is out injured", "Manager of the week"
+5. Morale system melhorado — training boost morale, losing streak penaliza mais
 
 -----
 
@@ -253,8 +263,8 @@ test2/
 │   ├── dataBundesliga.js   — Bundesliga (18) + Bundesliga 2 (18) teams → push
 │   ├── dataLigaPortugal.js — Liga Portugal (18) teams → push
 │   ├── engine.js           — simulateMatch, getTeamAttack/Defense, injuries (com return), form streak, wage cost
-│   ├── season.js           — fixtures, tabela, endSeason, domestic cup, Europa League, simulateToLastMatchweek, generateAIBids, returnLoanedPlayers, getActiveLeagues, TIER3_POOLS
-│   ├── manager.js          — FORMATION_DISPLAY, getBestEleven, transfers, FFP check, executeLoan
+│   ├── season.js           — fixtures, tabela, endSeason, domestic cup, Europa League, simulateToLastMatchweek, generateAIBids, returnLoanedPlayers, getActiveLeagues, TIER3_POOLS, generateYouthMarket, graduateYouthPlayers, cleanupFreeAgents
+│   ├── manager.js          — FORMATION_DISPLAY, getBestEleven, transfers, FFP check, executeLoan, TRAINING_DRILLS, startTeamTraining, completeTraining, sendPlayerOnLoan, signYouthPlayer, promoteYouthPlayer, trainYouthPlayer
 │   └── ui.js               — todas as screens, press conferences (pre+post), europa screen, AI bids, loan tab, modais, toasts, save/load
 ```
 
@@ -275,7 +285,7 @@ test2/
     · ⚡ Simulate Next 5 btn
     · Sim to Last Matchweek btn (se >1 jogo restante)
   · matchup-card (formations + bars)
-[NAV: Squad · Tactics · Table · Fixtures · Transfers · Stats · Career · 💾 Save · 🏠 Menu]
+[NAV: Squad · Tactics · Table · Fixtures · Transfers · 🌱 Youth · Stats · Career · 💾 Save · 🏠 Menu]
 ```
 
 **Mobile:** hub-left e hub-right stack verticalmente. NAV faz flex-wrap.

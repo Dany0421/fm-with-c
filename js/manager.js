@@ -168,9 +168,10 @@ function trainYouthPlayer(gameState, playerId) {
   const p = gameState.youthSquad.find(pl => pl.id === playerId);
   if (!p) return { success: false, message: 'Player not found.' };
 
-  // 5 ticks total across all youth players per season
+  // Ticks reset every matchweek; cap boosted by youth coach
   const ticksUsed = gameState.youthTrainingTicks || 0;
-  if (ticksUsed >= 5) return { success: false, message: 'No training sessions left this season (5/5 used).' };
+  const ticksCap = getYouthTicksCap(gameState);
+  if (ticksUsed >= ticksCap) return { success: false, message: `No training sessions left this matchweek (${ticksCap}/${ticksCap} used).` };
 
   // Cost scales with current OVR
   const cost = Math.round(40000 + (p.overall - 40) * 8000);
@@ -196,8 +197,21 @@ function trainYouthPlayer(gameState, playerId) {
   const stat = keys[Math.floor(Math.random() * keys.length)];
   p[stat] = Math.min(99, (p[stat] || 50) + 1);
 
-  const left = 5 - (gameState.youthTrainingTicks);
-  return { success: true, message: `${p.name} trained! +1 OVR, +1 ${stat}. ${left} session${left!==1?'s':''} left this season.` };
+  const left = ticksCap - gameState.youthTrainingTicks;
+
+  // 5% chance to develop a trait per session
+  let traitMsg = '';
+  if (!p.traits) p.traits = [];
+  if (p.traits.length < 3 && Math.random() < 0.05) {
+    const pool = (TRAIT_POOLS[p.pos] || TRAIT_POOLS['CM']).filter(t => !p.traits.includes(t) && !NEGATIVE_TRAITS.includes(t));
+    if (pool.length) {
+      const newTrait = pool[Math.floor(Math.random() * pool.length)];
+      p.traits.push(newTrait);
+      traitMsg = ` 🌟 New trait: ${TRAITS[newTrait]?.name || newTrait}!`;
+    }
+  }
+
+  return { success: true, message: `${p.name} trained! +1 OVR, +1 ${stat}. ${left} session${left!==1?'s':''} left this matchweek.${traitMsg}` };
 }
 
 function sendPlayerOnLoan(gameState, playerId) {
@@ -317,6 +331,167 @@ function formatMoney(amount) {
   return `£${amount}`;
 }
 
+// ─── PLAYER TRAITS ────────────────────────────────────────────────────────────
+const TRAITS = {
+  // Attacking
+  clinical:      { name: 'Clinical',     icon: '🎯', color: '#22c55e', desc: 'Big chance conversion +20%' },
+  poacher:       { name: 'Poacher',      icon: '👁️',  color: '#22c55e', desc: 'Higher scorer weight in the box' },
+  longshot:      { name: 'Long Shot',    icon: '💥', color: '#22c55e', desc: 'Low shots count as medium' },
+  speedster:     { name: 'Speedster',    icon: '⚡', color: '#22c55e', desc: 'Pace-based positions get +10% attack' },
+  header:        { name: 'Header King', icon: '🦁', color: '#22c55e', desc: 'Higher weight for header goals' },
+  // Creative / Midfield
+  playmaker:     { name: 'Playmaker',    icon: '🧠', color: '#60a5fa', desc: 'CAM/CM attack contribution +18%' },
+  btb:           { name: 'Box-to-Box',   icon: '🔄', color: '#60a5fa', desc: 'Contributes fully to both attack & defense' },
+  engine:        { name: 'Engine',       icon: '🔋', color: '#60a5fa', desc: 'Team loses less fitness after matches' },
+  // Defensive
+  rock:          { name: 'Rock',         icon: '🪨', color: '#38bdf8', desc: 'Defense contribution +15%' },
+  pkstopper:     { name: 'PK Stopper',   icon: '🧤', color: '#38bdf8', desc: 'GK: penalty saves 25% → 42%' },
+  aerial:        { name: 'Aerial',       icon: '✈️',  color: '#38bdf8', desc: 'CB: defense contribution +10%' },
+  // Mental
+  clutch:        { name: 'Clutch',       icon: '⭐', color: '#f59e0b', desc: 'Performs above all expectations in big moments' },
+  biggame:       { name: 'Big Game',     icon: '🏆', color: '#f59e0b', desc: 'Elevates team in CL/EL matches' },
+  consistent:    { name: 'Consistent',   icon: '📈', color: '#f59e0b', desc: 'Contribution +4% — always shows up' },
+  form:          { name: 'Form Player',  icon: '🔥', color: '#f59e0b', desc: 'Amplifies win/loss momentum' },
+  captain_mat:   { name: 'Leader',       icon: '🪖', color: '#f59e0b', desc: 'As captain: morale boost is stronger' },
+  // Negative
+  injury_prone:  { name: 'Injury Prone', icon: '🤕', color: '#ef4444', desc: 'Higher injury risk, longer recoveries' },
+  hotheaded:     { name: 'Hot-Headed',   icon: '🌡️', color: '#ef4444', desc: '1.5× yellow/red card chance' },
+  temperamental: { name: 'Moody',        icon: '😤', color: '#ef4444', desc: 'Unhappy after only 3 games benched' },
+};
+
+const NEGATIVE_TRAITS = ['injury_prone', 'hotheaded', 'temperamental'];
+
+const TRAIT_POOLS = {
+  GK:  ['rock', 'pkstopper', 'consistent', 'engine'],
+  CB:  ['rock', 'aerial', 'consistent', 'header', 'btb'],
+  RB:  ['speedster', 'consistent', 'engine', 'rock'],
+  LB:  ['speedster', 'consistent', 'engine', 'rock'],
+  CDM: ['rock', 'btb', 'consistent', 'engine'],
+  CM:  ['playmaker', 'btb', 'engine', 'consistent', 'form', 'longshot'],
+  CAM: ['playmaker', 'clinical', 'form', 'consistent', 'longshot', 'biggame'],
+  RW:  ['speedster', 'clinical', 'form', 'consistent', 'biggame'],
+  LW:  ['speedster', 'clinical', 'form', 'consistent', 'biggame'],
+  RM:  ['speedster', 'clinical', 'form', 'consistent'],
+  LM:  ['speedster', 'clinical', 'form', 'consistent'],
+  ST:  ['clinical', 'poacher', 'header', 'form', 'biggame', 'clutch', 'consistent'],
+  CF:  ['clinical', 'poacher', 'header', 'form', 'biggame', 'clutch', 'consistent'],
+};
+
+function assignRandomTraits(player) {
+  if (player.traits) return; // already assigned, don't overwrite
+  const roll = Math.random();
+  if (roll < 0.53) { player.traits = []; return; } // 53% no traits
+  const pool = TRAIT_POOLS[player.pos] || TRAIT_POOLS['CM'];
+  const numTraits = roll < 0.85 ? 1 : roll < 0.97 ? 2 : 3; // 32% one, 12% two, 3% three
+  const chosen = [];
+  for (let i = 0; i < numTraits; i++) {
+    const remaining = pool.filter(t => !chosen.includes(t));
+    if (!remaining.length) break;
+    chosen.push(remaining[Math.floor(Math.random() * remaining.length)]);
+  }
+  // Small chance of negative trait (~8% for low OVR players, ~3% otherwise)
+  if (Math.random() < (player.overall < 75 ? 0.08 : 0.03)) {
+    chosen.push(NEGATIVE_TRAITS[Math.floor(Math.random() * NEGATIVE_TRAITS.length)]);
+  }
+  // High OVR players always have at least something
+  if (player.overall >= 82 && !chosen.length && Math.random() < 0.4) {
+    chosen.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  player.traits = chosen;
+}
+
+// ─── STAFF ────────────────────────────────────────────────────────────────────
+const STAFF_ROLES = [
+  { id: 'assistantManager', name: 'Assistant Manager', icon: '🧠',
+    effectFn: q => `Win morale +${Math.floor(q/40)+1}, loss morale cushion. Training double-OVR ${(8+q/15).toFixed(0)}% chance.` },
+  { id: 'fitnessCoach',    name: 'Fitness Coach',     icon: '💪',
+    effectFn: q => `+${Math.floor(q/40)} extra fitness recovery/week. ${Math.floor(q/50)} less fatigue/match.` },
+  { id: 'physio',          name: 'Physio',            icon: '🏥',
+    effectFn: q => `Injury risk ${(q/17).toFixed(0)}% lower. Injuries ${Math.floor(q/50)} week shorter.` },
+  { id: 'youthCoach',      name: 'Youth Coach',       icon: '🌱',
+    effectFn: q => `${5 + Math.floor(q/33)} youth training ticks/matchweek (base: 5).` },
+  { id: 'scout',           name: 'Scout',             icon: '🔭',
+    effectFn: q => q >= 60 ? 'Reveals exact player potential in market & transfers.' : 'Shows approximate potential ranges.' },
+  { id: 'setPieceCoach',   name: 'Set Piece Coach',   icon: '🎯',
+    effectFn: q => `Penalties: ${(75 + q/27).toFixed(0)}% conversion. Free kicks: ${(15 + q/60).toFixed(0)}% goal rate.` },
+];
+
+const STAFF_FIRST = ['Carlos','James','Marcus','Viktor','Stefan','Diego','Mikael','Ahmed','Luca','Patrick','Henry','Rui','Sergio','Andre','David','Alex','Luiz','Youssef','Niko','Owen'];
+const STAFF_LAST  = ['Mota','Owen','Schmidt','Rossi','Petrov','Martinez','Jensen','Al-Rashid','Ferrari','Dubois','Oliveira','Santos','Carvalho','Meyer','Williams','Nguyen','Diallo','Khan','Barros','Eriksen'];
+
+function randomStaffName() {
+  return STAFF_FIRST[Math.floor(Math.random()*STAFF_FIRST.length)] + ' ' +
+         STAFF_LAST[Math.floor(Math.random()*STAFF_LAST.length)];
+}
+
+function generateStaffMarket(gameState) {
+  const market = [];
+  STAFF_ROLES.forEach(role => {
+    const count = 3 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < count; i++) {
+      const quality  = 40 + Math.floor(Math.random() * 56); // 40-95
+      const tier     = quality < 56 ? 0 : quality < 71 ? 1 : quality < 86 ? 2 : 3;
+      const wageRanges = [[5000,12000],[13000,22000],[23000,38000],[40000,65000]];
+      const hireRanges = [[50000,120000],[130000,220000],[240000,380000],[400000,650000]];
+      const [wMin,wMax] = wageRanges[tier];
+      const [hMin,hMax] = hireRanges[tier];
+      market.push({
+        id:       `s_${Math.random().toString(36).slice(2,10)}`,
+        role:     role.id,
+        name:     randomStaffName(),
+        quality,
+        wage:     Math.floor(wMin + Math.random() * (wMax - wMin)),
+        hireCost: Math.floor(hMin + Math.random() * (hMax - hMin)),
+      });
+    }
+  });
+  gameState.staffMarket = market;
+}
+
+function hireStaff(gameState, staffId) {
+  if (!gameState.staffMarket) return { success: false, message: 'No market available.' };
+  const idx = gameState.staffMarket.findIndex(s => s.id === staffId);
+  if (idx === -1) return { success: false, message: 'Staff member not found.' };
+  const candidate = gameState.staffMarket[idx];
+  if (!gameState.staff) gameState.staff = {};
+  if (gameState.staff[candidate.role]) return { success: false, message: 'That role is already filled. Fire current staff first.' };
+  if (!canAfford(gameState.playerTeam, candidate.hireCost, gameState))
+    return { success: false, message: `Need ${formatMoney(candidate.hireCost)} hire fee — not enough budget.` };
+  gameState.budgets[gameState.playerTeam] -= candidate.hireCost;
+  gameState.staffMarket.splice(idx, 1);
+  gameState.staff[candidate.role] = { ...candidate };
+  const role = STAFF_ROLES.find(r => r.id === candidate.role);
+  return { success: true, message: `${candidate.name} hired as ${role?.name}!` };
+}
+
+function fireStaff(gameState, roleId) {
+  if (!gameState.staff?.[roleId]) return { success: false, message: 'No staff in that role.' };
+  const name = gameState.staff[roleId].name;
+  delete gameState.staff[roleId];
+  return { success: true, message: `${name} has been released.` };
+}
+
+function getStaffQuality(gameState, roleId) {
+  return gameState.staff?.[roleId]?.quality || 0;
+}
+
+function getYouthTicksCap(gameState) {
+  const q = getStaffQuality(gameState, 'youthCoach');
+  return 5 + Math.floor(q / 33); // base 5, up to 8 with elite coach
+}
+
+// Determine what potential to show based on scout quality
+function getScoutedPotential(potential, gameState) {
+  const q = getStaffQuality(gameState, 'scout');
+  if (q === 0) return '??';
+  if (q < 60) {
+    const low  = Math.max(55, potential - 7);
+    const high = Math.min(99, potential + 7);
+    return `${low}-${high}`;
+  }
+  return String(potential);
+}
+
 // ─── TEAM TRAINING ───────────────────────────────────────────────────────────
 const TRAINING_DRILLS = [
   {
@@ -390,12 +565,14 @@ function completeTraining(gameState) {
   const team = getTeam(gameState.playerTeam);
   if (!team) { gameState.activeTraining = null; return; }
 
+  const assistQ = gameState?.staff?.assistantManager?.quality || 0;
+  const doubleOvrChance = Math.min(0.22, 0.08 + assistQ / 1100); // 8% → ~14% with elite staff
   let ovrGains = 0;
   team.squad.forEach(p => {
     if (p.injuredWeeks) return; // injured sit out
     drill.apply(p);
-    // Always +1 OVR, very rarely +2 (~8% chance)
-    const gain = Math.random() < 0.08 ? 2 : 1;
+    // Always +1 OVR, rarely +2 (boosted by assistant manager)
+    const gain = Math.random() < doubleOvrChance ? 2 : 1;
     const cap = (p.potential || 99) - 1;
     if (p.overall < cap) {
       p.overall = Math.min(cap, p.overall + gain);

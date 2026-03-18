@@ -3,31 +3,52 @@
 // ── Per-position contribution using individual stats ──────────────────────────
 
 function playerAttackContrib(p) {
+  let base;
   switch (p.pos) {
-    case 'ST': case 'CF': return p.shooting*0.5  + p.pace*0.25     + p.physical*0.25;
-    case 'LW': case 'RW': return p.pace*0.4      + p.dribbling*0.35 + p.shooting*0.25;
-    case 'CAM':            return p.dribbling*0.35 + p.passing*0.35  + p.shooting*0.3;
+    case 'ST': case 'CF': base = p.shooting*0.5  + p.pace*0.25     + p.physical*0.25; break;
+    case 'LW': case 'RW': base = p.pace*0.4      + p.dribbling*0.35 + p.shooting*0.25; break;
+    case 'CAM':            base = p.dribbling*0.35 + p.passing*0.35  + p.shooting*0.3; break;
     case 'CM': case 'RM': case 'LM':
-                           return p.passing*0.5   + p.physical*0.3  + p.dribbling*0.2;
-    case 'CDM':            return p.passing*0.35  + p.physical*0.35 + p.shooting*0.3;
-    case 'RB': case 'LB': return p.pace*0.4      + p.passing*0.35  + p.physical*0.25;
-    case 'CB':             return p.physical*0.5  + p.passing*0.3   + p.pace*0.2;
-    case 'GK':             return p.overall * 0.3;
-    default:               return p.overall;
+                           base = p.passing*0.5   + p.physical*0.3  + p.dribbling*0.2; break;
+    case 'CDM':            base = p.passing*0.35  + p.physical*0.35 + p.shooting*0.3; break;
+    case 'RB': case 'LB': base = p.pace*0.4      + p.passing*0.35  + p.physical*0.25; break;
+    case 'CB':             base = p.physical*0.5  + p.passing*0.3   + p.pace*0.2; break;
+    case 'GK':             base = p.overall * 0.3; break;
+    default:               base = p.overall; break;
   }
+  const t = p.traits;
+  if (t && t.length) {
+    if (t.includes('clinical') || t.includes('poacher'))                        base *= 1.12;
+    if (t.includes('speedster') && ['LW','RW','ST','CF','LB','RB'].includes(p.pos)) base *= 1.10;
+    if (t.includes('playmaker') && ['CAM','CM'].includes(p.pos))                base *= 1.18;
+    if (t.includes('btb') && p.pos === 'CM')                                    base *= 1.10;
+    if (t.includes('longshot'))                                                  base *= 1.05;
+    if (t.includes('consistent'))                                                base *= 1.04;
+  }
+  return base;
 }
 
 function playerDefenseContrib(p) {
+  let base;
   switch (p.pos) {
-    case 'GK':             return p.overall;
-    case 'CB':             return p.defending*0.55 + p.physical*0.3  + p.pace*0.15;
-    case 'RB': case 'LB': return p.defending*0.45 + p.pace*0.3      + p.physical*0.25;
-    case 'CDM':            return p.defending*0.5  + p.physical*0.3  + p.passing*0.2;
+    case 'GK':             base = p.overall; break;
+    case 'CB':             base = p.defending*0.55 + p.physical*0.3  + p.pace*0.15; break;
+    case 'RB': case 'LB': base = p.defending*0.45 + p.pace*0.3      + p.physical*0.25; break;
+    case 'CDM':            base = p.defending*0.5  + p.physical*0.3  + p.passing*0.2; break;
     case 'CM': case 'RM': case 'LM':
-                           return p.defending*0.35 + p.physical*0.4  + p.pace*0.25;
-    case 'CAM':            return p.physical*0.5   + p.defending*0.3 + p.pace*0.2;
-    default:               return p.physical*0.5   + p.pace*0.3      + p.defending*0.2;
+                           base = p.defending*0.35 + p.physical*0.4  + p.pace*0.25; break;
+    case 'CAM':            base = p.physical*0.5   + p.defending*0.3 + p.pace*0.2; break;
+    default:               base = p.physical*0.5   + p.pace*0.3      + p.defending*0.2; break;
   }
+  const t = p.traits;
+  if (t && t.length) {
+    if (t.includes('rock'))                                 base *= 1.15;
+    if (t.includes('aerial') && p.pos === 'CB')             base *= 1.10;
+    if (t.includes('btb') && p.pos === 'CM')                base *= 1.10;
+    if (t.includes('pkstopper') && p.pos === 'GK')          base *= 1.08;
+    if (t.includes('consistent'))                           base *= 1.04;
+  }
+  return base;
 }
 
 // ── Team ratings ──────────────────────────────────────────────────────────────
@@ -311,11 +332,17 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
   }
 
   // ── Penalties ──
-  [['home', 0.22, homeFwd], ['away', 0.18, awayFwd]].forEach(([side, prob, pool]) => {
+  const spCoachQ = gameState?.staff?.setPieceCoach?.quality || 0;
+  const homeGK = home.squad.find(p => p.pos === 'GK' && !p.injuredWeeks);
+  const awayGK = away.squad.find(p => p.pos === 'GK' && !p.injuredWeeks);
+  [['home', 0.22, homeFwd, home.id, awayGK], ['away', 0.18, awayFwd, away.id, homeGK]].forEach(([side, prob, pool, teamId, oppGK]) => {
     if (Math.random() < prob) {
       const min = Math.floor(Math.random() * 85) + 3;
       const scorer = pickWeighted(pool, p => p.shooting);
-      if (Math.random() < 0.75) {
+      // Set piece coach boosts conversion for player's team; pkstopper GK trait reduces it
+      let conv = teamId === gameState?.playerTeam ? Math.min(0.92, 0.75 + spCoachQ / 400) : 0.75;
+      if (oppGK?.traits?.includes('pkstopper')) conv = Math.min(conv, 0.58);
+      if (Math.random() < conv) {
         if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.75; homeBigChances++; }
         else                 { awayGoals++; awayShots++; awayXG += 0.75; awayBigChances++; }
         scorer.goals++;
@@ -328,12 +355,13 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
   });
 
   // ── Free kicks ──
-  [['home', 0.14, home.squad], ['away', 0.11, away.squad]].forEach(([side, prob, squad]) => {
+  [['home', 0.14, home.squad, home.id], ['away', 0.11, away.squad, away.id]].forEach(([side, prob, squad, teamId]) => {
     if (Math.random() < prob) {
       const min = Math.floor(Math.random() * 85) + 3;
       const fkPool = squad.filter(p => !p.injuredWeeks && ['CM','CAM','LW','RW','ST','CDM'].includes(p.pos));
       const taker = fkPool.length ? pickWeighted(fkPool, p => Math.round((p.passing + p.shooting) / 2)) : squad[0];
-      if (taker && Math.random() < 0.15) {
+      const fkRate = teamId === gameState?.playerTeam ? Math.min(0.35, 0.15 + spCoachQ / 500) : 0.15;
+      if (taker && Math.random() < fkRate) {
         if (side === 'home') { homeGoals++; homeShots++; homeXG += 0.15; }
         else                 { awayGoals++; awayShots++; awayXG += 0.15; }
         taker.goals++;
@@ -360,7 +388,7 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
   if (awayGoals === 0) { const gk = home.squad.find(p => p.pos === 'GK'); if (gk) gk.cleanSheets = (gk.cleanSheets || 0) + 1; }
 
   // Injuries
-  const newlyInjured = generateMatchInjuries(home, away);
+  const newlyInjured = generateMatchInjuries(home, away, gameState);
   if (gameState?.playerTeam && newlyInjured.length) {
     const playerInj = newlyInjured.filter(p => p.teamId === gameState.playerTeam);
     if (playerInj.length) {
@@ -473,7 +501,10 @@ function getFormStreak(teamId, gameState) {
 }
 
 function updateMorale(teamId, result, gameState) {
-  let change = result === 'win' ? 5 : result === 'draw' ? 1 : -4;
+  const assistQ = teamId === gameState?.playerTeam ? (gameState?.staff?.assistantManager?.quality || 0) : 0;
+  const winBonus      = Math.floor(assistQ / 40);  // 0-2 extra morale on wins
+  const lossReduction = Math.floor(assistQ / 60);  // 0-1 less morale loss on defeats
+  let change = result === 'win' ? 5 + winBonus : result === 'draw' ? 1 : -4 + lossReduction;
   const streak = getFormStreak(teamId, gameState);
   if (result === 'win'  && streak >= 2)  change += 2;
   if (result === 'loss' && streak <= -2) change -= 2;
@@ -482,23 +513,47 @@ function updateMorale(teamId, result, gameState) {
 }
 
 function recoverFitness(gameState) {
+  const fitnessCoachQ = gameState?.staff?.fitnessCoach?.quality || 0;
+  const extra = Math.floor(fitnessCoachQ / 40); // 0-2 extra per week for player's team
   for (const teamId in gameState.fitness) {
-    gameState.fitness[teamId] = Math.min(100, (gameState.fitness[teamId] || 85) + 3);
+    const bonus = teamId === gameState?.playerTeam ? extra : 0;
+    gameState.fitness[teamId] = Math.min(100, (gameState.fitness[teamId] || 85) + 3 + bonus);
   }
 }
 
 function applyMatchFatigue(teamId, gameState) {
-  gameState.fitness[teamId] = Math.max(50, (gameState.fitness[teamId] || 85) - 8);
+  const fitnessCoachQ = teamId === gameState?.playerTeam ? (gameState?.staff?.fitnessCoach?.quality || 0) : 0;
+  const fatigueSave = Math.floor(fitnessCoachQ / 50); // 0-1 less fatigue with good coach
+  gameState.fitness[teamId] = Math.max(50, (gameState.fitness[teamId] || 85) - 8 + fatigueSave);
+  // Engine trait players reduce team fatigue slightly
+  if (teamId === gameState?.playerTeam) {
+    const team = getTeam(teamId);
+    const engineCount = team?.squad.filter(p => p.traits?.includes('engine') && !p.injuredWeeks && !p.outOnLoan).length || 0;
+    if (engineCount > 0) gameState.fitness[teamId] = Math.min(100, gameState.fitness[teamId] + Math.min(engineCount, 2));
+  }
 }
 
-function generateMatchInjuries(home, away) {
+function generateMatchInjuries(home, away, gameState) {
   const newlyInjured = [];
+  const physioQ = gameState?.staff?.physio?.quality || 0;
+  const baseRisk = Math.max(0.05, 0.12 - physioQ / 1700); // 12% → ~5% with elite physio
+  const durationReduction = Math.floor(physioQ / 50);      // 0-1 week shorter with good physio
+
   [home, away].forEach(team => {
-    if (Math.random() < 0.12) {
+    // Only player's team benefits from physio
+    const risk = team.id === gameState?.playerTeam ? baseRisk : 0.12;
+    if (Math.random() < risk) {
       const eligible = team.squad.filter(p => !p.injuredWeeks);
       if (!eligible.length) return;
-      const victim = eligible[Math.floor(Math.random() * eligible.length)];
-      victim.injuredWeeks = Math.floor(Math.random() * 3) + 1;
+      // injury_prone players 40% more likely to be the victim
+      const prone = eligible.filter(p => p.traits?.includes('injury_prone'));
+      const victim = prone.length && Math.random() < 0.4
+        ? prone[Math.floor(Math.random() * prone.length)]
+        : eligible[Math.floor(Math.random() * eligible.length)];
+      let duration = Math.floor(Math.random() * 3) + 1;
+      if (victim.traits?.includes('injury_prone')) duration += 1; // +1 week for prone players
+      if (team.id === gameState?.playerTeam) duration = Math.max(1, duration - durationReduction);
+      victim.injuredWeeks = duration;
       newlyInjured.push({ name: victim.name, pos: victim.pos, weeks: victim.injuredWeeks, teamId: team.id });
     }
   });

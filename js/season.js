@@ -68,6 +68,14 @@ function initSeason(gameState) {
   if (!gameState.youthSquad) gameState.youthSquad = [];
   if (!gameState.youthMarket || !gameState.youthMarket[0]?.youthPrice) generateYouthMarket(gameState);
 
+  // Init staff system
+  if (!gameState.staff) gameState.staff = {};
+  if (!gameState.staffMarket || !gameState.staffMarket.length) generateStaffMarket(gameState);
+
+  // One-time trait migration: assign traits to any player that doesn't have them yet
+  getAllTeams().forEach(t => t.squad.forEach(p => { if (!p.traits) assignRandomTraits(p); }));
+  if (gameState.youthSquad) gameState.youthSquad.forEach(p => { if (!p.traits) assignRandomTraits(p); });
+
   // Seed leagueTeams for all known leagues (handles both fresh start and old saves)
   if (!gameState.leagueTeams) gameState.leagueTeams = {};
   Object.keys(LEAGUES).forEach(lid => {
@@ -202,6 +210,12 @@ function advanceMatchweek(gameState) {
       if (gameState.budgets[id] !== undefined) gameState.budgets[id] -= getWeeklyWageCost(team);
     });
   });
+
+  // Deduct staff wages for player's team
+  if (gameState.staff && gameState.playerTeam) {
+    const staffWages = Object.values(gameState.staff).reduce((sum, s) => sum + (s.wage || 0), 0);
+    if (staffWages > 0) gameState.budgets[gameState.playerTeam] = (gameState.budgets[gameState.playerTeam] || 0) - staffWages;
+  }
 
   activeLeagues.forEach(lid => simulateMatchweek(lid, gameState));
 
@@ -421,6 +435,9 @@ function endSeason(gameState) {
   if ((playerTableRow.won || 0) > (playerTableRow.played || 1) * 0.55) repChange += 2;
   gameState.managerReputation = Math.max(0, Math.min(100, (gameState.managerReputation || 50) + repChange));
 
+  // Season-end trait earning for player's squad
+  checkTraitEarning(gameState);
+
   // endOfSeasonData must be set BEFORE Europa init (crash safety)
   const faCupWinnerId = gameState.faCup?.winner;
   gameState.endOfSeasonData = {
@@ -528,6 +545,7 @@ function processRetirements(gameState) {
         Math.min(75, regenOvr),
         regenNation()
       );
+      assignRandomTraits(regen);
       team.squad.push(regen);
     }
   });
@@ -699,6 +717,7 @@ function generateYouthMarket(gameState) {
     p.potential = potential;
     p.isYouth = true;
     p.youthPrice = Math.round((Math.max(0, potential - 60) * 60000) + 80000);
+    assignRandomTraits(p);
     market.push(p);
   }
 
@@ -739,6 +758,31 @@ function cleanupFreeAgents() {
     const idx = FREE_AGENTS.indexOf(target);
     if (idx !== -1) FREE_AGENTS.splice(idx, 1);
   }
+}
+
+// ─── TRAIT EARNING ────────────────────────────────────────────────────────────
+function checkTraitEarning(gameState) {
+  const team = getTeam(gameState.playerTeam);
+  if (!team) return;
+  const tactics = gameState.tactics?.[gameState.playerTeam] || {};
+  team.squad.forEach(p => {
+    if (!p.traits) p.traits = [];
+    if (p.traits.length >= 3) return;
+    // 8+ goals → clinical or poacher
+    if ((p.goals || 0) >= 8 && Math.random() < 0.25) {
+      const t = ['ST','CF','CAM'].includes(p.pos) ? 'clinical' : 'poacher';
+      if (!p.traits.includes(t)) { p.traits.push(t); return; }
+    }
+    // 5+ clean sheets (GK) → pkstopper
+    if (p.pos === 'GK' && (p.cleanSheets || 0) >= 5 && Math.random() < 0.20) {
+      if (!p.traits.includes('pkstopper')) { p.traits.push('pkstopper'); return; }
+    }
+    // Captain all season + manager rep 65+ → Leader trait
+    if (tactics.captain === p.id && (gameState.managerReputation || 50) >= 65 && Math.random() < 0.15) {
+      if (!p.traits.includes('captain_mat')) p.traits.push('captain_mat');
+    }
+    p.traits = p.traits.slice(0, 3);
+  });
 }
 
 // ─── LOAN RETURNS ────────────────────────────────────────────────────────────
@@ -800,6 +844,9 @@ function startNewSeason(gameState) {
   graduateYouthPlayers(gameState);
   generateYouthMarket(gameState);
   cleanupFreeAgents();
+
+  // Refresh staff market each new season
+  generateStaffMarket(gameState);
 
   initSeason(gameState);
 }
