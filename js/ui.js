@@ -533,6 +533,7 @@ function renderHub(app) {
             <h4>RECENT RESULTS</h4>
             ${renderRecentResults()}
           </div>
+          ${renderNewsFeed(gameState)}
         </div>
       </div>
 
@@ -573,6 +574,68 @@ function renderRecentResults() {
       </div>
     `;
   }).join('');
+}
+
+function renderNewsFeed(gameState) {
+  const feed = gameState.newsFeed || [];
+  if (!feed.length) return '';
+
+  // POTM spotlight if set
+  const potmCard = gameState.lastPOTM ? (() => {
+    const p = gameState.lastPOTM.player;
+    return `
+      <div class="news-potm-card">
+        <div class="news-potm-icon">🏅</div>
+        <div class="news-potm-body">
+          <div class="news-potm-label">PLAYER OF THE MONTH</div>
+          <div class="news-potm-name">${p.name}</div>
+          <div class="news-potm-detail">${p.pos} · Avg ${gameState.lastPOTM.avg} · ${p.goals}g ${p.assists}a</div>
+        </div>
+      </div>
+    `;
+  })() : '';
+
+  const items = feed.slice(0, 12).map(item => {
+    const clickable = item.type === 'totm' || item.type === 'tots';
+    const which = item.type === 'tots' ? 'season' : 'month';
+    return `
+      <div class="news-item news-type-${item.type}${clickable ? ' news-clickable' : ''}" ${clickable ? `onclick="showTOTMModal('${which}')"` : ''}>
+        <span class="news-icon">${item.icon}</span>
+        <div class="news-body">
+          <div class="news-headline">${item.headline}</div>
+          ${item.detail ? `<div class="news-detail">${item.detail}${item.week ? ` · Wk ${item.week}` : ''}</div>` : (item.week ? `<div class="news-detail">Wk ${item.week}</div>` : '')}
+        </div>
+        ${clickable ? `<span class="news-arrow">›</span>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="hub-card hub-news-card" style="margin-top:12px">
+      <h4>📰 LATEST NEWS</h4>
+      ${potmCard}
+      <div class="news-list">${items}</div>
+      ${feed.length > 12 ? `<div class="news-more muted" style="font-size:11px;text-align:center;padding:6px 0">${feed.length - 12} more stories</div>` : ''}
+    </div>
+  `;
+}
+
+// TOTM modal (opened when clicking TOTM news)
+function showTOTMModal(which) {
+  const data = which === 'season' ? gameState.lastTOTS : gameState.lastTOTM;
+  if (!data) return;
+  const title = which === 'season' ? 'Team of the Season' : 'Team of the Month';
+  const rows = [
+    ...(data.GK ? [`<tr><td class="muted">GK</td><td><strong>${data.GK.p.name}</strong></td><td class="muted">${data.GK.teamName}</td><td>${data.GK.avg?.toFixed(1) || '—'}</td></tr>`] : []),
+    ...(data.DEF || []).map(x => `<tr><td class="muted">DEF</td><td><strong>${x.p.name}</strong></td><td class="muted">${x.teamName}</td><td>${x.avg?.toFixed(1) || '—'}</td></tr>`),
+    ...(data.MID || []).map(x => `<tr><td class="muted">MID</td><td><strong>${x.p.name}</strong></td><td class="muted">${x.teamName}</td><td>${x.avg?.toFixed(1) || '—'}</td></tr>`),
+    ...(data.ATT || []).map(x => `<tr><td class="muted">ATT</td><td><strong>${x.p.name}</strong></td><td class="muted">${x.teamName}</td><td>${x.avg?.toFixed(1) || '—'}</td></tr>`),
+  ].join('');
+  showModal({
+    title: `⭐ ${title}`,
+    body: `<table class="squad-table" style="width:100%"><tr><th></th><th>Player</th><th>Club</th><th>Avg</th></tr>${rows}</table>`,
+    cancel: 'Close'
+  });
 }
 
 function renderMiniTable(table, playerTeamId) {
@@ -798,9 +861,10 @@ function renderTactics(app) {
 // ─── PLAYER TRAINING SCREEN ──────────────────────────────────────────────────
 function renderTraining(app) {
   const team = getTeam(gameState.playerTeam);
+  const _posOrder = { GK:0, CB:1, LB:2, RB:2, LWB:2, RWB:2, CDM:3, CM:4, CAM:5, LM:6, RM:6, LW:7, RW:7, CF:8, ST:9 };
   const squad = (team?.squad || []).filter(p => !p.outOnLoan).sort((a, b) => {
-    if (a.trainingProgram && !b.trainingProgram) return -1;
-    if (!a.trainingProgram && b.trainingProgram) return 1;
+    const po = (_posOrder[a.pos] ?? 5) - (_posOrder[b.pos] ?? 5);
+    if (po !== 0) return po;
     return b.overall - a.overall;
   });
   const budget = gameState.budgets[gameState.playerTeam] || 0;
@@ -2520,6 +2584,12 @@ function buyConfirm(playerId, fromTeamId) {
     cancel: 'Cancel',
     onConfirm: () => {
       const result = attemptTransfer(gameState, playerId, fromTeamId || null);
+      if (result.success) {
+        const _buyWeek = gameState.currentRound?.[gameState.playerLeague] || 1;
+        const _fromLabel = fromTeam?.name || 'Free Agent';
+        const _feeLabel = fromTeamId ? formatMoney(fee) : 'Free';
+        pushNews({ type: 'transfer_in', icon: '✍️', headline: `${player.name} joins ${getTeam(gameState.playerTeam)?.name}`, detail: `From ${_fromLabel} · ${_feeLabel}`, week: _buyWeek }, gameState);
+      }
       saveGame();
       showToast(result.message, result.success ? 'success' : 'error');
       showScreen('transfers');
@@ -3566,6 +3636,8 @@ function renewConfirm(playerId) {
       const result = renewContract(gameState, playerId);
       if (result.success) {
         showToast(`✅ ${player.name} signed for ${offer.contractYears} years.`);
+        const _renewWeek = gameState.currentRound?.[gameState.playerLeague] || 1;
+        pushNews({ type: 'contract_signed', icon: '📝', headline: `${player.name} signs new contract`, detail: `${offer.contractYears}-year deal · ${formatMoney(offer.newWage)}/wk`, week: _renewWeek }, gameState);
       } else {
         showToast(result.message || 'Could not renew.', 'error');
       }
@@ -3615,6 +3687,8 @@ function acceptBid(bidId) {
         }
       }
       gameState.aiBids = bids.filter(b => b.id !== bidId);
+      const _bidWeek = gameState.currentRound?.[gameState.playerLeague] || 1;
+      pushNews({ type: 'transfer_out', icon: '💼', headline: `${bid.playerName} sold to ${bid.biddingTeamName}`, detail: `Fee: ${formatMoney(bid.amount)}`, week: _bidWeek }, gameState);
       saveGame();
       showToast(`${bid.playerName} sold to ${bid.biddingTeamName} for ${formatMoney(bid.amount)}!`, 'success');
       showScreen('hub');
@@ -4359,6 +4433,100 @@ function continueSecondHalf(subs) {
     possession: fullResult.possession, xG: fullResult.xG, shots: fullResult.shots, bigChances: fullResult.bigChances
   };
   gameState._postMatchResult = matchResult;
+
+  // Compute match ratings for both teams
+  computeMatchRatings(fixture.home, fixture.away, fullResult, gameState);
+
+  // ─── NEWS from player's own match ────────────────────────────────────────────
+  const _nw = gameState.currentRound[gameState.playerLeague];
+  const _myTeamName = getTeam(gameState.playerTeam)?.name || '';
+  const _oppId = isHome ? fixture.away : fixture.home;
+  const _oppName = getTeam(_oppId)?.name || '';
+  const _pg = isHome ? fullResult.homeGoals : fullResult.awayGoals;
+  const _og = isHome ? fullResult.awayGoals : fullResult.homeGoals;
+  const _scoreStr = `${_pg}–${_og}`;
+
+  // Match result news
+  if (matchResult === 'win') {
+    if (_pg - _og >= 3) {
+      pushNews({ type: 'big_win', icon: '💥', headline: `Dominant! ${_myTeamName} ${_scoreStr} ${_oppName}`, detail: `Big win for the boss`, week: _nw }, gameState);
+    } else {
+      // Check comeback: if halftime we were losing
+      const _htScore = firstHalf;
+      const _htPg = isHome ? _htScore.homeGoals : _htScore.awayGoals;
+      const _htOg = isHome ? _htScore.awayGoals : _htScore.homeGoals;
+      if (_htPg < _htOg) {
+        pushNews({ type: 'comeback', icon: '🔥', headline: `What a comeback! ${_myTeamName} ${_scoreStr} ${_oppName}`, detail: `Down at half-time, won it!`, week: _nw }, gameState);
+      } else {
+        pushNews({ type: 'match_win', icon: '⚽', headline: `${_myTeamName} ${_scoreStr} ${_oppName}`, detail: `Three points secured`, week: _nw }, gameState);
+      }
+    }
+  } else if (matchResult === 'loss') {
+    if (_og - _pg >= 3) {
+      pushNews({ type: 'big_loss', icon: '📉', headline: `Tough day — ${_myTeamName} ${_scoreStr} ${_oppName}`, detail: `Heavy defeat`, week: _nw }, gameState);
+    } else {
+      pushNews({ type: 'match_loss', icon: '😤', headline: `${_myTeamName} ${_scoreStr} ${_oppName}`, detail: `Points dropped`, week: _nw }, gameState);
+    }
+  } else {
+    pushNews({ type: 'match_draw', icon: '🤝', headline: `${_myTeamName} ${_scoreStr} ${_oppName}`, detail: `A point each`, week: _nw }, gameState);
+  }
+
+  // Clean sheet news
+  if (_og === 0) {
+    pushNews({ type: 'clean_sheet', icon: '🧤', headline: `Clean sheet for ${_myTeamName}`, detail: `Solid at the back`, week: _nw }, gameState);
+  }
+
+  // Hat-tricks and goal milestones
+  const _goalCounts = {};
+  for (const ev of fullResult.events) {
+    if (ev.type === 'goal' && (isHome ? ev.team === 'home' : ev.team === 'away')) {
+      _goalCounts[ev.player] = (_goalCounts[ev.player] || 0) + 1;
+    }
+  }
+  for (const [pname, gcnt] of Object.entries(_goalCounts)) {
+    if (gcnt >= 3) pushNews({ type: 'hat_trick', icon: '🎩', headline: `Hat-trick! ${pname} bags three`, detail: `Incredible performance`, week: _nw }, gameState);
+  }
+
+  // Red card on player team
+  for (const ev of fullResult.events) {
+    if (ev.type === 'red' && (isHome ? ev.team === 'home' : ev.team === 'away')) {
+      pushNews({ type: 'red_card_incident', icon: '🟥', headline: `${ev.player} sees red`, detail: `${_myTeamName} down to ten men`, week: _nw }, gameState);
+    }
+  }
+
+  // Goal milestones for player's squad
+  const _squad = getTeam(gameState.playerTeam)?.squad || [];
+  for (const p of _squad) {
+    for (const thresh of [5, 10, 15, 20, 25]) {
+      const prev = p.goals - (_goalCounts[p.name] || 0);
+      if (p.goals >= thresh && prev < thresh) {
+        pushNews({ type: 'goal_milestone', icon: '🎯', headline: `${p.name} reaches ${thresh} goals`, detail: `${p.pos} · season tally`, week: _nw }, gameState);
+      }
+    }
+  }
+  // Assist milestones
+  const _assistCounts = {};
+  for (const ev of fullResult.events) {
+    if (ev.type === 'goal' && ev.assist && (isHome ? ev.team === 'home' : ev.team === 'away')) {
+      _assistCounts[ev.assist] = (_assistCounts[ev.assist] || 0) + 1;
+    }
+  }
+  for (const p of _squad) {
+    for (const thresh of [5, 10]) {
+      const prev = p.assists - (_assistCounts[p.name] || 0);
+      if (p.assists >= thresh && prev < thresh) {
+        pushNews({ type: 'assist_milestone', icon: '🅰️', headline: `${p.name} hits ${thresh} assists`, detail: `${p.pos} · creative force`, week: _nw }, gameState);
+      }
+    }
+  }
+
+  // New injuries from this match
+  if (gameState.newInjuries?.length) {
+    gameState.newInjuries.forEach(inj => {
+      pushNews({ type: 'injury', icon: '🏥', headline: `${inj.name} picks up an injury`, detail: `${inj.pos} · out for ${inj.weeks}w`, week: _nw }, gameState);
+    });
+  }
+  // ─── END MATCH NEWS ───────────────────────────────────────────────────────────
 
   _halftimeState = null;
   saveGame();

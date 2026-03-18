@@ -1654,8 +1654,6 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 /* ── PLAYER TRAINING SCREEN ───────────────────────────────────── */
 .training-screen-body {
   padding: 16px;
-  max-width: 720px;
-  margin: 0 auto;
 }
 .training-screen-top {
   display: flex;
@@ -1737,6 +1735,47 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   .training-player-row { flex-wrap: wrap; gap: 8px; }
   .tp-status-col { min-width: unset; width: 100%; }
   .tp-prog-footer { flex-wrap: wrap; gap: 8px; }
+}
+
+/* ─── TRAINING DESKTOP GRID ─── */
+@media (min-width: 769px) {
+  .training-player-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+  }
+  .training-player-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 14px;
+  }
+  /* pos badge sits on its own line at the top */
+  .training-player-row .tp-pos {
+    min-width: unset;
+    align-self: flex-start;
+  }
+  /* name + OVR side by side */
+  .training-player-row .tp-info {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .training-player-row .tp-name {
+    font-size: 13px;
+    flex: 1;
+  }
+  .training-player-row .tp-ovr {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  /* status block fills the card width */
+  .training-player-row .tp-status-col {
+    min-width: unset;
+    width: 100%;
+    margin-top: 2px;
+  }
 }
 
 /* ─── HALFTIME SCREEN ─────────────────────────────────────────────────────── */
@@ -1902,4 +1941,72 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
   .ht-tactic-row .btn-group { width: 100%; }
   .ht-score { gap: 8px; }
   .ht-team { font-size: 11px; max-width: 85px; }
+}
+
+/* ─── NEWS FEED ────────────────────────────────────────────────────────────── */
+.hub-news-card h4 { margin-bottom: 8px; }
+
+.news-potm-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(250,204,21,0.12), rgba(250,204,21,0.04));
+  border: 1px solid rgba(250,204,21,0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.news-potm-icon { font-size: 28px; line-height: 1; }
+.news-potm-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: #facc15; text-transform: uppercase; }
+.news-potm-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.news-potm-detail { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.news-list { display: flex; flex-direction: column; gap: 4px; }
+
+.news-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  border-left: 3px solid var(--surface-2);
+  background: rgba(255,255,255,0.02);
+}
+.news-item.news-clickable { cursor: pointer; }
+.news-item.news-clickable:hover { background: rgba(255,255,255,0.05); }
+
+/* Border colors by news type */
+.news-type-match_win, .news-type-big_win, .news-type-comeback, .news-type-win_streak, .news-type-unbeaten_run,
+.news-type-clean_sheet, .news-type-table_top, .news-type-european_zone, .news-type-safe {
+  border-left-color: var(--green);
+}
+.news-type-match_loss, .news-type-big_loss, .news-type-losing_streak,
+.news-type-relegation_zone, .news-type-injury, .news-type-red_card_incident {
+  border-left-color: var(--red);
+}
+.news-type-transfer_in, .news-type-transfer_out, .news-type-contract_signed,
+.news-type-match_draw, .news-type-rival_stumble {
+  border-left-color: #60a5fa;
+}
+.news-type-potm, .news-type-totm, .news-type-pots, .news-type-tots,
+.news-type-goal_milestone, .news-type-assist_milestone, .news-type-hat_trick {
+  border-left-color: #facc15;
+}
+.news-type-injury_return { border-left-color: #a78bfa; }
+.news-type-season_start { border-left-color: var(--accent); }
+.news-type-transfer_rumor { border-left-color: #38bdf8; }
+.news-type-manager_quote { border-left-color: #fb923c; }
+.news-type-pundit_opinion { border-left-color: #c084fc; }
+.news-type-rival_drama { border-left-color: #f97316; }
+
+.news-icon { font-size: 14px; line-height: 1.4; flex-shrink: 0; }
+.news-body { flex: 1; min-width: 0; }
+.news-headline { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.3; }
+.news-detail { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.news-arrow { font-size: 16px; color: var(--muted); align-self: center; flex-shrink: 0; }
+.news-more { margin-top: 4px; }
+
+@media (max-width: 480px) {
+  .news-headline { font-size: 11px; }
+  .news-item { padding: 6px 6px; }
 }

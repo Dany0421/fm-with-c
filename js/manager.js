@@ -849,11 +849,31 @@ function completePlayerTraining(p, gameState) {
   p.trainingProgram = null;
   if (!prog) return;
   const cap = (p.potential || 99) - 1;
+  const prevOvr = p.overall;
+
+  // Backward compat: old-save GKs may lack gk stats — initialize from overall before training
+  if (p.pos === 'GK') {
+    const base = p.overall;
+    if (p.gkDiving      === undefined) p.gkDiving      = Math.round(base * 0.95);
+    if (p.gkHandling    === undefined) p.gkHandling    = Math.round(base * 1.00);
+    if (p.gkReflexes    === undefined) p.gkReflexes    = Math.round(base * 0.98);
+    if (p.gkKicking     === undefined) p.gkKicking     = Math.round(base * 0.75);
+    if (p.gkPositioning === undefined) p.gkPositioning = Math.round(base * 0.95);
+  }
+
+  // Snapshot formula BEFORE stats change (may differ from p.overall on legacy saves)
+  calculateOverall(p);
+  const calcBefore = p.overall;
+  p.overall = prevOvr; // restore real OVR
+
   prog.stats.forEach(stat => {
     p[stat] = Math.min(99, (p[stat] || 50) + 2);
   });
+
+  // Compute formula AFTER — apply only the positive delta to the real OVR
   calculateOverall(p);
-  if (p.overall > cap) p.overall = cap;
+  const delta = Math.max(0, p.overall - calcBefore);
+  p.overall = Math.min(cap, prevOvr + delta);
 }
 
 function executeLoan(gameState, playerId, fromTeamId) {
@@ -943,6 +963,7 @@ function renewContract(gameState, playerId) {
   player.wage  = offer.newWage;
   player.contract = offer.contractYears;
   player.morale   = Math.min(95, (player.morale || 70) + 15);
+  player.benchFrustration = 0;
   // Remove any pending demand for this player
   if (gameState.contractDemands)
     gameState.contractDemands = gameState.contractDemands.filter(d => d.playerId !== playerId);
@@ -960,8 +981,10 @@ function acceptWageDemand(gameState, demandId) {
     return { success: false, message: 'Player not found.' };
   }
   player.wage = (player.wage || Math.round(Math.max(0, player.overall - 50) * 60)) + demand.wageIncrease;
+  player.contract = 3; // new contract on acceptance
   player.morale = Math.min(90, (player.morale || 70) + 25);
   player.matchesWithoutPlay = 0;
+  player.benchFrustration = 0;
   gameState.contractDemands = gameState.contractDemands.filter(d => d.id !== demandId);
   return { success: true, message: `${player.name} happy with +${formatMoney(demand.wageIncrease)}/wk raise.` };
 }
@@ -1261,4 +1284,325 @@ function launchMarketing(gameState, campaignId) {
     gameState.managerReputation = Math.min(100, (gameState.managerReputation || 50) + campaign.effect.repBonus);
   }
   return { success: true, message: `${campaign.name} launched! ${campaign.desc}` };
+}
+
+// ─── NEWS FEED ────────────────────────────────────────────────────────────────
+
+function pushNews(item, gameState) {
+  gameState.newsFeed = gameState.newsFeed || [];
+  // These types are always unique (milestones, awards, injuries) — never deduplicated
+  const alwaysUnique = ['potm','totm','pots','tots','goal_milestone','assist_milestone','hat_trick','injury','injury_return','transfer_in','transfer_out','contract_signed'];
+  if (!alwaysUnique.includes(item.type)) {
+    const recent = gameState.newsFeed.slice(0, 2);
+    if (recent.some(n => n.type === item.type)) return;
+  }
+  gameState.newsFeed.unshift(item);
+  if (gameState.newsFeed.length > 50) gameState.newsFeed.length = 50;
+}
+
+function computeMatchRatings(homeId, awayId, result, gameState) {
+  const homeFormation = gameState.tactics?.[homeId]?.formation || '4-4-2';
+  const awayFormation = gameState.tactics?.[awayId]?.formation || '4-4-2';
+  const homePlayed = getBestEleven(homeId, homeFormation, gameState);
+  const awayPlayed = getBestEleven(awayId, awayFormation, gameState);
+
+  const goalMap = {}, assistMap = {}, yellowMap = {}, redMap = {};
+  for (const ev of (result.events || [])) {
+    if (ev.type === 'goal') {
+      goalMap[ev.player] = (goalMap[ev.player] || 0) + 1;
+      if (ev.assist) assistMap[ev.assist] = (assistMap[ev.assist] || 0) + 1;
+    }
+    if (ev.type === 'yellow') yellowMap[ev.player] = true;
+    if (ev.type === 'red') redMap[ev.player] = true;
+  }
+
+  const homeWon = result.homeGoals > result.awayGoals;
+  const awayWon = result.awayGoals > result.homeGoals;
+  const DEF_POS = ['GK','CB','LB','RB','LWB','RWB'];
+  const week = gameState.currentRound?.[gameState.playerLeague] || 1;
+
+  const ratePlayer = (p, isHome) => {
+    let r = 6.5;
+    r += (goalMap[p.name] || 0) * 1.0;
+    r += (assistMap[p.name] || 0) * 0.5;
+    if (redMap[p.name]) r -= 1.5;
+    else if (yellowMap[p.name]) r -= 0.4;
+    if (isHome ? homeWon : awayWon) r += 0.3;
+    else if (isHome ? awayWon : homeWon) r -= 0.2;
+    const conceded = isHome ? result.awayGoals > 0 : result.homeGoals > 0;
+    if (!conceded && DEF_POS.includes(p.pos)) r += 0.5;
+    return Math.round(Math.max(4.0, Math.min(9.5, r)) * 10) / 10;
+  };
+
+  for (const p of homePlayed) {
+    p.matchRatings = p.matchRatings || [];
+    p.matchRatings.push({ rating: ratePlayer(p, true), week });
+  }
+  for (const p of awayPlayed) {
+    p.matchRatings = p.matchRatings || [];
+    p.matchRatings.push({ rating: ratePlayer(p, false), week });
+  }
+  // Sub-on players get base rating 6.5
+  for (const ev of (result.events || [])) {
+    if (ev.type !== 'sub') continue;
+    const allSq = [...(getTeam(homeId)?.squad || []), ...(getTeam(awayId)?.squad || [])];
+    const sub = allSq.find(p => p.name === ev.playerOn);
+    if (sub && !sub.matchRatings?.find(r => r.week === week)) {
+      sub.matchRatings = sub.matchRatings || [];
+      sub.matchRatings.push({ rating: 6.5, week });
+    }
+  }
+}
+
+function _getLeagueAllPlayers(leagueId, gameState) {
+  return getLeagueTeams(leagueId, gameState).flatMap(tid => {
+    const t = getTeam(tid);
+    return t ? t.squad.map(p => ({ p, teamName: t.name, teamId: tid })) : [];
+  });
+}
+
+function getPlayerOfMonth(leagueId, fromWeek, toWeek, gameState) {
+  let best = null, bestAvg = 0;
+  for (const { p } of _getLeagueAllPlayers(leagueId, gameState)) {
+    const ratings = (p.matchRatings || []).filter(r => r.week >= fromWeek && r.week <= toWeek);
+    if (ratings.length < 2) continue;
+    const avg = ratings.reduce((s, r) => s + r.rating, 0) / ratings.length;
+    if (avg > bestAvg) { bestAvg = avg; best = p; }
+  }
+  return best ? { player: best, avg: Math.round(bestAvg * 10) / 10 } : null;
+}
+
+function getTeamOfMonth(leagueId, fromWeek, toWeek, gameState) {
+  const GK_P = ['GK'], DEF_P = ['CB','LB','RB','LWB','RWB'], MID_P = ['CM','CDM','CAM','LM','RM'], ATT_P = ['ST','CF','LW','RW'];
+  const avgInPeriod = p => {
+    const r = (p.matchRatings || []).filter(r => r.week >= fromWeek && r.week <= toWeek);
+    if (r.length < 2) return 0;
+    return r.reduce((s, x) => s + x.rating, 0) / r.length;
+  };
+  const all = _getLeagueAllPlayers(leagueId, gameState);
+  const pickBest = (positions, count) =>
+    all.filter(({ p }) => positions.includes(p.pos))
+       .map(({ p, teamName, teamId }) => ({ p, teamName, teamId, avg: avgInPeriod(p) }))
+       .filter(x => x.avg > 0).sort((a, b) => b.avg - a.avg).slice(0, count);
+
+  const GK = pickBest(GK_P, 1)[0] || null;
+  const DEF = pickBest(DEF_P, 4);
+  const MID = pickBest(MID_P, 3);
+  const ATT = pickBest(ATT_P, 3);
+  if (!GK && !DEF.length && !ATT.length) return null;
+  return { GK, DEF, MID, ATT };
+}
+
+// ─── COLORFUL NEWS (rumors, quotes, drama) ───────────────────────────────────
+
+function generateColorfulNews(gameState) {
+  if (!gameState.playerTeam || !gameState.playerLeague) return;
+  const week = gameState.currentRound[gameState.playerLeague] || 1;
+  const leagueTeams = getLeagueTeams(gameState.playerLeague, gameState);
+  const myTeam = getTeam(gameState.playerTeam);
+  const myTeamName = myTeam?.name || '';
+  const table = getLeagueTable(gameState.playerLeague, gameState);
+  const currPos = table.findIndex(r => r.id === gameState.playerTeam) + 1;
+  const leagueName = LEAGUES[gameState.playerLeague]?.name || 'the league';
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // ── Transfer Rumors (~38% chance) ────────────────────────────────────────
+  if (Math.random() < 0.38) {
+    const otherIds = leagueTeams.filter(tid => tid !== gameState.playerTeam);
+    const targetTeam = getTeam(pick(otherIds));
+    if (targetTeam) {
+      const notables = targetTeam.squad.filter(p => p.overall >= 73 && !p.injuredWeeks && !p.outOnLoan);
+      if (notables.length) {
+        const target = pick(notables);
+        const intId = Math.random() < 0.35 ? gameState.playerTeam : pick(otherIds.filter(id => id !== targetTeam.id));
+        const intName = getTeam(intId)?.name || 'A top club';
+        const fee = formatMoney(Math.round(calculateTransferValue(target) * (1.0 + Math.random() * 0.5)));
+        const alt = getTeam(pick(otherIds.filter(id => id !== intId && id !== targetTeam.id)))?.name || 'another club';
+        const headlines = [
+          `${intName} monitoring ${target.name} ahead of transfer window`,
+          `${target.name} attracting interest — ${intName} ready to make move`,
+          `Sources: ${intName} preparing ${fee} bid for ${targetTeam.name}'s ${target.name}`,
+          `${target.name} told he can leave ${targetTeam.name} — ${intName} lead the race`,
+          `Agent of ${target.name} spotted in talks with ${intName} chiefs`,
+          `${intName} eye ambitious swoop for ${targetTeam.name} star ${target.name}`,
+          `${target.name} wants a new challenge — ${intName} offering escape route`,
+          `${intName} and ${alt} both chasing ${target.name} — bidding war looms`,
+          `${targetTeam.name} reject opening offer from ${intName} for ${target.name}`,
+          `${target.name}: "I love this club" — but ${intName} don't give up`,
+        ];
+        pushNews({ type: 'transfer_rumor', icon: '🔍', headline: pick(headlines), detail: `${target.pos} · OVR ${target.overall} · ${targetTeam.name}`, week }, gameState);
+      }
+    }
+  }
+
+  // ── Your own player linked away (~20% chance) ─────────────────────────────
+  if (Math.random() < 0.20 && myTeam) {
+    const stars = myTeam.squad.filter(p => p.overall >= 74 && !p.injuredWeeks && !p.outOnLoan);
+    if (stars.length) {
+      const star = pick(stars);
+      const suitor = getTeam(pick(leagueTeams.filter(id => id !== gameState.playerTeam)))?.name || 'a rival';
+      const headlines = [
+        `${star.name} linked with shock move away from ${myTeamName}`,
+        `${suitor} ready to test ${myTeamName}'s resolve with big bid for ${star.name}`,
+        `${star.name} contract talks stalling — ${suitor} circling`,
+        `Report: ${star.name} flattered by interest but committed to ${myTeamName} — for now`,
+        `${myTeamName} adamant ${star.name} not for sale as ${suitor} prepare approach`,
+        `Sources close to ${star.name} refuse to rule out a summer departure`,
+        `${star.name} drops hint on future: "I want to play at the highest level"`,
+      ];
+      pushNews({ type: 'transfer_rumor', icon: '🔍', headline: pick(headlines), detail: `${star.pos} · OVR ${star.overall} · your squad`, week }, gameState);
+    }
+  }
+
+  // ── Manager Quotes (~45% chance) ─────────────────────────────────────────
+  if (Math.random() < 0.45) {
+    const recent = (gameState.results[gameState.playerLeague] || [])
+      .filter(r => r.homeTeam === gameState.playerTeam || r.awayTeam === gameState.playerTeam)
+      .slice(-1);
+    let quotes = [];
+    if (recent.length) {
+      const r = recent[0];
+      const isH = r.homeTeam === gameState.playerTeam;
+      const mg = isH ? r.homeGoals : r.awayGoals;
+      const og = isH ? r.awayGoals : r.homeGoals;
+      const opp = getTeam(isH ? r.awayTeam : r.homeTeam)?.name || 'opponents';
+      if (mg > og) {
+        quotes = [
+          `${myTeamName} boss: "We deserved every point today. No question."`,
+          `"This squad has something special — I see it every day." — ${myTeamName} manager`,
+          `Manager: "I said we'd bounce back and we did. Keep doubting us."`,
+          `"${opp} are a good side. But tonight we were simply better." — ${myTeamName} boss`,
+          `${myTeamName} manager: "The belief in that dressing room right now is incredible"`,
+          `"People wrote us off. I showed the lads those headlines." — ${myTeamName} boss`,
+          `Manager: "That's the ${myTeamName} I know. That's who we are."`,
+          `${myTeamName} boss dedicates win to fans: "They're the reason we fight"`,
+        ];
+      } else if (mg < og) {
+        quotes = [
+          `${myTeamName} manager fumes: "That referee decision was an absolute joke"`,
+          `"I back my players 100%. The result doesn't tell the full story." — ${myTeamName} boss`,
+          `${myTeamName} boss refuses to panic: "We've been through tougher moments"`,
+          `"We'll watch that back, it'll hurt — but we'll come out stronger." — manager`,
+          `"${opp} got lucky. We had the better chances and we all know it." — ${myTeamName} boss`,
+          `Manager points to officiating: "Three decisions. Three wrong calls. Not football."`,
+          `"One bad result doesn't define us. Ask me again in five games." — ${myTeamName} manager`,
+          `${myTeamName} boss in defiant mood: "This squad will not crumble. Watch."`,
+        ];
+      } else {
+        quotes = [
+          `${myTeamName} manager: "A point today — I'll take that. We move."`,
+          `"We should've won it. We know that. No excuses." — ${myTeamName} boss`,
+          `${myTeamName} boss: "Draws won't get us where we want to be."`,
+          `"We had the game in our hands. Just couldn't finish." — manager`,
+          `Manager philosophical: "Football. Sometimes you deserve more."`,
+        ];
+      }
+    } else {
+      quotes = [
+        `${myTeamName} boss: "We're building something here. The pieces are coming together."`,
+        `"Every session in training this week has been exceptional." — ${myTeamName} manager`,
+        `${myTeamName} manager: "We're not looking at the table yet. Just the next game."`,
+        `"This squad can surprise people this season — I genuinely believe that." — boss`,
+        `${myTeamName} manager: "I've never worked with a more committed group of players"`,
+      ];
+    }
+    if (quotes.length) pushNews({ type: 'manager_quote', icon: '🎙️', headline: pick(quotes), week }, gameState);
+  }
+
+  // ── Rival Manager Drama (~22% chance) ────────────────────────────────────
+  if (Math.random() < 0.22) {
+    const rivalRows = table.filter(r => r.id !== gameState.playerTeam);
+    if (rivalRows.length) {
+      const rival = getTeam(pick(rivalRows).id);
+      const rivalName = rival?.name || 'Rival club';
+      const drama = [
+        `${rivalName} manager in heated exchange with fourth official after final whistle`,
+        `${rivalName} boss: "We were absolutely robbed tonight. This cannot continue."`,
+        `Shock at ${rivalName} — star player reportedly submits transfer request`,
+        `${rivalName} manager hits back at critics: "Keep talking. We'll keep winning."`,
+        `Reports: ${rivalName} dressing room divided after run of poor results`,
+        `${rivalName} set to overhaul squad — three senior players could leave`,
+        `${rivalName} boss under pressure as board meet to discuss manager's future`,
+        `"${rivalName} are in freefall — something has to change" — insider`,
+        `${rivalName} captain posts cryptic message amid contract standoff`,
+        `${rivalName} manager denies bust-up with players: "What happens in there stays there"`,
+        `${rivalName} star skips training amid transfer speculation`,
+        `${rivalName} to hold emergency board meeting after dismal run of form`,
+      ];
+      pushNews({ type: 'rival_drama', icon: '🔥', headline: pick(drama), detail: rivalName, week }, gameState);
+    }
+  }
+
+  // ── Pundit Opinions (~28% chance) ────────────────────────────────────────
+  if (Math.random() < 0.28) {
+    const pundits = ['Gary Neville','Jamie Carragher','Roy Keane','Alan Shearer','Micah Richards','Thierry Henry','Ian Wright','Rio Ferdinand','Steven Gerrard','Frank Lampard'];
+    const pundit = pick(pundits);
+    const star = myTeam?.squad.filter(p => p.overall >= 72).sort((a, b) => b.overall - a.overall)[0];
+    const topTeamName = table[0]?.id !== gameState.playerTeam ? getTeam(table[0]?.id)?.name : getTeam(table[1]?.id)?.name;
+    let quotes = [];
+    if (currPos <= 3) {
+      quotes = [
+        `${pundit}: "${myTeamName} are genuine title contenders. I'm calling it now."`,
+        `"Don't sleep on ${myTeamName} — they are the real deal this season." — ${pundit}`,
+        ...(star ? [`${pundit} backs ${star.name} for Player of the Year: "Nobody touches him right now"`] : []),
+        `${pundit}: "I said ${myTeamName} would challenge. Nobody believed me."`,
+        `"${myTeamName} have the best defensive record in ${leagueName} — that's a title team." — ${pundit}`,
+      ];
+    } else if (currPos <= 7) {
+      quotes = [
+        `${pundit}: "${myTeamName} have the squad to push for a top-four finish"`,
+        `"${myTeamName} are inconsistent — but when they're on it, they're frightening." — ${pundit}`,
+        ...(star ? [`"${star.name} is the best ${star.pos} in ${leagueName} right now." — ${pundit}`] : []),
+        `${pundit}: "I'd love to see ${myTeamName} in a cup final. That fan base deserves it."`,
+        `"${myTeamName} remind me of a team I played in — organised, hungry, dangerous." — ${pundit}`,
+      ];
+    } else if (currPos > table.length - 4) {
+      quotes = [
+        `${pundit}: "${myTeamName} need a win this weekend. The pressure is building."`,
+        `"I can't defend that run of results from ${myTeamName}. Something must change." — ${pundit}`,
+        `${pundit}: "${myTeamName} looked like a team without a plan out there"`,
+        `"${myTeamName} look low on confidence. That dressing room needs a spark." — ${pundit}`,
+      ];
+    } else {
+      quotes = [
+        ...(topTeamName ? [`${pundit}: "${topTeamName} look unstoppable — but who's stopping them?"`] : []),
+        ...(star ? [`"${star.name} is quietly having a brilliant season. Not enough talk about him." — ${pundit}`] : []),
+        `${pundit}: "The ${leagueName} title race is wide open — anyone can win it"`,
+        `"I've been impressed by ${myTeamName} at their best this season." — ${pundit}`,
+        `${pundit}: "Whoever wins the ${leagueName} this year has genuinely earned it"`,
+      ];
+    }
+    if (quotes.length) pushNews({ type: 'pundit_opinion', icon: '📺', headline: pick(quotes), week }, gameState);
+  }
+}
+function getPlayerOfSeason(leagueId, gameState) {
+  let best = null, bestAvg = 0;
+  for (const { p } of _getLeagueAllPlayers(leagueId, gameState)) {
+    const ratings = p.matchRatings || [];
+    if (ratings.length < 10) continue; // min 10 apps for season award
+    const avg = ratings.reduce((s, r) => s + r.rating, 0) / ratings.length;
+    if (avg > bestAvg) { bestAvg = avg; best = p; }
+  }
+  return best ? { player: best, avg: Math.round(bestAvg * 10) / 10 } : null;
+}
+
+function getTeamOfSeason(leagueId, gameState) {
+  const GK_P = ['GK'], DEF_P = ['CB','LB','RB','LWB','RWB'], MID_P = ['CM','CDM','CAM','LM','RM'], ATT_P = ['ST','CF','LW','RW'];
+  const seasonAvg = p => {
+    const r = p.matchRatings || [];
+    if (r.length < 8) return 0;
+    return r.reduce((s, x) => s + x.rating, 0) / r.length;
+  };
+  const all = _getLeagueAllPlayers(leagueId, gameState);
+  const pickBest = (positions, count) =>
+    all.filter(({ p }) => positions.includes(p.pos))
+       .map(({ p, teamName, teamId }) => ({ p, teamName, teamId, avg: seasonAvg(p) }))
+       .filter(x => x.avg > 0).sort((a, b) => b.avg - a.avg).slice(0, count);
+
+  const GK = pickBest(GK_P, 1)[0] || null;
+  const DEF = pickBest(DEF_P, 4);
+  const MID = pickBest(MID_P, 3);
+  const ATT = pickBest(ATT_P, 3);
+  if (!GK && !DEF.length && !ATT.length) return null;
+  return { GK, DEF, MID, ATT };
 }

@@ -153,6 +153,7 @@ function simulateMatchweek(leagueId, gameState) {
     fixture.result = result;
     gameState.results[leagueId].push(result);
     weekResults.push(result);
+    if (leagueId === gameState.playerLeague) computeMatchRatings(fixture.home, fixture.away, result, gameState);
 
     if (result.homeGoals > result.awayGoals) {
       updateMorale(fixture.home, 'win', gameState);
@@ -237,6 +238,99 @@ function advanceMatchweek(gameState) {
 
   const week = gameState.currentRound[gameState.playerLeague];
   gameState.transferWindowOpen = (week <= 3) || (week >= 19 && week <= 22);
+
+  // ─── NEWS GENERATION ────────────────────────────────────────────────────────
+  if (gameState.playerTeam && gameState.playerLeague) {
+    const _nw = week; // news week
+    const _myTeam = getTeam(gameState.playerTeam);
+    const _myTeamName = _myTeam?.name || '';
+    const _leagueName = LEAGUES[gameState.playerLeague]?.name || '';
+
+    // Injury returns — check BEFORE decrementInjuries fires
+    if (_myTeam) {
+      _myTeam.squad.forEach(p => {
+        if (p.injuredWeeks === 1) {
+          pushNews({ type: 'injury_return', icon: '💪', headline: `${p.name} is back fit`, detail: `${p.pos} returns to full training`, week: _nw }, gameState);
+        }
+      });
+    }
+
+    // New injuries from just-simulated AI matches (only playerTeam players)
+    if (gameState.newInjuries?.length) {
+      gameState.newInjuries.forEach(inj => {
+        pushNews({ type: 'injury', icon: '🏥', headline: `${inj.name} picks up an injury`, detail: `${inj.pos} · out for ${inj.weeks} week${inj.weeks !== 1 ? 's' : ''}`, week: _nw }, gameState);
+      });
+    }
+
+    // Table position changes
+    const _table = getLeagueTable(gameState.playerLeague, gameState);
+    const _currPos = _table.findIndex(r => r.id === gameState.playerTeam) + 1;
+    const _prevPos = gameState._prevLeaguePos || _currPos;
+    const _relZone = _table.length - (LEAGUES[gameState.playerLeague]?.relegationSpots || 3);
+    if (_prevPos !== 1 && _currPos === 1) {
+      pushNews({ type: 'table_top', icon: '🥇', headline: `${_myTeamName} go top of the table!`, detail: `Leading the ${_leagueName}`, week: _nw }, gameState);
+    } else if (_prevPos > 4 && _currPos <= 4) {
+      pushNews({ type: 'european_zone', icon: '🌍', headline: `European football in sight`, detail: `${_myTeamName} move into the top 4`, week: _nw }, gameState);
+    } else if (_prevPos > 0 && _prevPos <= _relZone && _currPos > _relZone) {
+      pushNews({ type: 'safe', icon: '😮‍💨', headline: `${_myTeamName} escape the drop zone`, detail: `Moving to safety`, week: _nw }, gameState);
+    } else if (_prevPos > _relZone && _currPos > 0 && _currPos <= _relZone) {
+      pushNews({ type: 'relegation_zone', icon: '🔴', headline: `${_myTeamName} drop into the relegation zone`, detail: `Danger zone in the ${_leagueName}`, week: _nw }, gameState);
+    }
+    gameState._prevLeaguePos = _currPos;
+
+    // Win/loss streaks
+    const _allResults = (gameState.results[gameState.playerLeague] || [])
+      .filter(r => r.homeTeam === gameState.playerTeam || r.awayTeam === gameState.playerTeam);
+    const _getOut = r => {
+      const h = r.homeTeam === gameState.playerTeam;
+      const mg = h ? r.homeGoals : r.awayGoals, og = h ? r.awayGoals : r.homeGoals;
+      return mg > og ? 'W' : mg === og ? 'D' : 'L';
+    };
+    const _last3 = _allResults.slice(-3).map(_getOut);
+    const _last5 = _allResults.slice(-5).map(_getOut);
+    if (_last3.length === 3 && _last3.every(o => o === 'W'))
+      pushNews({ type: 'win_streak', icon: '🔥', headline: `${_myTeamName} on a 3-game winning run!`, week: _nw }, gameState);
+    if (_last3.length === 3 && _last3.every(o => o === 'L'))
+      pushNews({ type: 'losing_streak', icon: '⚠️', headline: `Three straight losses for ${_myTeamName}`, detail: `Form is a concern`, week: _nw }, gameState);
+    if (_last5.length === 5 && !_last5.includes('L') && _last5.includes('D'))
+      pushNews({ type: 'unbeaten_run', icon: '🛡️', headline: `${_myTeamName} five games unbeaten`, week: _nw }, gameState);
+
+    // Rival stumbles — only when player is in top 5 themselves
+    if (_currPos > 0 && _currPos <= 5) {
+      _table.slice(0, 4).filter(r => r.id !== gameState.playerTeam).forEach(rival => {
+        const _rr = (gameState.results[gameState.playerLeague] || [])
+          .filter(r => r.homeTeam === rival.id || r.awayTeam === rival.id).slice(-1);
+        if (_rr.length) {
+          const r = _rr[0];
+          const lost = r.homeTeam === rival.id ? r.homeGoals < r.awayGoals : r.awayGoals < r.homeGoals;
+          if (lost) pushNews({ type: 'rival_stumble', icon: '😏', headline: `${getTeam(rival.id)?.name} drop points`, detail: `Title race tightens`, week: _nw }, gameState);
+        }
+      });
+    }
+
+    // POTM / TOTM every 4 matchweeks
+    if (_nw > 0 && _nw % 4 === 0) {
+      const _from = _nw - 3;
+      const _potm = getPlayerOfMonth(gameState.playerLeague, _from, _nw, gameState);
+      const _totm = getTeamOfMonth(gameState.playerLeague, _from, _nw, gameState);
+      if (_potm) {
+        gameState.lastPOTM = _potm;
+        pushNews({ type: 'potm', icon: '🏅', headline: `${_potm.player.name} wins Player of the Month`, detail: `Avg rating ${_potm.avg} · ${_potm.player.goals}g ${_potm.player.assists}a`, week: _nw }, gameState);
+      }
+      if (_totm) {
+        gameState.lastTOTM = _totm;
+        const _names = [
+          ...(_totm.GK ? [_totm.GK.p.name] : []),
+          ...(_totm.DEF || []).slice(0, 2).map(x => x.p.name),
+          ...(_totm.ATT || []).slice(0, 1).map(x => x.p.name),
+        ].join(', ');
+        pushNews({ type: 'totm', icon: '🌟', headline: `Team of the Month announced`, detail: _names, week: _nw }, gameState);
+      }
+    }
+    // Colorful news: rumors, manager quotes, pundit opinions, rival drama
+    generateColorfulNews(gameState);
+  }
+  // ─── END NEWS ────────────────────────────────────────────────────────────────
 
   // Decrement injury timers
   decrementInjuries(gameState);
@@ -451,6 +545,25 @@ function endSeason(gameState) {
     topScorerLeague, myTopScorer, managerOfSeason,
     europeanResult: getEuropeanSeasonResult(gameState)
   });
+
+  // Season awards: POTS + TOTS
+  try {
+    const _pots = getPlayerOfSeason(gameState.playerLeague, gameState);
+    const _tots = getTeamOfSeason(gameState.playerLeague, gameState);
+    if (_pots) {
+      gameState.lastPOTS = _pots;
+      pushNews({ type: 'pots', icon: '🏆', headline: `${_pots.player.name} is Player of the Season`, detail: `Avg rating ${_pots.avg} · ${_pots.player.goals}g ${_pots.player.assists}a`, week: gameState.currentRound[gameState.playerLeague] || 38 }, gameState);
+    }
+    if (_tots) {
+      gameState.lastTOTS = _tots;
+      const _totNames = [
+        ...(_tots.GK ? [_tots.GK.p.name] : []),
+        ...(_tots.DEF || []).slice(0, 3).map(x => x.p.name),
+        ...(_tots.ATT || []).slice(0, 2).map(x => x.p.name),
+      ].join(', ');
+      pushNews({ type: 'tots', icon: '⭐', headline: `Team of the Season revealed`, detail: _totNames, week: gameState.currentRound[gameState.playerLeague] || 38 }, gameState);
+    }
+  } catch(e) { console.error('POTS/TOTS error:', e); }
 
   // Age players + retirements + regens
   processRetirements(gameState);
@@ -898,31 +1011,41 @@ function generateContractDemands(gameState) {
     if (p.overall < 65) return;
     const morale = p.morale ?? 70;
     const noPlay = p.matchesWithoutPlay || 0;
-    // Already has a demand pending
-    if (gameState.contractDemands.find(d => d.playerId === p.id)) return;
 
-    // Wage demand: low morale + sitting on bench
-    if (morale < 45 && noPlay >= 5) {
-      const offer = getContractRenewalOffer(p);
-      gameState.contractDemands.push({
-        id: `demand-${p.id}-${Date.now()}`,
-        playerId: p.id,
-        playerName: p.name,
-        playerPos: p.pos,
-        playerOvr: p.overall,
-        type: 'wage',
-        wageIncrease: offer.wageIncrease,
-        newWage: offer.newWage
-      });
+    // Accumulate bench frustration when unhappy + not playing (carries across seasons)
+    if (morale < 50 && noPlay >= 3) {
+      p.benchFrustration = (p.benchFrustration || 0) + 1;
     }
-    // Transfer request: very low morale + star player benched even longer
-    if (morale < 30 && noPlay >= 8 && p.overall >= 72) {
-      // Upgrade to transfer request if not already one
-      const existing = gameState.contractDemands.find(d => d.playerId === p.id);
-      if (existing) {
-        existing.type = 'transfer';
-      }
-    }
+
+    // Demands ONLY fire in the last year of contract
+    if ((p.contract || 3) > 1) return;
+    // Already has a pending demand
+    if (gameState.contractDemands.find(d => d.playerId === p.id)) return;
+    // Must be actually unhappy or have built up frustration
+    const frustration = p.benchFrustration || 0;
+    if (morale >= 55 && frustration < 4) return;
+
+    const offer = getContractRenewalOffer(p);
+    // Scale demand by how long they've been suffering: 0-7 = base, 8-19 = +40%, 20+ = +80%
+    const frustMult = frustration >= 20 ? 1.8 : frustration >= 8 ? 1.4 : 1.0;
+    const scaledIncrease = Math.round(offer.wageIncrease * frustMult);
+    const currentWage = p.wage || Math.round(Math.max(0, p.overall - 50) * 60);
+    const scaledWage = currentWage + scaledIncrease;
+
+    // High frustration stars (waited 20+ matchweeks) want out entirely
+    // Transfer request: only elite players (87+) OR someone who's been waiting forever (30+ matchweeks unhappy)
+    const demandType = (frustration >= 20 && (p.overall >= 87 || frustration >= 30)) ? 'transfer' : 'wage';
+
+    gameState.contractDemands.push({
+      id: `demand-${p.id}-${Date.now()}`,
+      playerId: p.id,
+      playerName: p.name,
+      playerPos: p.pos,
+      playerOvr: p.overall,
+      type: demandType,
+      wageIncrease: scaledIncrease,
+      newWage: scaledWage
+    });
   });
 }
 
@@ -941,12 +1064,18 @@ function startNewSeason(gameState) {
   gameState.aiBids = []; // clear pending bids
   gameState.negotiations = []; // clear pending negotiations
 
-  // Reset player stats for new season
+  // Reset player stats and match ratings for new season
   getAllTeams().forEach(team => {
     team.squad.forEach(p => {
       p.goals = 0; p.assists = 0; p.appearances = 0; p.cleanSheets = 0;
+      p.matchRatings = [];
     });
   });
+  // New season divider in news feed
+  pushNews({ type: 'season_start', icon: '🗓️', headline: `Season ${gameState.season} begins`, detail: `A new chapter starts`, week: 0 }, gameState);
+  gameState._prevLeaguePos = null;
+  gameState.lastPOTM = null;
+  gameState.lastTOTM = null;
 
   // Youth system: graduate 18-year-olds → free agents, generate new market, cleanup FA pool
   graduateYouthPlayers(gameState);
