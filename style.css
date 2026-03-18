@@ -1650,3 +1650,91 @@ tr.player-loaned { background: rgba(37, 99, 235, 0.06); }
 .slot-picker-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
 .slot-picker-name { font-weight: 600; font-size: 13px; }
 .slot-picker-sub { font-size: 10px; }
+
+/* ── PLAYER TRAINING SCREEN ───────────────────────────────────── */
+.training-screen-body {
+  padding: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.training-screen-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.budget-label { font-weight: 700; font-size: 14px; color: var(--green); }
+.training-player-list { display: flex; flex-direction: column; gap: 6px; }
+.training-player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+.training-player-row:hover { background: var(--bg3); border-color: var(--accent); }
+.training-player-row.tp-row-active { border-color: rgba(234,179,8,0.4); background: rgba(234,179,8,0.05); }
+.tp-pos { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; min-width: 38px; text-align: center; padding: 3px 6px; border-radius: 4px; }
+.tp-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.tp-name { font-weight: 600; font-size: 14px; }
+.tp-ovr { font-size: 11px; color: var(--muted); }
+.tp-status-col { display: flex; align-items: center; min-width: 160px; }
+.tp-status-active { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+.tp-prog-name { font-size: 12px; font-weight: 600; color: var(--warn); }
+.tp-prog-meta { font-size: 11px; }
+.tp-status-available { font-size: 12px; }
+.tp-status-blocked { font-size: 12px; }
+.tp-progress-track {
+  height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; width: 100%;
+}
+.tp-progress-fill { height: 100%; background: var(--warn); border-radius: 3px; transition: width 0.3s; }
+
+/* Training modal program cards */
+.tp-programs-list { display: flex; flex-direction: column; gap: 10px; }
+.tp-program-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.tp-program-card:not(.tp-prog-disabled):hover { border-color: var(--accent); background: var(--bg3); }
+.tp-prog-disabled { opacity: 0.45; }
+.tp-prog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tp-prog-icon { font-size: 18px; }
+.tp-prog-name-main { font-weight: 700; font-size: 14px; flex: 1; }
+.tp-prog-cost { font-weight: 700; font-size: 13px; color: var(--warn); }
+.tp-prog-desc { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+.tp-prog-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.tp-prog-stats { font-size: 12px; font-weight: 700; flex: 1; }
+.tp-modal-active {
+  background: rgba(234,179,8,0.08);
+  border: 1px solid rgba(234,179,8,0.3);
+  border-radius: 8px;
+  padding: 14px;
+}
+.tp-modal-active-header { font-size: 15px; margin-bottom: 6px; }
+
+@media (max-width: 768px) {
+  .tp-status-col { min-width: 120px; }
+  .tp-name { font-size: 13px; }
+}
+@media (max-width: 480px) {
+  .training-player-row { flex-wrap: wrap; gap: 8px; }
+  .tp-status-col { min-width: unset; width: 100%; }
+  .tp-prog-footer { flex-wrap: wrap; gap: 8px; }
+}

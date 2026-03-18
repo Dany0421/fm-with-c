@@ -256,11 +256,16 @@ function advanceMatchweek(gameState) {
   // Reset youth training ticks each matchweek
   gameState.youthTrainingTicks = 0;
 
-  // Tick active team training
-  if (gameState.activeTraining) {
-    gameState.activeTraining.weeksLeft--;
-    if (gameState.activeTraining.weeksLeft <= 0) completeTraining(gameState);
-  }
+  // Tick per-player training programs
+  const trainingSquad = getTeam(gameState.playerTeam)?.squad || [];
+  trainingSquad.forEach(p => {
+    if (!p.trainingProgram) return;
+    p.trainingProgram.weeksLeft--;
+    if (p.trainingProgram.weeksLeft <= 0) {
+      completePlayerTraining(p, gameState);
+      gameState.notification = `🏋️ ${p.name} completed their training program! OVR now ${p.overall}.`;
+    }
+  });
 
   generateAIBids(gameState);
   generateContractDemands(gameState);
@@ -524,26 +529,41 @@ function processRetirements(gameState) {
         // Young players grow towards their potential
         const gap = p.potential - p.overall;
         if (gap > 0) {
-          const growth = Math.min(gap, Math.floor(Math.random() * 4) + 1); // 1–4 per season
-          p.overall = Math.min(p.potential, p.overall + growth);
-          // Also grow individual stats
-          const statKeys = ['pace','shooting','passing','defending','physical','dribbling'];
+          // Grow individual stats — OVR recalculated from them
+          const statKeys = p.pos === 'GK'
+            ? ['gkHandling','gkReflexes','gkDiving','gkPositioning','gkKicking','pace','physical']
+            : ['pace','shooting','passing','defending','physical','dribbling'];
           statKeys.forEach(k => {
-            if (Math.random() < 0.5) p[k] = Math.min(99, p[k] + Math.floor(Math.random() * 3) + 1);
+            if (p[k] !== undefined && Math.random() < 0.5) p[k] = Math.min(99, p[k] + Math.floor(Math.random() * 3) + 1);
           });
+          calculateOverall(p);
+          p.overall = Math.min(p.potential, p.overall);
         }
       } else if (p.age <= 29) {
-        // Prime: small random fluctuation ±1, rarely grows
+        // Prime: small random fluctuation, rarely grows
         if (Math.random() < 0.2 && p.overall < p.potential) {
-          p.overall = Math.min(p.potential, p.overall + 1);
+          const statKeys = p.pos === 'GK'
+            ? ['gkHandling','gkReflexes','gkPositioning']
+            : ['pace','shooting','passing','defending','physical','dribbling'];
+          const k = statKeys[Math.floor(Math.random() * statKeys.length)];
+          if (p[k] !== undefined) p[k] = Math.min(99, p[k] + 1);
+          calculateOverall(p);
+          p.overall = Math.min(p.potential, p.overall);
         }
       } else if (p.age > 30) {
-        // Decline after 30
+        // Decline after 30 — decay stats then recalc
         const decay = Math.floor((p.age - 30) * 0.8);
         const drop = Math.floor(Math.random() * decay * 0.5);
-        p.overall = Math.max(55, p.overall - drop);
-        // Pace declines fastest
-        if (p.age > 32 && Math.random() < 0.5) p.pace = Math.max(40, p.pace - 1);
+        if (drop > 0) {
+          const statKeys = p.pos === 'GK'
+            ? ['gkHandling','gkReflexes','gkDiving','gkPositioning']
+            : ['pace','shooting','passing','defending','physical','dribbling'];
+          const k = statKeys[Math.floor(Math.random() * statKeys.length)];
+          if (p[k] !== undefined) p[k] = Math.max(40, p[k] - drop);
+          if (p.age > 32 && Math.random() < 0.5) p.pace = Math.max(40, p.pace - 1);
+          calculateOverall(p);
+          p.overall = Math.max(55, p.overall);
+        }
       }
 
       // Retirement age threshold
@@ -598,12 +618,14 @@ function processRetirements(gameState) {
       p.age++;
       const gap = (p.potential || 75) - p.overall;
       if (gap > 0) {
-        const growth = Math.min(gap, Math.floor(Math.random() * 3) + 1);
-        p.overall = Math.min(p.potential, p.overall + growth);
-        const statKeys = ['pace','shooting','passing','defending','physical','dribbling'];
+        const statKeys = p.pos === 'GK'
+          ? ['gkHandling','gkReflexes','gkDiving','gkPositioning','gkKicking','pace','physical']
+          : ['pace','shooting','passing','defending','physical','dribbling'];
         statKeys.forEach(k => {
-          if (Math.random() < 0.4) p[k] = Math.min(99, p[k] + 1);
+          if (p[k] !== undefined && Math.random() < 0.4) p[k] = Math.min(99, p[k] + 1);
         });
+        calculateOverall(p);
+        p.overall = Math.min(p.potential, p.overall);
       }
     });
   }

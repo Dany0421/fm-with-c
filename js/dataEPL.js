@@ -11,10 +11,17 @@ function makePlayer(id, name, pos, age, ovr, nation) {
 
   let pace, shooting, passing, defending, physical, dribbling;
 
+  let gkDiving, gkHandling, gkReflexes, gkKicking, gkPositioning;
+
   switch (pos) {
     case 'GK':
       pace = stat(0.50); shooting = stat(0.22); passing = stat(0.58);
       defending = stat(1.05); physical = stat(0.76); dribbling = stat(0.30);
+      gkDiving      = stat(1.02);
+      gkHandling    = stat(1.04);
+      gkReflexes    = stat(1.00);
+      gkKicking     = stat(0.68);
+      gkPositioning = stat(0.98);
       break;
     case 'CB':
       pace = stat(0.58); shooting = stat(0.32); passing = stat(0.64);
@@ -49,24 +56,30 @@ function makePlayer(id, name, pos, age, ovr, nation) {
       defending = stat(0.68); physical = stat(0.72); dribbling = stat(0.72);
   }
 
-  // overall is the authoritative value passed in — don't average stats (they vary by position profile)
-  const overall = ovr;
+  // Build the player object so calculateOverall can read its stats
+  const player = {
+    id, name, pos, age, nation: nation || 'ENG',
+    pace, shooting, passing, defending, physical, dribbling,
+    ...(pos === 'GK' ? { gkDiving, gkHandling, gkReflexes, gkKicking, gkPositioning } : {}),
+    overall: ovr, // temporary — will be replaced by calculateOverall below
+  };
+
+  // Derive overall from stats (position-weighted). Defined in manager.js but available globally.
+  if (typeof calculateOverall === 'function') calculateOverall(player);
 
   // Potential: how good they can become. Young players have higher ceiling relative to current ovr.
-  // Stars (ovr 85+) tend to have high potential. Youth always has room to grow.
   let potential;
-  if (age <= 18) potential = overall + Math.floor(Math.random() * 20) + 8;
-  else if (age <= 21) potential = overall + Math.floor(Math.random() * 14) + 4;
-  else if (age <= 24) potential = overall + Math.floor(Math.random() * 8) + 1;
-  else potential = overall + Math.floor(Math.random() * 4);
+  if (age <= 18) potential = player.overall + Math.floor(Math.random() * 20) + 8;
+  else if (age <= 21) potential = player.overall + Math.floor(Math.random() * 14) + 4;
+  else if (age <= 24) potential = player.overall + Math.floor(Math.random() * 8) + 1;
+  else potential = player.overall + Math.floor(Math.random() * 4);
   potential = Math.min(99, potential);
 
   return {
-    id, name, pos, age, nation: nation || 'ENG',
-    pace, shooting, passing, defending, physical, dribbling, overall, potential,
+    ...player, potential,
     contract: Math.floor(Math.random() * 3) + 1,
-    wage: Math.round(Math.pow(Math.max(0, overall - 55), 2.2) * 80 + Math.random() * 5000),
-    value: Math.round(Math.pow(Math.max(0, overall - 55), 3) * 1800 * (age <= 23 ? 1.4 : age <= 26 ? 1.1 : age <= 29 ? 1.0 : age <= 31 ? 0.75 : 0.4)),
+    wage: Math.round(Math.pow(Math.max(0, player.overall - 55), 2.2) * 80 + Math.random() * 5000),
+    value: Math.round(Math.pow(Math.max(0, player.overall - 55), 3) * 1800 * (age <= 23 ? 1.4 : age <= 26 ? 1.1 : age <= 29 ? 1.0 : age <= 31 ? 0.75 : 0.4)),
     morale: 70 + Math.floor(Math.random() * 20),
     fitness: 85 + Math.floor(Math.random() * 15),
     goals: 0, assists: 0, appearances: 0, cleanSheets: 0

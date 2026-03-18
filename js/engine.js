@@ -31,7 +31,11 @@ function playerAttackContrib(p) {
 function playerDefenseContrib(p) {
   let base;
   switch (p.pos) {
-    case 'GK':             base = p.overall; break;
+    case 'GK':
+      base = p.gkHandling
+        ? p.gkHandling*0.28 + p.gkReflexes*0.25 + p.gkPositioning*0.25 + p.gkDiving*0.15 + p.gkKicking*0.07
+        : p.overall; // fallback for old saves
+      break;
     case 'CB':             base = p.defending*0.55 + p.physical*0.3  + p.pace*0.15; break;
     case 'RB': case 'LB': base = p.defending*0.45 + p.pace*0.3      + p.physical*0.25; break;
     case 'CDM':            base = p.defending*0.5  + p.physical*0.3  + p.passing*0.2; break;

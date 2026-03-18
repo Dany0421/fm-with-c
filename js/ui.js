@@ -88,12 +88,10 @@ function showPlayerModal(playerId) {
         <div class="pm-badge"><div class="pm-badge-val" style="font-size:13px;color:var(--accent2)">${formatMoney(val)}</div><div class="pm-badge-lbl">Value</div></div>
       </div>
       <div class="pm-stats">
-        ${statBar('PAC', player.pace)}
-        ${statBar('SHO', player.shooting)}
-        ${statBar('PAS', player.passing)}
-        ${statBar('DEF', player.defending)}
-        ${statBar('PHY', player.physical)}
-        ${statBar('DRI', player.dribbling)}
+        ${(player.pos === 'GK' && player.gkHandling !== undefined)
+          ? [statBar('DIV', player.gkDiving), statBar('HAN', player.gkHandling), statBar('REF', player.gkReflexes), statBar('KIC', player.gkKicking), statBar('POS', player.gkPositioning)].join('')
+          : [statBar('PAC', player.pace), statBar('SHO', player.shooting), statBar('PAS', player.passing), statBar('DEF', player.defending), statBar('PHY', player.physical), statBar('DRI', player.dribbling)].join('')
+        }
       </div>
       ${player.traits?.length ? `
         <div class="pm-traits">
@@ -271,6 +269,7 @@ function showScreen(screen, data) {
     case 'europa-league':   renderEuropa(app); break;
     case 'champions-league': renderCL(app); break;
     case 'club':            renderClub(app); break;
+    case 'training':        renderTraining(app); break;
     default: renderHub(app);
   }
 
@@ -518,6 +517,7 @@ function renderHub(app) {
       <nav class="hub-nav">
         <button onclick="showScreen('squad')">👥 Squad</button>
         <button onclick="showScreen('tactics')">📋 Tactics</button>
+        <button onclick="showScreen('training')">🏋️ Training</button>
         <button onclick="showScreen('table')">📊 Table</button>
         <button onclick="showScreen('fixtures')">📅 Fixtures</button>
         <button onclick="showScreen('transfers')">💰 Transfers</button>
@@ -766,8 +766,6 @@ function renderTactics(app) {
             ${spSelect('cornerTaker', '🚩 Corner Taker')}
           </div>
 
-          <div class="tactic-section-title" style="margin-top:18px">TEAM TRAINING</div>
-          ${renderTrainingSection()}
 
         </div>
       </div>
@@ -775,70 +773,149 @@ function renderTactics(app) {
   `;
 }
 
-function renderTrainingSection() {
-  const active = gameState.activeTraining;
-  if (active) {
-    const drill = TRAINING_DRILLS.find(d => d.id === active.drillId);
-    const done = active.totalWeeks - active.weeksLeft;
-    const pct = Math.round((done / active.totalWeeks) * 100);
-    return `
-      <div class="training-active">
-        <div class="training-active-top">
-          <span>${drill?.icon || '🏋️'} <strong>${drill?.name || active.drillId}</strong></span>
-          <span class="muted">${active.weeksLeft}w left</span>
-        </div>
-        <div class="training-active-desc muted">${drill?.desc || ''}</div>
-        <div class="training-progress-track">
-          <div class="training-progress-fill" style="width:${pct}%"></div>
-        </div>
-        <div class="training-progress-label muted">${done} / ${active.totalWeeks} matchweeks</div>
-      </div>
-    `;
-  }
-  return `
-    <div class="training-note muted">Pick a drill — whole squad trains. Injured sit out. +1 OVR guaranteed on completion, rarely +2.</div>
-    <div class="training-grid">
-      ${TRAINING_DRILLS.map(d => `
-        <div class="training-card" onclick="trainingConfirm('${d.id}')">
-          <div class="training-card-top">
-            <span class="training-icon">${d.icon}</span>
-            <span class="training-name">${d.name}</span>
-          </div>
-          <div class="training-desc">${d.desc}</div>
-          <div class="training-meta">
-            <span class="training-cost">${formatMoney(d.cost)}</span>
-            <span class="training-weeks muted">${d.weeks}w</span>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function trainingConfirm(drillId) {
-  const drill = TRAINING_DRILLS.find(d => d.id === drillId);
-  if (!drill) return;
-  const budget = gameState.budgets[gameState.playerTeam] || 0;
-  const canAffordIt = budget >= drill.cost;
-  showModal({
-    title: `${drill.icon} ${drill.name}`,
-    body: `
-      <div style="margin-bottom:12px;color:var(--muted);font-size:13px">${drill.desc}</div>
-      <div class="modal-stats-row">
-        <div><span class="muted">Cost</span><br><strong class="${canAffordIt?'green':'danger'}">${formatMoney(drill.cost)}</strong></div>
-        <div><span class="muted">Duration</span><br><strong>${drill.weeks} matchweeks</strong></div>
-        <div><span class="muted">Budget</span><br><strong>${formatMoney(budget)}</strong></div>
-      </div>
-      ${!canAffordIt ? '<p style="color:var(--danger);font-size:12px;margin-top:8px">⚠️ Not enough budget.</p>' : ''}
-    `,
-    confirm: canAffordIt ? 'Start Training' : null,
-    cancel: 'Cancel',
-    onConfirm: () => {
-      const r = startTeamTraining(gameState, drillId);
-      showToast(r.message, r.success ? 'success' : 'error');
-      if (r.success) showScreen('tactics');
-    }
+// ─── PLAYER TRAINING SCREEN ──────────────────────────────────────────────────
+function renderTraining(app) {
+  const team = getTeam(gameState.playerTeam);
+  const squad = (team?.squad || []).filter(p => !p.outOnLoan).sort((a, b) => {
+    if (a.trainingProgram && !b.trainingProgram) return -1;
+    if (!a.trainingProgram && b.trainingProgram) return 1;
+    return b.overall - a.overall;
   });
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  const inProgCount = squad.filter(p => p.trainingProgram).length;
+
+  app.innerHTML = `
+    <div class="screen-header">
+      <button class="btn-back" onclick="showScreen('hub')">← Back</button>
+      <h2>🏋️ Training</h2>
+    </div>
+    <div class="training-screen-body">
+      <div class="training-screen-top">
+        <span class="muted" style="font-size:13px">${inProgCount} player${inProgCount!==1?'s':''} in active program</span>
+        <span class="budget-label">${formatMoney(budget)}</span>
+      </div>
+      <div class="training-player-list">
+        ${squad.map(p => {
+          const prog = p.trainingProgram;
+          let statusHtml;
+          if (prog) {
+            const programs = getTrainingPrograms(p.pos);
+            const progInfo = programs.find(pr => pr.id === prog.programId);
+            const done = prog.totalWeeks - prog.weeksLeft;
+            const pct = Math.round((done / prog.totalWeeks) * 100);
+            statusHtml = `
+              <div class="tp-status-active">
+                <div class="tp-prog-name">${progInfo?.icon || '🏋️'} ${progInfo?.name || prog.programId}</div>
+                <div class="tp-progress-track"><div class="tp-progress-fill" style="width:${pct}%"></div></div>
+                <div class="tp-prog-meta muted">${prog.weeksLeft}w left</div>
+              </div>`;
+          } else if (p.injuredWeeks) {
+            statusHtml = `<span class="tp-status-blocked danger">🤕 Injured (${p.injuredWeeks}w)</span>`;
+          } else {
+            statusHtml = `<span class="tp-status-available muted">Available</span>`;
+          }
+          return `
+            <div class="training-player-row ${prog ? 'tp-row-active' : ''}" onclick="showPlayerTrainingModal(${p.id})">
+              <div class="tp-pos pos-${p.pos}">${p.pos}</div>
+              <div class="tp-info">
+                <span class="tp-name">${p.name}</span>
+                <span class="tp-ovr">OVR ${p.overall}</span>
+              </div>
+              <div class="tp-status-col">${statusHtml}</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function showPlayerTrainingModal(playerId) {
+  const team = getTeam(gameState.playerTeam);
+  const p = team?.squad.find(pl => pl.id === playerId);
+  if (!p) return;
+
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  const isGK = p.pos === 'GK';
+  const hasGKStats = p.gkHandling !== undefined;
+
+  const statBar = (label, v) => {
+    if (v === undefined) return '';
+    const pct = Math.round((v / 99) * 100);
+    const color = v >= 80 ? 'var(--green)' : v >= 70 ? 'var(--accent)' : v >= 60 ? 'var(--warn)' : 'var(--danger)';
+    return `<div class="pm-stat-row">
+      <span class="pm-stat-label">${label}</span>
+      <div class="pm-stat-track"><div class="pm-stat-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="pm-stat-val" style="color:${color}">${v}</span>
+    </div>`;
+  };
+
+  const statsHtml = (isGK && hasGKStats)
+    ? [statBar('DIV', p.gkDiving), statBar('HAN', p.gkHandling), statBar('REF', p.gkReflexes), statBar('KIC', p.gkKicking), statBar('POS', p.gkPositioning)].join('')
+    : [statBar('PAC', p.pace), statBar('SHO', p.shooting), statBar('PAS', p.passing), statBar('DEF', p.defending), statBar('PHY', p.physical), statBar('DRI', p.dribbling)].join('');
+
+  let programsHtml = '';
+  if (p.trainingProgram) {
+    const programs = getTrainingPrograms(p.pos);
+    const progInfo = programs.find(pr => pr.id === p.trainingProgram.programId);
+    const done = p.trainingProgram.totalWeeks - p.trainingProgram.weeksLeft;
+    const pct = Math.round((done / p.trainingProgram.totalWeeks) * 100);
+    programsHtml = `
+      <div class="tp-modal-active">
+        <div class="tp-modal-active-header">${progInfo?.icon || '🏋️'} <strong>${progInfo?.name || p.trainingProgram.programId}</strong></div>
+        <div class="muted" style="font-size:12px;margin-bottom:8px">${progInfo?.desc || ''}</div>
+        <div class="tp-progress-track"><div class="tp-progress-fill" style="width:${pct}%"></div></div>
+        <div class="tp-prog-meta muted" style="margin-top:4px">${p.trainingProgram.weeksLeft} week${p.trainingProgram.weeksLeft!==1?'s':''} remaining</div>
+      </div>`;
+  } else {
+    const programs = getTrainingPrograms(p.pos);
+    const nearCap = p.overall >= (p.potential || 99) - 2;
+    programsHtml = programs.map(prog => {
+      const canAffordIt = budget >= prog.cost;
+      const statLabels = prog.stats.map(s => {
+        const labels = { gkDiving:'DIV', gkHandling:'HAN', gkReflexes:'REF', gkKicking:'KIC', gkPositioning:'POS',
+          pace:'PAC', shooting:'SHO', passing:'PAS', defending:'DEF', physical:'PHY', dribbling:'DRI' };
+        return `+${labels[s]||s}`;
+      }).join(' ');
+      const disabled = !canAffordIt || p.injuredWeeks || nearCap;
+      return `
+        <div class="tp-program-card ${disabled ? 'tp-prog-disabled' : ''}">
+          <div class="tp-prog-header">
+            <span class="tp-prog-icon">${prog.icon}</span>
+            <span class="tp-prog-name-main">${prog.name}</span>
+            <span class="tp-prog-cost ${canAffordIt?'':'danger'}">${formatMoney(prog.cost)}</span>
+          </div>
+          <div class="tp-prog-desc muted">${prog.desc}</div>
+          <div class="tp-prog-footer">
+            <span class="tp-prog-stats green">${statLabels}</span>
+            <span class="muted">⏱ ${prog.duration}w</span>
+            <button class="btn btn-sm ${disabled?'btn-disabled':''}" ${disabled?'disabled':''} onclick="startTrainingConfirm(${p.id},'${prog.id}')">Start</button>
+          </div>
+        </div>`;
+    }).join('');
+    if (nearCap) programsHtml = `<div class="muted" style="font-size:12px;margin-bottom:10px">⚠️ Near potential ceiling — limited gains.</div>` + programsHtml;
+  }
+
+  showModal({
+    title: `🏋️ ${p.name}`,
+    body: `
+      <div class="pm-ovr-row" style="margin-bottom:12px">
+        <span class="pos-badge pos-${p.pos}" style="font-size:13px;padding:3px 10px">${p.pos}</span>
+        <span class="ovr-badge" style="font-size:18px;font-weight:700;margin-left:10px">OVR ${p.overall}</span>
+        <span class="muted" style="font-size:12px;margin-left:8px">POT ${p.potential||'??'}</span>
+      </div>
+      <div style="margin-bottom:14px">${statsHtml}</div>
+      <div class="tp-programs-list">${programsHtml}</div>
+    `,
+    cancel: 'Close',
+  });
+}
+
+function startTrainingConfirm(playerId, programId) {
+  const r = startPlayerTraining(gameState, playerId, programId);
+  showToast(r.message, r.success ? 'success' : 'error');
+  const modal = document.getElementById('fm-modal');
+  if (modal) { modal.classList.remove('modal-visible'); setTimeout(() => modal.remove(), 200); }
+  if (r.success) showScreen('training');
 }
 
 function renderPitchLineup(lineup, formation, interactive = false) {

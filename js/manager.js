@@ -279,18 +279,20 @@ function trainYouthPlayer(gameState, playerId) {
 
   gameState.budgets[gameState.playerTeam] -= cost;
   gameState.youthTrainingTicks = ticksUsed + 1;
-  p.overall = Math.min(p.potential - 2, p.overall + 1);
-
   // Boost a key stat based on position
   const statBoosts = {
     ST: ['shooting','pace'], CF: ['shooting','dribbling'], LW: ['pace','dribbling'],
     RW: ['pace','dribbling'], CAM: ['dribbling','passing'], CM: ['passing','physical'],
     CDM: ['defending','physical'], LB: ['pace','defending'], RB: ['pace','defending'],
-    CB: ['defending','physical'], GK: ['defending','physical']
+    CB: ['defending','physical'],
+    GK: ['gkHandling','gkReflexes','gkDiving','gkPositioning','gkKicking']
   };
   const keys = statBoosts[p.pos] || ['physical','passing'];
   const stat = keys[Math.floor(Math.random() * keys.length)];
   p[stat] = Math.min(99, (p[stat] || 50) + 1);
+  // Recalculate OVR from new stats
+  calculateOverall(p);
+  p.overall = Math.min(p.potential - 2, p.overall);
 
   const left = ticksCap - gameState.youthTrainingTicks;
 
@@ -631,97 +633,117 @@ function getScoutedPotential(potential, gameState) {
   return String(potential);
 }
 
-// ─── TEAM TRAINING ───────────────────────────────────────────────────────────
-const TRAINING_DRILLS = [
-  {
-    id: 'finishing', name: 'Finishing', icon: '🎯', cost: 450000, weeks: 6,
-    desc: 'Shooting ↑ for FWD/CAM, Pace ↑ for wide',
-    apply(p) {
-      if (['ST','CF','CAM','LW','RW'].includes(p.pos)) p.shooting = Math.min(99, p.shooting + (Math.random()<0.35?2:1));
-      else if (['CM'].includes(p.pos)) p.shooting = Math.min(99, p.shooting + 1);
-      if (['LW','RW'].includes(p.pos)) p.pace = Math.min(99, p.pace + 1);
-    }
-  },
-  {
-    id: 'defense', name: 'Defensive Shape', icon: '🛡️', cost: 400000, weeks: 7,
-    desc: 'Defending ↑ for DEF/CDM, Physical ↑ all',
-    apply(p) {
-      p.physical = Math.min(99, p.physical + 1);
-      if (['CB','LB','RB','CDM','LWB','RWB'].includes(p.pos)) p.defending = Math.min(99, p.defending + (Math.random()<0.35?2:1));
-    }
-  },
-  {
-    id: 'sprint', name: 'Sprint Work', icon: '⚡', cost: 350000, weeks: 5,
-    desc: 'Pace ↑ for all, extra boost for wide & strikers',
-    apply(p) {
-      const bonus = ['LW','RW','ST','LB','RB'].includes(p.pos) ? (Math.random()<0.35?2:1) : 1;
-      p.pace = Math.min(99, p.pace + bonus);
-    }
-  },
-  {
-    id: 'passing', name: 'Passing Clinic', icon: '⚽', cost: 380000, weeks: 6,
-    desc: 'Passing ↑ for all, extra for midfielders',
-    apply(p) {
-      const bonus = ['CM','CAM','CDM','LM','RM'].includes(p.pos) ? (Math.random()<0.35?2:1) : 1;
-      p.passing = Math.min(99, p.passing + bonus);
-    }
-  },
-  {
-    id: 'strength', name: 'Strength Camp', icon: '💪', cost: 320000, weeks: 5,
-    desc: 'Physical ↑↑ across the whole squad equally',
-    apply(p) {
-      p.physical = Math.min(99, p.physical + (Math.random()<0.35?2:1));
-    }
-  },
-  {
-    id: 'technical', name: 'Ball Mastery', icon: '🎭', cost: 420000, weeks: 7,
-    desc: 'Dribbling ↑ for FWD/MID, Passing ↑ for MID',
-    apply(p) {
-      if (['ST','CAM','LW','RW','CM'].includes(p.pos)) p.dribbling = Math.min(99, p.dribbling + (Math.random()<0.35?2:1));
-      if (['CM','CAM','CDM'].includes(p.pos)) p.passing = Math.min(99, p.passing + 1);
-    }
-  },
-];
-
-function startTeamTraining(gameState, drillId) {
-  const drill = TRAINING_DRILLS.find(d => d.id === drillId);
-  if (!drill) return { success: false, message: 'Training not found.' };
-  if (gameState.activeTraining) return { success: false, message: 'Training already in progress.' };
-  if (!canAfford(gameState.playerTeam, drill.cost, gameState)) {
-    return { success: false, message: `Not enough budget — need ${formatMoney(drill.cost)}.` };
+// ─── OVERALL FORMULA (position-weighted from individual stats) ────────────────
+function calculateOverall(p) {
+  let score;
+  if (p.pos === 'GK') {
+    const div = p.gkDiving      || p.defending;
+    const han = p.gkHandling    || p.defending;
+    const ref = p.gkReflexes    || p.defending;
+    const kic = p.gkKicking     || p.pace;
+    const pos = p.gkPositioning || p.defending;
+    score = han*0.26 + ref*0.23 + pos*0.22 + div*0.19 + kic*0.10;
+  } else if (p.pos === 'CB') {
+    score = p.defending*0.45 + p.physical*0.28 + p.pace*0.14 + p.passing*0.08 + p.dribbling*0.05;
+  } else if (p.pos === 'LB' || p.pos === 'RB') {
+    score = p.pace*0.28 + p.defending*0.28 + p.passing*0.20 + p.physical*0.15 + p.dribbling*0.09;
+  } else if (p.pos === 'CDM') {
+    score = p.defending*0.35 + p.physical*0.27 + p.passing*0.23 + p.pace*0.08 + p.dribbling*0.07;
+  } else if (p.pos === 'CM') {
+    score = p.passing*0.35 + p.physical*0.20 + p.dribbling*0.20 + p.defending*0.15 + p.pace*0.10;
+  } else if (p.pos === 'CAM') {
+    score = p.passing*0.28 + p.dribbling*0.28 + p.shooting*0.24 + p.pace*0.12 + p.physical*0.08;
+  } else if (['LW','RW','LM','RM'].includes(p.pos)) {
+    score = p.pace*0.30 + p.dribbling*0.28 + p.shooting*0.22 + p.passing*0.12 + p.physical*0.08;
+  } else if (p.pos === 'ST' || p.pos === 'CF') {
+    score = p.shooting*0.36 + p.pace*0.20 + p.dribbling*0.18 + p.physical*0.16 + p.passing*0.10;
+  } else {
+    score = (p.pace + p.shooting + p.passing + p.defending + p.physical + p.dribbling) / 6;
   }
-  gameState.budgets[gameState.playerTeam] -= drill.cost;
-  gameState.activeTraining = { drillId, weeksLeft: drill.weeks, totalWeeks: drill.weeks };
-  return { success: true, message: `${drill.name} started — ${drill.weeks} matchweeks to go.` };
+  p.overall = Math.min(99, Math.max(40, Math.round(score)));
 }
 
-function completeTraining(gameState) {
-  const training = gameState.activeTraining;
-  if (!training) return;
-  const drill = TRAINING_DRILLS.find(d => d.id === training.drillId);
-  if (!drill) { gameState.activeTraining = null; return; }
+// ─── PLAYER TRAINING ─────────────────────────────────────────────────────────
+const PLAYER_TRAINING_PROGRAMS = {
+  GK: [
+    { id:'gk_shot_stopper', name:'Shot Stopper',   icon:'🧤', desc:'Reflexes and diving saves',           stats:['gkReflexes','gkDiving'],               duration:5, cost:320000 },
+    { id:'gk_traditional',  name:'Goalkeeper',     icon:'🥅', desc:'Complete keeper fundamentals',        stats:['gkHandling','gkPositioning','gkReflexes'], duration:6, cost:380000 },
+    { id:'sweeper_keeper',  name:'Sweeper Keeper', icon:'🏃', desc:'Distribution and sweeping',           stats:['gkKicking','gkDiving','gkPositioning'], duration:6, cost:400000 },
+  ],
+  CB: [
+    { id:'cb_stopper',   name:'Stopper',        icon:'🛡️', desc:'Aggressive defending and duels',    stats:['defending','physical'],          duration:5, cost:300000 },
+    { id:'cb_ball_play', name:'Ball-Playing CB', icon:'🎯', desc:'Build-up and distribution',        stats:['passing','defending'],           duration:6, cost:340000 },
+    { id:'cb_pace_def',  name:'Pace Defender',  icon:'⚡', desc:'Speed and recovery defending',      stats:['pace','defending'],              duration:5, cost:310000 },
+  ],
+  'LB,RB': [
+    { id:'fb_overlap', name:'Attacking FB',  icon:'↑',  desc:'Overlapping runs and crossing',    stats:['pace','passing'],    duration:5, cost:300000 },
+    { id:'fb_solid',   name:'Defensive FB',  icon:'🔒', desc:'Solid defending and positioning',  stats:['defending','physical'], duration:5, cost:290000 },
+  ],
+  CDM: [
+    { id:'cdm_anchor',  name:'Anchor',        icon:'⚓', desc:'Sit deep, win every duel',         stats:['defending','physical'],           duration:5, cost:310000 },
+    { id:'cdm_regista', name:'Deep Playmaker', icon:'📋', desc:'Dictate play from deep',           stats:['passing','dribbling'],            duration:6, cost:360000 },
+    { id:'cdm_box2box', name:'Box-to-Box',    icon:'🔄', desc:'Dynamic all-round midfielder',     stats:['physical','defending','passing'],  duration:7, cost:400000 },
+  ],
+  CM: [
+    { id:'cm_playmaker', name:'Playmaker',   icon:'🎼', desc:'Creativity and vision',            stats:['passing','dribbling'],            duration:6, cost:360000 },
+    { id:'cm_engine',    name:'Engine',      icon:'⚙️', desc:'Stamina and work rate',            stats:['physical','passing'],             duration:5, cost:320000 },
+    { id:'cm_complete',  name:'Complete CM', icon:'⭐', desc:'Well-rounded midfield game',       stats:['passing','physical','dribbling'],  duration:7, cost:420000 },
+  ],
+  CAM: [
+    { id:'cam_free',    name:'Free Role',     icon:'✦',  desc:'Creative freedom in the final third', stats:['dribbling','passing'],           duration:6, cost:380000 },
+    { id:'cam_shadow',  name:'Shadow Striker',icon:'👤', desc:'Late runs and finishing',              stats:['shooting','dribbling'],          duration:5, cost:350000 },
+    { id:'cam_classic', name:'Trequartista',  icon:'🎭', desc:'Link play and vision',                 stats:['passing','shooting','dribbling'], duration:7, cost:430000 },
+  ],
+  'LW,RW,LM,RM': [
+    { id:'w_speedster', name:'Speedster',      icon:'💨', desc:'Pace and direct running',          stats:['pace','dribbling'],           duration:5, cost:320000 },
+    { id:'w_inside',    name:'Inside Forward', icon:'↗️', desc:'Cut inside and shoot',             stats:['shooting','dribbling'],       duration:5, cost:340000 },
+    { id:'w_provider',  name:'Wide Playmaker', icon:'📐', desc:'Crossing and chance creation',     stats:['passing','dribbling','pace'], duration:6, cost:380000 },
+  ],
+  'ST,CF': [
+    { id:'st_poacher',  name:'Poacher',      icon:'🎯', desc:'Penalty box finishing',           stats:['shooting','physical'],          duration:5, cost:350000 },
+    { id:'st_advanced', name:'Advanced Fwd', icon:'⚡', desc:'Dynamic all-round attacker',      stats:['shooting','pace','dribbling'],  duration:6, cost:420000 },
+    { id:'st_false9',   name:'False 9',      icon:'🔄', desc:'Deep link-up and creativity',     stats:['passing','dribbling','shooting'],duration:7, cost:450000 },
+    { id:'st_target',   name:'Target Man',   icon:'💪', desc:'Hold-up play and aerial threat',  stats:['physical','shooting'],          duration:5, cost:330000 },
+  ],
+};
 
+function getTrainingPrograms(pos) {
+  for (const key of Object.keys(PLAYER_TRAINING_PROGRAMS)) {
+    if (key.split(',').includes(pos)) return PLAYER_TRAINING_PROGRAMS[key];
+  }
+  return PLAYER_TRAINING_PROGRAMS['CM'];
+}
+
+function startPlayerTraining(gameState, playerId, programId) {
   const team = getTeam(gameState.playerTeam);
-  if (!team) { gameState.activeTraining = null; return; }
+  const p = team?.squad.find(pl => pl.id === playerId);
+  if (!p) return { success: false, message: 'Player not found.' };
+  if (p.injuredWeeks) return { success: false, message: `${p.name} is injured.` };
+  if (p.outOnLoan) return { success: false, message: `${p.name} is out on loan.` };
+  if (p.trainingProgram) return { success: false, message: `${p.name} is already in a training program.` };
 
-  const assistQ = gameState?.staff?.assistantManager?.quality || 0;
-  const doubleOvrChance = Math.min(0.22, 0.08 + assistQ / 1100); // 8% → ~14% with elite staff
-  let ovrGains = 0;
-  team.squad.forEach(p => {
-    if (p.injuredWeeks) return; // injured sit out
-    drill.apply(p);
-    // Always +1 OVR, rarely +2 (boosted by assistant manager)
-    const trainingBonus = getTrainingOvrBonus(gameState);
-    const gain = (Math.random() < doubleOvrChance ? 2 : 1) + trainingBonus;
-    const cap = (p.potential || 99) - 1;
-    if (p.overall < cap) {
-      p.overall = Math.min(cap, p.overall + gain);
-      ovrGains += gain;
-    }
+  const programs = getTrainingPrograms(p.pos);
+  const prog = programs.find(pr => pr.id === programId);
+  if (!prog) return { success: false, message: 'Program not found.' };
+  if (!canAfford(gameState.playerTeam, prog.cost, gameState))
+    return { success: false, message: `Not enough budget — need ${formatMoney(prog.cost)}.` };
+
+  gameState.budgets[gameState.playerTeam] -= prog.cost;
+  p.trainingProgram = { programId, weeksLeft: prog.duration, totalWeeks: prog.duration };
+  return { success: true, message: `${p.name} started ${prog.name} training (${prog.duration} weeks).` };
+}
+
+function completePlayerTraining(p, gameState) {
+  const programs = getTrainingPrograms(p.pos);
+  const prog = programs.find(pr => pr.id === p.trainingProgram.programId);
+  p.trainingProgram = null;
+  if (!prog) return;
+  const cap = (p.potential || 99) - 1;
+  prog.stats.forEach(stat => {
+    p[stat] = Math.min(99, (p[stat] || 50) + 2);
   });
-
-  gameState.activeTraining = null;
-  gameState.notification = `🏋️ ${drill.name} complete! Squad OVR +${ovrGains} total.`;
+  calculateOverall(p);
+  if (p.overall > cap) p.overall = cap;
 }
 
 function executeLoan(gameState, playerId, fromTeamId) {
