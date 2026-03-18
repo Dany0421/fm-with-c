@@ -13,40 +13,40 @@ function makePlayer(id, name, pos, age, ovr, nation) {
 
   switch (pos) {
     case 'GK':
-      pace = stat(0.55); shooting = stat(0.25); passing = stat(0.55);
-      defending = stat(0.85); physical = stat(0.72); dribbling = stat(0.35);
+      pace = stat(0.50); shooting = stat(0.22); passing = stat(0.58);
+      defending = stat(1.05); physical = stat(0.76); dribbling = stat(0.30);
       break;
     case 'CB':
-      pace = stat(0.60); shooting = stat(0.38); passing = stat(0.60);
-      defending = stat(0.88); physical = stat(0.82); dribbling = stat(0.48);
+      pace = stat(0.58); shooting = stat(0.32); passing = stat(0.64);
+      defending = stat(1.05); physical = stat(0.92); dribbling = stat(0.44);
       break;
     case 'RB': case 'LB':
-      pace = stat(0.78); shooting = stat(0.50); passing = stat(0.72);
-      defending = stat(0.78); physical = stat(0.72); dribbling = stat(0.68);
+      pace = stat(0.92); shooting = stat(0.48); passing = stat(0.80);
+      defending = stat(0.90); physical = stat(0.76); dribbling = stat(0.74);
       break;
     case 'CDM':
-      pace = stat(0.65); shooting = stat(0.52); passing = stat(0.74);
-      defending = stat(0.82); physical = stat(0.80); dribbling = stat(0.62);
+      pace = stat(0.64); shooting = stat(0.52); passing = stat(0.84);
+      defending = stat(0.98); physical = stat(0.90); dribbling = stat(0.64);
       break;
     case 'CM':
-      pace = stat(0.68); shooting = stat(0.60); passing = stat(0.80);
-      defending = stat(0.65); physical = stat(0.72); dribbling = stat(0.72);
+      pace = stat(0.70); shooting = stat(0.66); passing = stat(0.98);
+      defending = stat(0.68); physical = stat(0.76); dribbling = stat(0.80);
       break;
     case 'CAM':
-      pace = stat(0.72); shooting = stat(0.74); passing = stat(0.84);
-      defending = stat(0.42); physical = stat(0.64); dribbling = stat(0.84);
+      pace = stat(0.74); shooting = stat(0.84); passing = stat(1.02);
+      defending = stat(0.36); physical = stat(0.62); dribbling = stat(1.02);
       break;
     case 'RW': case 'LW':
-      pace = stat(0.88); shooting = stat(0.74); passing = stat(0.72);
-      defending = stat(0.38); physical = stat(0.65); dribbling = stat(0.88);
+      pace = stat(1.04); shooting = stat(0.78); passing = stat(0.74);
+      defending = stat(0.34); physical = stat(0.64); dribbling = stat(1.04);
       break;
     case 'ST': case 'CF':
-      pace = stat(0.76); shooting = stat(0.88); passing = stat(0.62);
-      defending = stat(0.35); physical = stat(0.78); dribbling = stat(0.76);
+      pace = stat(0.84); shooting = stat(1.06); passing = stat(0.60);
+      defending = stat(0.30); physical = stat(0.86); dribbling = stat(0.82);
       break;
     default:
-      pace = stat(0.70); shooting = stat(0.65); passing = stat(0.70);
-      defending = stat(0.65); physical = stat(0.70); dribbling = stat(0.70);
+      pace = stat(0.72); shooting = stat(0.68); passing = stat(0.72);
+      defending = stat(0.68); physical = stat(0.72); dribbling = stat(0.72);
   }
 
   // overall is the authoritative value passed in — don't average stats (they vary by position profile)

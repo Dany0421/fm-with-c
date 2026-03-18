@@ -67,17 +67,38 @@ function getSquadByPosition(teamId) {
 }
 
 // Get best 11 for a formation
-function getBestEleven(teamId, formation) {
+function getBestEleven(teamId, formation, gameState) {
   const team = getTeam(teamId);
   const squad = [...team.squad].sort((a, b) => b.overall - a.overall);
-  const used = new Set();
-
   const rows = FORMATION_DISPLAY[formation] || FORMATION_DISPLAY['4-4-2'];
-  // Flatten rows to get ordered slot list
   const slots = rows.flat();
 
+  // Use manual lineup if set and valid length
+  const manual = gameState?.tactics?.[teamId]?.startingXI;
+  if (manual && manual.length === slots.length) {
+    const used = new Set();
+    return slots.map((slot, i) => {
+      const pid = manual[i];
+      let p = squad.find(pl => pl.id === pid && !pl.injuredWeeks && !pl.outOnLoan);
+      if (p && !used.has(p.id)) { used.add(p.id); return { ...p, slot }; }
+      // Player unavailable — auto-fill this slot
+      p = squad.find(pl => !used.has(pl.id) && !pl.injuredWeeks && !pl.outOnLoan && pl.pos === slot);
+      if (!p) {
+        for (const alt of (POS_FALLBACKS[slot] || [])) {
+          p = squad.find(pl => !used.has(pl.id) && !pl.injuredWeeks && !pl.outOnLoan && pl.pos === alt);
+          if (p) break;
+        }
+      }
+      if (!p) p = squad.find(pl => !used.has(pl.id) && !pl.injuredWeeks && !pl.outOnLoan);
+      if (!p) p = squad.find(pl => !used.has(pl.id));
+      if (p) { used.add(p.id); return { ...p, slot }; }
+      return null;
+    }).filter(Boolean);
+  }
+
+  // Auto-pick
+  const used = new Set();
   function pickPlayer(targetPos) {
-    // exact match first (skip injured + out on loan)
     let p = squad.find(p => !used.has(p.id) && !p.injuredWeeks && !p.outOnLoan && p.pos === targetPos);
     if (!p) {
       for (const alt of (POS_FALLBACKS[targetPos] || [])) {
@@ -85,15 +106,89 @@ function getBestEleven(teamId, formation) {
         if (p) break;
       }
     }
-    // last resort: best remaining (skip only out on loan)
     if (!p) p = squad.find(p => !used.has(p.id) && !p.outOnLoan && !p.injuredWeeks);
     if (!p) p = squad.find(p => !used.has(p.id));
     if (p) { used.add(p.id); return { ...p, slot: targetPos }; }
     return null;
   }
-
-  // Pick players in slot order
   return slots.map(slot => pickPlayer(slot)).filter(Boolean);
+}
+
+function setManualLineup(gameState, slotIdx, playerId) {
+  const tactics = getManagerTactics(gameState);
+  const rows = FORMATION_DISPLAY[tactics.formation] || FORMATION_DISPLAY['4-4-2'];
+  const slots = rows.flat();
+  // Initialize from current auto XI if no manual lineup yet
+  let xi = (tactics.startingXI?.length === slots.length)
+    ? [...tactics.startingXI]
+    : getBestEleven(gameState.playerTeam, tactics.formation).map(p => p.id);
+  // If player is already in another slot, swap
+  const existingSlot = xi.indexOf(playerId);
+  if (existingSlot !== -1 && existingSlot !== slotIdx) {
+    xi[existingSlot] = xi[slotIdx];
+  }
+  xi[slotIdx] = playerId;
+  setTactics(gameState, { startingXI: xi });
+}
+
+function clearManualLineup(gameState) {
+  setTactics(gameState, { startingXI: null });
+}
+
+// ─── PLAYER INSTRUCTIONS ──────────────────────────────────────────────────────
+const PLAYER_INSTRUCTIONS = [
+  // GK
+  { id: 'gk_sweeper',  positions: ['GK'],                    icon: '↑',  name: 'Sweeper Keeper',   desc: 'Comes off line to intercept through balls',          atkMod: 1.05, defMod: 0.90 },
+  { id: 'gk_line',     positions: ['GK'],                    icon: '🛑', name: 'Stay on Line',     desc: 'Stays in goal, minimal risk approach',               atkMod: 1.00, defMod: 1.10 },
+  // CB
+  { id: 'cb_stepup',   positions: ['CB'],                    icon: '↑',  name: 'Step Up & Press',  desc: 'Aggressive high line, presses attackers',            atkMod: 1.06, defMod: 0.88 },
+  { id: 'cb_deep',     positions: ['CB'],                    icon: '↓',  name: 'Stay Deep',        desc: 'Covers the space in behind, very safe',             atkMod: 0.90, defMod: 1.14 },
+  { id: 'cb_carry',    positions: ['CB'],                    icon: '↗',  name: 'Carry Ball Out',   desc: 'Drives forward with the ball to start attacks',      atkMod: 1.14, defMod: 0.86 },
+  // Fullbacks
+  { id: 'fb_overlap',  positions: ['LB','RB','LWB','RWB'],   icon: '↑',  name: 'Overlap',          desc: 'Bombs forward to support attack down the flank',     atkMod: 1.20, defMod: 0.80 },
+  { id: 'fb_hold',     positions: ['LB','RB','LWB','RWB'],   icon: '●',  name: 'Hold Position',    desc: 'Stays in shape, provides defensive solidity',        atkMod: 1.00, defMod: 1.05 },
+  { id: 'fb_tuck',     positions: ['LB','RB','LWB','RWB'],   icon: '↘',  name: 'Tuck Inside',      desc: 'Cuts inside to form an extra midfielder',            atkMod: 1.08, defMod: 1.08 },
+  { id: 'fb_inverted', positions: ['LB','RB','LWB','RWB'],   icon: '↙',  name: 'Inverted Run',     desc: 'Runs infield into half-spaces, shooting threat',     atkMod: 1.15, defMod: 0.82 },
+  // CDM
+  { id: 'cdm_sit',     positions: ['CDM'],                   icon: '↓',  name: 'Sit Deep',         desc: 'Shields the defence at all times, rarely attacks',   atkMod: 0.72, defMod: 1.30 },
+  { id: 'cdm_roam',    positions: ['CDM'],                   icon: '↔',  name: 'Roam & Intercept', desc: 'Covers wide areas, wins the ball all over the pitch', atkMod: 1.05, defMod: 1.12 },
+  { id: 'cdm_join',    positions: ['CDM'],                   icon: '↑',  name: 'Join the Attack',  desc: 'Gets forward when team attacks, late box arrivals',  atkMod: 1.24, defMod: 0.82 },
+  // CM
+  { id: 'cm_btb',      positions: ['CM'],                    icon: '↕',  name: 'Box to Box',       desc: 'Covers the whole pitch with high energy',            atkMod: 1.14, defMod: 1.10 },
+  { id: 'cm_hold',     positions: ['CM'],                    icon: '●',  name: 'Hold Position',    desc: 'Stays in shape, recycles possession calmly',         atkMod: 0.94, defMod: 1.12 },
+  { id: 'cm_advance',  positions: ['CM'],                    icon: '↑',  name: 'Advance Forward',  desc: 'Makes late runs into the box, ghost into space',     atkMod: 1.24, defMod: 0.78 },
+  { id: 'cm_deep',     positions: ['CM'],                    icon: '↓',  name: 'Drop Deep',        desc: 'Drops to receive between lines, starts play',        atkMod: 0.90, defMod: 1.18 },
+  // CAM
+  { id: 'cam_free',    positions: ['CAM'],                   icon: '✦',  name: 'Free Role',        desc: 'Roams freely in the final third, unlocks defences',  atkMod: 1.24, defMod: 0.74 },
+  { id: 'cam_support', positions: ['CAM'],                   icon: '↔',  name: 'Support Play',     desc: 'Drops deep to receive, links midfield and attack',   atkMod: 1.06, defMod: 0.92 },
+  { id: 'cam_press',   positions: ['CAM'],                   icon: '↑↑', name: 'Press High',       desc: 'Aggressively hunts centre-backs and full-backs',     atkMod: 1.12, defMod: 1.06 },
+  // Wingers
+  { id: 'w_cut',       positions: ['LW','RW','LM','RM'],     icon: '↘',  name: 'Cut Inside',       desc: 'Comes infield to shoot or play one-twos',            atkMod: 1.18, defMod: 0.86 },
+  { id: 'w_wide',      positions: ['LW','RW','LM','RM'],     icon: '↑',  name: 'Stay Wide',        desc: 'Hugs the touchline, stretches play, delivers crosses', atkMod: 1.10, defMod: 0.82 },
+  { id: 'w_trackback', positions: ['LW','RW','LM','RM'],     icon: '↓',  name: 'Track Back',       desc: 'Drops back to help full-back defend transitions',    atkMod: 0.82, defMod: 1.24 },
+  { id: 'w_underlap',  positions: ['LW','RW','LM','RM'],     icon: '↙',  name: 'Underlap Run',     desc: 'Makes inside runs behind the striker, third-man',    atkMod: 1.14, defMod: 0.88 },
+  // Strikers
+  { id: 'st_behind',   positions: ['ST','CF'],               icon: '↑',  name: 'Run in Behind',    desc: 'Exploits space in behind the defensive line',        atkMod: 1.18, defMod: 0.90 },
+  { id: 'st_holdup',   positions: ['ST','CF'],               icon: '↓',  name: 'Hold Up Play',     desc: 'Links play, holds the ball for runners',             atkMod: 1.06, defMod: 0.94 },
+  { id: 'st_roam',     positions: ['ST','CF'],               icon: '↔',  name: 'Roam Wide',        desc: 'Drifts wide to create space in the box for others',  atkMod: 1.10, defMod: 0.90 },
+  { id: 'st_press',    positions: ['ST','CF'],               icon: '↑↑', name: 'Press CBs Hard',   desc: 'Hunts the ball high, forces errors in build-up',     atkMod: 1.12, defMod: 0.96 },
+  { id: 'st_drop',     positions: ['ST','CF'],               icon: '↙',  name: 'Drop Deep',        desc: 'False 9 — drops into midfield to overload and link', atkMod: 1.14, defMod: 0.88 },
+];
+
+function getPlayerInstructions(pos) {
+  return PLAYER_INSTRUCTIONS.filter(i => i.positions.includes(pos));
+}
+
+function setPlayerInstruction(gameState, playerId, instructionId) {
+  const t = gameState.playerTeam;
+  if (!gameState.tactics) gameState.tactics = {};
+  if (!gameState.tactics[t]) gameState.tactics[t] = getManagerTactics(gameState);
+  if (!gameState.tactics[t].playerInstructions) gameState.tactics[t].playerInstructions = {};
+  if (instructionId === null) {
+    delete gameState.tactics[t].playerInstructions[playerId];
+  } else {
+    gameState.tactics[t].playerInstructions[playerId] = instructionId;
+  }
 }
 
 // Transfer market

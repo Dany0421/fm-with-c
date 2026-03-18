@@ -55,13 +55,18 @@ function playerDefenseContrib(p) {
 
 function getTeamAttack(team, gameState) {
   const tactics = gameState?.tactics?.[team.id] || {};
-  const squad = [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
+  const squad = (team.id === gameState?.playerTeam)
+    ? getBestEleven(team.id, tactics.formation || '4-4-2', gameState)
+    : [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
 
+  const instructions = tactics.playerInstructions || {};
   const atkScore = squad.reduce((s, p) => {
     const w = ['ST','CF','RW','LW','CAM'].includes(p.pos) ? 1.3 :
               ['CM','RM','LM'].includes(p.pos) ? 1.0 : 0.6;
     const contrib = playerAttackContrib(p);
-    return s + (contrib * 0.8 + p.overall * 0.2) * w;
+    const instr = PLAYER_INSTRUCTIONS?.find(i => i.id === instructions[p.id]);
+    const instrMod = instr ? instr.atkMod : 1.0;
+    return s + (contrib * 0.8 + p.overall * 0.2) * w * instrMod;
   }, 0) / 11;
 
   let mod = 1.0;
@@ -90,14 +95,19 @@ function getTeamAttack(team, gameState) {
 
 function getTeamDefense(team, gameState) {
   const tactics = gameState?.tactics?.[team.id] || {};
-  const squad = [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
+  const squad = (team.id === gameState?.playerTeam)
+    ? getBestEleven(team.id, tactics.formation || '4-4-2', gameState)
+    : [...team.squad].filter(p => !p.injuredWeeks).sort((a, b) => b.overall - a.overall).slice(0, 11);
 
+  const defInstructions = gameState?.tactics?.[team.id]?.playerInstructions || {};
   const defScore = squad.reduce((s, p) => {
     const w = ['GK','CB'].includes(p.pos) ? 1.4 :
               ['RB','LB','CDM'].includes(p.pos) ? 1.1 :
               ['CM','RM','LM'].includes(p.pos) ? 0.8 : 0.5;
     const contrib = playerDefenseContrib(p);
-    return s + (contrib * 0.8 + p.overall * 0.2) * w;
+    const instr = PLAYER_INSTRUCTIONS?.find(i => i.id === defInstructions[p.id]);
+    const instrMod = instr ? instr.defMod : 1.0;
+    return s + (contrib * 0.8 + p.overall * 0.2) * w * instrMod;
   }, 0) / 11;
 
   let mod = 1.0;

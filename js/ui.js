@@ -656,7 +656,8 @@ function sellConfirm(playerId) {
 function renderTactics(app) {
   const tactics = getManagerTactics(gameState);
   const team = getTeam(gameState.playerTeam);
-  const lineup = getBestEleven(gameState.playerTeam, tactics.formation);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  const isManual = !!(tactics.startingXI?.length);
 
   function btnGroup(key, options, labels) {
     return `<div class="btn-group">
@@ -701,7 +702,14 @@ function renderTactics(app) {
       <div class="tactics-body">
         <div class="pitch-container">
           <div class="pitch">
-            ${renderPitchLineup(lineup, tactics.formation)}
+            ${renderPitchLineup(lineup, tactics.formation, true)}
+          </div>
+          <div class="lineup-mode-bar">
+            <span class="lineup-mode-badge ${isManual ? 'lineup-manual' : 'lineup-auto'}">
+              ${isManual ? '✏️ Manual' : '⚡ Auto'}
+            </span>
+            ${isManual ? `<button class="btn-sm btn-secondary" onclick="resetLineup()">↺ Reset to Auto</button>` : ''}
+            <span class="muted" style="font-size:11px">Tap a player to change</span>
           </div>
           ${renderTeamAnalytics(gameState)}
         </div>
@@ -833,21 +841,34 @@ function trainingConfirm(drillId) {
   });
 }
 
-function renderPitchLineup(lineup, formation) {
+function renderPitchLineup(lineup, formation, interactive = false) {
   const rows = FORMATION_DISPLAY[formation] || FORMATION_DISPLAY['4-4-2'];
-  let idx = 0;
-  return rows.map(row => {
-    const rowPlayers = lineup.slice(idx, idx + row.length);
-    idx += row.length;
+  let slotIdx = 0;
+  return rows.map((row, rowI) => {
+    const rowStart = slotIdx;
+    const rowPlayers = lineup.slice(slotIdx, slotIdx + row.length);
+    slotIdx += row.length;
     return `
       <div class="pitch-row">
-        ${rowPlayers.map(p => p ? `
-          <div class="pitch-player">
-            <div class="pp-badge pos-${p.pos}">${p.slot}</div>
-            <div class="pp-name">${p.name.split(' ').pop()}</div>
-            <div class="pp-ovr">${p.overall}</div>
-          </div>
-        ` : '').join('')}
+        ${rowPlayers.map((p, i) => {
+          const si = rowStart + i;
+          const morale = p?.morale ?? 70;
+          const unhappy = morale < 50;
+          const injured = p?.injuredWeeks > 0;
+          const instrId = interactive ? gameState.tactics?.[gameState.playerTeam]?.playerInstructions?.[p.id] : null;
+          const instr = instrId ? PLAYER_INSTRUCTIONS?.find(i => i.id === instrId) : null;
+          return p ? `
+            <div class="pitch-player ${interactive ? 'pp-interactive' : ''} ${injured ? 'pp-injured' : ''} ${instr ? 'pp-has-instr' : ''}"
+              ${interactive ? `onclick="openPlayerMenu(${si}, '${row[i]}')"` : ''}>
+              <div class="pp-badge pos-${p.pos}">${p.slot}</div>
+              <div class="pp-name">${p.name.split(' ').pop()}</div>
+              <div class="pp-ovr">${p.overall}</div>
+              ${instr ? `<div class="pp-instr" title="${instr.name}">${instr.icon}</div>` : ''}
+              ${unhappy && !injured && !instr ? `<div class="pp-mood">😤</div>` : ''}
+              ${injured ? `<div class="pp-mood">🤕</div>` : ''}
+            </div>
+          ` : '';
+        }).join('')}
       </div>
     `;
   }).join('');
@@ -867,8 +888,172 @@ function applySetPiece(key, value) {
 }
 
 function updateFormation(f) {
-  setTactics(gameState, { formation: f });
+  setTactics(gameState, { formation: f, startingXI: null });
   saveGame();
+  showScreen('tactics');
+}
+
+function resetLineup() {
+  clearManualLineup(gameState);
+  saveGame();
+  showScreen('tactics');
+}
+
+function openSlotPicker(slotIdx, slotPos) {
+  const team = getTeam(gameState.playerTeam);
+  const tactics = getManagerTactics(gameState);
+  const slots = (FORMATION_DISPLAY[tactics.formation] || FORMATION_DISPLAY['4-4-2']).flat();
+  const xi = tactics.startingXI?.length === slots.length
+    ? tactics.startingXI
+    : getBestEleven(gameState.playerTeam, tactics.formation, gameState).map(p => p.id);
+
+  const currentId = xi[slotIdx];
+
+  // Sort: exact pos match first, then fallbacks, then rest — all sorted by OVR within group
+  const fallbacks = POS_FALLBACKS[slotPos] || [];
+  const sorted = [...team.squad]
+    .filter(p => !p.outOnLoan)
+    .sort((a, b) => {
+      const rank = p => p.pos === slotPos ? 0 : fallbacks.includes(p.pos) ? 1 : 2;
+      return rank(a) - rank(b) || b.overall - a.overall;
+    });
+
+  showModal({
+    title: `Pick player — ${slotPos} (slot ${slotIdx + 1})`,
+    cancel: 'Cancel',
+    confirm: false,
+    body: `
+      <div class="slot-picker-list">
+        ${sorted.map(p => {
+          const isCurrent = p.id === currentId;
+          const inXI = xi.includes(p.id) && !isCurrent;
+          const morale = p.morale ?? 70;
+          const moraleColor = morale > 70 ? 'var(--green)' : morale > 45 ? 'var(--warn)' : 'var(--danger)';
+          const isMatch = p.pos === slotPos;
+          const isFallback = !isMatch && fallbacks.includes(p.pos);
+          return `
+            <div class="slot-picker-row ${isCurrent ? 'slot-current' : ''} ${p.injuredWeeks ? 'slot-injured' : ''}"
+              onclick="assignToSlot(${slotIdx}, ${p.id})">
+              <span class="pos-badge pos-${p.pos}">${p.pos}</span>
+              <div class="slot-picker-info">
+                <span class="slot-picker-name">${p.name}</span>
+                <span class="slot-picker-sub muted">
+                  ${p.injuredWeeks ? `🤕 ${p.injuredWeeks}w` : ''}
+                  ${inXI ? '· Starting' : ''}
+                  ${!isMatch && isFallback ? '· alt pos' : ''}
+                  ${!isMatch && !isFallback ? '· off-pos' : ''}
+                </span>
+              </div>
+              <span class="ovr-cell ovr-${ovrClass(p.overall)}">${p.overall}</span>
+              <span style="font-size:11px;color:${moraleColor};min-width:24px;text-align:right">${morale}</span>
+              ${isCurrent ? '<span style="font-size:10px;color:var(--green);margin-left:4px">▶</span>' : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `
+  });
+}
+
+function assignToSlot(slotIdx, playerId) {
+  setManualLineup(gameState, slotIdx, playerId);
+  saveGame();
+  document.getElementById('fm-modal')?.remove();
+  showScreen('tactics');
+}
+
+function openPlayerMenu(slotIdx, slotPos) {
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  const player = lineup[slotIdx];
+  if (!player) return;
+
+  const instrId = tactics.playerInstructions?.[player.id];
+  const instr = instrId ? PLAYER_INSTRUCTIONS?.find(i => i.id === instrId) : null;
+  const morale = player.morale ?? 70;
+  const moraleColor = morale > 70 ? 'var(--green)' : morale > 45 ? 'var(--warn)' : 'var(--danger)';
+
+  showModal({
+    title: false,
+    cancel: 'Close',
+    confirm: false,
+    body: `
+      <div class="player-menu-header">
+        <span class="pos-badge pos-${player.pos}">${player.pos}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px">${player.name}</div>
+          <div class="muted" style="font-size:12px">
+            OVR <strong>${player.overall}</strong> · Morale <strong style="color:${moraleColor}">${morale}</strong>
+            ${player.injuredWeeks ? ` · <span style="color:var(--danger)">🤕 ${player.injuredWeeks}w</span>` : ''}
+          </div>
+          ${instr ? `<div style="margin-top:4px;font-size:12px;color:var(--accent)">${instr.icon} ${instr.name}</div>` : ''}
+        </div>
+      </div>
+      <div class="player-menu-actions">
+        <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('fm-modal').remove();openSlotPicker(${slotIdx},'${slotPos}')">
+          🔄 Change Player
+        </button>
+        <button class="btn btn-primary" style="flex:1" onclick="document.getElementById('fm-modal').remove();openInstructionPicker(${slotIdx})">
+          📋 Instructions${instr ? ` <span style="opacity:.7">· ${instr.icon}</span>` : ''}
+        </button>
+      </div>
+    `
+  });
+}
+
+function openInstructionPicker(slotIdx) {
+  const tactics = getManagerTactics(gameState);
+  const lineup = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
+  const player = lineup[slotIdx];
+  if (!player) return;
+
+  const available = getPlayerInstructions(player.pos);
+  const currentId = tactics.playerInstructions?.[player.id];
+
+  showModal({
+    title: `📋 ${player.name} — Instructions`,
+    cancel: 'Cancel',
+    confirm: false,
+    body: `
+      <div class="slot-picker-list">
+        <div class="slot-picker-row ${!currentId ? 'slot-current' : ''}" onclick="assignInstruction(${player.id}, null)">
+          <span style="font-size:18px;min-width:28px;text-align:center">✕</span>
+          <div class="slot-picker-info">
+            <span class="slot-picker-name">No Instruction</span>
+            <span class="slot-picker-sub muted">Default behaviour for this position</span>
+          </div>
+        </div>
+        ${available.map(i => {
+          const isCurrent = i.id === currentId;
+          const atkUp = i.atkMod > 1, atkDown = i.atkMod < 1;
+          const defUp = i.defMod > 1, defDown = i.defMod < 1;
+          return `
+            <div class="slot-picker-row ${isCurrent ? 'slot-current' : ''}" onclick="assignInstruction(${player.id}, '${i.id}')">
+              <span style="font-size:20px;min-width:28px;text-align:center">${i.icon}</span>
+              <div class="slot-picker-info">
+                <span class="slot-picker-name">${i.name}</span>
+                <span class="slot-picker-sub muted">${i.desc}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:11px;white-space:nowrap">
+                <span style="color:${atkUp?'var(--green)':atkDown?'var(--danger)':'var(--muted)'}">
+                  ${atkUp?'▲':atkDown?'▼':'●'} ATK
+                </span>
+                <span style="color:${defUp?'var(--accent)':defDown?'var(--danger)':'var(--muted)'}">
+                  ${defUp?'▲':defDown?'▼':'●'} DEF
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `
+  });
+}
+
+function assignInstruction(playerId, instructionId) {
+  setPlayerInstruction(gameState, playerId, instructionId);
+  saveGame();
+  document.getElementById('fm-modal')?.remove();
   showScreen('tactics');
 }
 
@@ -3413,7 +3598,7 @@ function choosePostMatchAnswer(moraleChange) {
 // Override playMatch to handle cup matches
 function playMatch() {
   const tactics = getManagerTactics(gameState);
-  const starting11 = getBestEleven(gameState.playerTeam, tactics.formation);
+  const starting11 = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
 
   if (gameState.faCupMatchActive) {
     const data = simulateFaCupPlayerMatch(gameState, tactics);
@@ -3497,7 +3682,7 @@ function resolveFaCupAndRefresh(playerWon) {
 // ─── SIMULATE NEXT N GAMES ───────────────────────────────────────────────────
 function simulateNextGames(n) {
   const tactics = getManagerTactics(gameState);
-  const starting11 = getBestEleven(gameState.playerTeam, tactics.formation);
+  const starting11 = getBestEleven(gameState.playerTeam, tactics.formation, gameState);
   const results = [];
   const pt = gameState.playerTeam;
   const preEOSData = gameState.endOfSeasonData;
