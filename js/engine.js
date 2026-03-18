@@ -397,7 +397,12 @@ function simulateMatch(homeTeamId, awayTeamId, gameState) {
     }
   }
 
-  const attendance = Math.floor(home.capacity * (0.7 + Math.random() * 0.3));
+  const isPlayerHome = homeTeamId === gameState?.playerTeam;
+  const effectiveCapacity = isPlayerHome ? getStadiumCapacity(gameState) : (home.capacity || 30000);
+  // Marketing attendance boost
+  const mktCampaign = gameState?.marketing?.activeCampaign;
+  const attBoost = (isPlayerHome && mktCampaign?.effect?.type === 'attendance') ? mktCampaign.effect.value : 0;
+  const attendance = Math.floor(effectiveCapacity * (0.7 + Math.random() * 0.3) * (1 + attBoost));
   if (gameState?.budgets) {
     gameState.budgets[homeTeamId] = (gameState.budgets[homeTeamId] || 0) + Math.round(attendance * 2);
   }

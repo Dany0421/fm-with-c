@@ -616,7 +616,8 @@ function completeTraining(gameState) {
     if (p.injuredWeeks) return; // injured sit out
     drill.apply(p);
     // Always +1 OVR, rarely +2 (boosted by assistant manager)
-    const gain = Math.random() < doubleOvrChance ? 2 : 1;
+    const trainingBonus = getTrainingOvrBonus(gameState);
+    const gain = (Math.random() < doubleOvrChance ? 2 : 1) + trainingBonus;
     const cap = (p.potential || 99) - 1;
     if (p.overall < cap) {
       p.overall = Math.min(cap, p.overall + gain);
@@ -788,4 +789,249 @@ function getTopScorers(leagueId, gameState, count = 10) {
     });
   });
   return scorers.sort((a, b) => b.goals - a.goals).slice(0, count);
+}
+
+// ─── INFRASTRUCTURE ──────────────────────────────────────────────────────────
+const INFRA_DATA = {
+  stadium: {
+    name: 'Stadium', icon: '🏟️',
+    desc: 'Bigger capacity = more gate receipts each home match.',
+    tiers: [
+      { label: 'Current Ground',    capacityBonus: 0,     cost: 0,          time: 0 },
+      { label: 'Expanded Stand',    capacityBonus: 8000,  cost: 6_000_000,  time: 1 },
+      { label: 'New East Stand',    capacityBonus: 20000, cost: 18_000_000, time: 2 },
+      { label: 'Modern Stadium',    capacityBonus: 40000, cost: 45_000_000, time: 2 },
+    ]
+  },
+  trainingGround: {
+    name: 'Training Ground', icon: '⚽',
+    desc: 'Better facilities = extra OVR gained from team training drills.',
+    tiers: [
+      { label: 'Basic Pitches',     ovrBonus: 0, cost: 0,          time: 0 },
+      { label: 'Upgraded Pitches',  ovrBonus: 1, cost: 3_000_000,  time: 1 },
+      { label: 'Pro Facility',      ovrBonus: 2, cost: 9_000_000,  time: 1 },
+      { label: 'Elite Complex',     ovrBonus: 3, cost: 22_000_000, time: 2 },
+    ]
+  },
+  youthAcademy: {
+    name: 'Youth Academy', icon: '🌱',
+    desc: 'Better youth setup = higher OVR and potential on prospects.',
+    tiers: [
+      { label: 'Local Scouts',      ovrBonus: 0, potBonus: 0, cost: 0,          time: 0 },
+      { label: 'Regional Academy',  ovrBonus: 2, potBonus: 3, cost: 2_500_000,  time: 1 },
+      { label: 'National Academy',  ovrBonus: 4, potBonus: 5, cost: 7_000_000,  time: 1 },
+      { label: 'Elite Academy',     ovrBonus: 6, potBonus: 8, cost: 16_000_000, time: 2 },
+    ]
+  }
+};
+
+function getStadiumCapacity(gameState) {
+  const team = getTeam(gameState.playerTeam);
+  if (!team) return 30000;
+  const baseCapacity = team.capacity || 30000;
+  const tier = gameState.infrastructure?.stadium || 0;
+  const bonus = INFRA_DATA.stadium.tiers[tier]?.capacityBonus || 0;
+  return baseCapacity + bonus;
+}
+
+function getTrainingOvrBonus(gameState) {
+  const tier = gameState.infrastructure?.trainingGround || 0;
+  return INFRA_DATA.trainingGround.tiers[tier]?.ovrBonus || 0;
+}
+
+function getYouthInfraBonus(gameState) {
+  const tier = gameState.infrastructure?.youthAcademy || 0;
+  const t = INFRA_DATA.youthAcademy.tiers[tier];
+  return { ovrBonus: t?.ovrBonus || 0, potBonus: t?.potBonus || 0 };
+}
+
+function upgradeInfrastructure(gameState, type) {
+  if (!INFRA_DATA[type]) return { success: false, message: 'Unknown building.' };
+  const infra = gameState.infrastructure;
+  if (infra.building) return { success: false, message: `Already constructing ${INFRA_DATA[infra.building.type].name}. Wait for it to complete.` };
+  const current = infra[type] || 0;
+  if (current >= 3) return { success: false, message: 'Already at max level.' };
+  const nextTier = INFRA_DATA[type].tiers[current + 1];
+  if ((gameState.budgets[gameState.playerTeam] || 0) < nextTier.cost)
+    return { success: false, message: `Not enough budget. Need ${formatMoney(nextTier.cost)}.` };
+  gameState.budgets[gameState.playerTeam] -= nextTier.cost;
+  infra.building = { type, completeSeason: gameState.season + nextTier.time };
+  return { success: true, message: `${INFRA_DATA[type].name} upgrade started. Completes in ${nextTier.time} season${nextTier.time > 1 ? 's' : ''}.` };
+}
+
+// ─── SPONSORS ────────────────────────────────────────────────────────────────
+const SPONSOR_POOL = {
+  main: {
+    tier1: [
+      { name: 'Bet365', weekly: 85000 }, { name: 'Parimatch', weekly: 65000 },
+      { name: 'LeoVegas', weekly: 70000 }, { name: '888sport', weekly: 75000 },
+      { name: 'Betway', weekly: 88000 }, { name: 'William Hill', weekly: 92000 },
+      { name: 'Paddy Power', weekly: 98000 }, { name: 'Coral', weekly: 72000 },
+      { name: 'Ladbrokes', weekly: 80000 }, { name: 'BetVictor', weekly: 62000 },
+      { name: 'BoyleSports', weekly: 55000 }, { name: 'Casumo', weekly: 60000 },
+      { name: 'Unibet', weekly: 68000 }, { name: 'Betfair', weekly: 90000 },
+      { name: 'Sky Bet', weekly: 95000 }, { name: 'SportPesa', weekly: 58000 },
+      { name: 'Mansion', weekly: 52000 }, { name: 'Dafabet', weekly: 63000 },
+      { name: 'Fun88', weekly: 57000 }, { name: 'Spreadex', weekly: 48000 },
+    ],
+    tier2: [
+      { name: 'AIA', weekly: 185000 }, { name: 'Cazoo', weekly: 165000 },
+      { name: 'Cinch', weekly: 155000 }, { name: 'Nexen Tire', weekly: 200000 },
+      { name: 'Standard Chartered', weekly: 250000 }, { name: 'KONAMI', weekly: 175000 },
+      { name: 'TAG Heuer', weekly: 195000 }, { name: 'Haier', weekly: 160000 },
+      { name: 'Marathonbet', weekly: 145000 }, { name: 'Yokohama', weekly: 180000 },
+      { name: 'EA Sports', weekly: 220000 }, { name: 'Hublot', weekly: 170000 },
+      { name: 'Visit Malaysia', weekly: 140000 }, { name: 'MSC Cruises', weekly: 150000 },
+      { name: 'Socios.com', weekly: 130000 }, { name: 'Tezos', weekly: 135000 },
+    ],
+    tier3: [
+      { name: 'Emirates', weekly: 480000 }, { name: 'Etihad', weekly: 440000 },
+      { name: 'Qatar Airways', weekly: 520000 }, { name: 'Crypto.com', weekly: 390000 },
+      { name: 'Mastercard', weekly: 420000 }, { name: 'Heineken', weekly: 360000 },
+      { name: 'Chevrolet', weekly: 500000 }, { name: 'Aon', weekly: 380000 },
+      { name: 'DHL', weekly: 350000 }, { name: 'Rakuten', weekly: 430000 },
+      { name: 'Allianz', weekly: 470000 }, { name: 'Bein Sports', weekly: 410000 },
+      { name: 'Fly Emirates', weekly: 490000 }, { name: 'Visit Dubai', weekly: 460000 },
+    ],
+  },
+  kit: {
+    tier1: [
+      { name: 'Umbro', weekly: 28000 }, { name: 'Castore', weekly: 32000 },
+      { name: 'Hummel', weekly: 22000 }, { name: 'Macron', weekly: 20000 },
+      { name: 'Kappa', weekly: 18000 }, { name: 'Errea', weekly: 16000 },
+      { name: 'Joma', weekly: 15000 }, { name: 'Sondico', weekly: 12000 },
+      { name: "O'Neills", weekly: 14000 }, { name: 'Score Draw', weekly: 11000 },
+      { name: 'Admiral', weekly: 13000 }, { name: 'Avec', weekly: 10000 },
+    ],
+    tier2: [
+      { name: 'Puma', weekly: 82000 }, { name: 'New Balance', weekly: 72000 },
+      { name: 'Under Armour', weekly: 78000 }, { name: 'Le Coq Sportif', weekly: 62000 },
+      { name: 'Lotto', weekly: 58000 }, { name: 'Mizuno', weekly: 68000 },
+      { name: 'Fila', weekly: 52000 }, { name: 'Jako', weekly: 48000 },
+    ],
+    tier3: [
+      { name: 'Nike', weekly: 165000 }, { name: 'Adidas', weekly: 175000 },
+    ],
+  },
+  regional: {
+    tier1: [
+      { name: 'City Motors', weekly: 12000 }, { name: 'Regional Bank', weekly: 15000 },
+      { name: 'Premier Foods', weekly: 10000 }, { name: 'Metro Tyres', weekly: 9000 },
+      { name: 'Sunbelt Energy', weekly: 11000 }, { name: 'Cornerstone Insurance', weekly: 13000 },
+      { name: 'Delta Construction', weekly: 8500 }, { name: 'Falcon Logistics', weekly: 9500 },
+      { name: 'Atlas Property', weekly: 10500 }, { name: 'Summit Dental', weekly: 7500 },
+      { name: 'Greenleaf Hotels', weekly: 11500 }, { name: 'Horizon Telecoms', weekly: 12500 },
+      { name: 'Oakridge Builders', weekly: 8000 }, { name: 'Cardinal Finance', weekly: 14000 },
+      { name: 'Trident Security', weekly: 9000 }, { name: 'Pacific Recruitment', weekly: 7000 },
+      { name: 'Cobalt Media', weekly: 8000 }, { name: 'Meridian Law', weekly: 10000 },
+    ],
+    tier2: [
+      { name: 'Specsavers', weekly: 42000 }, { name: 'Iceland Foods', weekly: 38000 },
+      { name: 'Carabao Energy', weekly: 55000 }, { name: 'FxPro', weekly: 48000 },
+      { name: 'Entain', weekly: 52000 }, { name: 'Utilita Energy', weekly: 40000 },
+      { name: 'eToro', weekly: 58000 }, { name: 'Visit Thailand', weekly: 45000 },
+      { name: 'Cazoo Auto', weekly: 50000 }, { name: 'Staysure Travel', weekly: 36000 },
+    ],
+    tier3: [
+      { name: 'Amazon', weekly: 95000 }, { name: 'Vodafone', weekly: 88000 },
+      { name: 'Barclays', weekly: 105000 }, { name: 'HSBC', weekly: 100000 },
+      { name: 'Samsung', weekly: 98000 }, { name: 'Hyundai', weekly: 92000 },
+      { name: 'Booking.com', weekly: 85000 }, { name: 'Pepsi', weekly: 90000 },
+    ],
+  }
+};
+
+function _getSponsorTierPool(slot, rep) {
+  const pool = SPONSOR_POOL[slot];
+  if (rep >= 72) return [...pool.tier2, ...pool.tier3];
+  if (rep >= 57) return [...pool.tier1, ...pool.tier2];
+  return pool.tier1;
+}
+
+function generateSponsorOffers(gameState) {
+  const rep = gameState.managerReputation || 50;
+  const offers = { main: [], kit: [], regional: [] };
+  ['main', 'kit', 'regional'].forEach(slot => {
+    const pool = _getSponsorTierPool(slot, rep).sort(() => Math.random() - 0.5);
+    offers[slot] = pool.slice(0, 3).map(s => ({
+      id: `spo-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+      slot,
+      name: s.name,
+      weeklyIncome: Math.round(s.weekly * (0.85 + Math.random() * 0.30) / 1000) * 1000,
+      duration: 2 + Math.floor(Math.random() * 2),
+    }));
+  });
+  gameState.sponsorOffers = offers;
+}
+
+function signSponsor(gameState, offerId, slot) {
+  const offers = gameState.sponsorOffers?.[slot] || [];
+  const offer = offers.find(o => o.id === offerId);
+  if (!offer) return { success: false, message: 'Offer not found.' };
+  if (!gameState.sponsorships) gameState.sponsorships = {};
+  gameState.sponsorships[slot] = { ...offer, seasonsLeft: offer.duration };
+  // Clear offers for this slot
+  if (gameState.sponsorOffers) gameState.sponsorOffers[slot] = [];
+  return { success: true, message: `Signed ${offer.name} as ${slot} sponsor for ${offer.duration} seasons at ${formatMoney(offer.weeklyIncome)}/wk.` };
+}
+
+// ─── MARKETING ───────────────────────────────────────────────────────────────
+const MARKETING_CAMPAIGNS = [
+  {
+    id: 'fan_engagement',
+    name: 'Fan Engagement Drive',
+    icon: '📣',
+    desc: 'Community events and matchday promotions boost attendance for 10 home games.',
+    effect: { type: 'attendance', value: 0.25 },  // +25% capacity
+    weeksActive: 10,
+    costTier: [350_000, 450_000, 600_000],  // cost by rep tier
+  },
+  {
+    id: 'social_media',
+    name: 'Social Media Blitz',
+    icon: '📱',
+    desc: 'Digital campaign raises your profile. +6 rep immediately + £20k/wk sponsor bonus for 8 weeks.',
+    effect: { type: 'rep_and_income', repBonus: 6, incomeBonus: 20000 },
+    weeksActive: 8,
+    costTier: [500_000, 650_000, 850_000],
+  },
+  {
+    id: 'commercial_push',
+    name: 'Commercial Push',
+    icon: '💼',
+    desc: 'Aggressive commercial activity adds bonus weekly income for 12 weeks.',
+    effect: { type: 'income', value: 40000 },  // +£40k/wk
+    weeksActive: 12,
+    costTier: [700_000, 900_000, 1_200_000],
+  },
+];
+
+function getCampaignCost(campaignId, gameState) {
+  const c = MARKETING_CAMPAIGNS.find(m => m.id === campaignId);
+  if (!c) return 0;
+  const rep = gameState.managerReputation || 50;
+  const tierIdx = rep >= 72 ? 2 : rep >= 57 ? 1 : 0;
+  return c.costTier[tierIdx];
+}
+
+function launchMarketing(gameState, campaignId) {
+  if (!MARKETING_CAMPAIGNS.find(m => m.id === campaignId))
+    return { success: false, message: 'Campaign not found.' };
+  if (!gameState.marketing) gameState.marketing = { activeCampaign: null, campaignsThisSeason: 0 };
+  if (gameState.marketing.activeCampaign)
+    return { success: false, message: 'A campaign is already running.' };
+  if (gameState.marketing.campaignsThisSeason >= 1)
+    return { success: false, message: 'Only 1 campaign per season.' };
+  const cost = getCampaignCost(campaignId, gameState);
+  if ((gameState.budgets[gameState.playerTeam] || 0) < cost)
+    return { success: false, message: `Not enough budget. Need ${formatMoney(cost)}.` };
+  const campaign = MARKETING_CAMPAIGNS.find(m => m.id === campaignId);
+  gameState.budgets[gameState.playerTeam] -= cost;
+  gameState.marketing.activeCampaign = { ...campaign, weeksLeft: campaign.weeksActive };
+  gameState.marketing.campaignsThisSeason++;
+  // Apply instant rep bonus
+  if (campaign.effect.type === 'rep_and_income') {
+    gameState.managerReputation = Math.min(100, (gameState.managerReputation || 50) + campaign.effect.repBonus);
+  }
+  return { success: true, message: `${campaign.name} launched! ${campaign.desc}` };
 }

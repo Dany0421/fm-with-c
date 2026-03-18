@@ -270,6 +270,7 @@ function showScreen(screen, data) {
     case 'career':          renderCareer(app); break;
     case 'europa-league':   renderEuropa(app); break;
     case 'champions-league': renderCL(app); break;
+    case 'club':            renderClub(app); break;
     default: renderHub(app);
   }
 
@@ -465,6 +466,7 @@ function renderHub(app) {
       ${notification ? `<div class="notification">${notification}</div>` : ''}
       ${newInjuries.map(p => `<div class="notification notification-injury">🤕 <strong>${p.name}</strong> (${p.pos}) injured — out for <strong>${p.weeks}w</strong></div>`).join('')}
       ${unhappyNotifs.map(p => `<div class="notification notification-unhappy">😤 <strong>${p.name}</strong> (${p.pos} · ${p.ovr}) wants more playing time</div>`).join('')}
+      ${(gameState.sponsorOffers && ['main','kit','regional'].some(s => (gameState.sponsorOffers[s]||[]).length > 0 && !gameState.sponsorships?.[s])) ? `<div class="notification" style="background:#1a1f0a;border-color:#84cc16;color:#bef264">💼 New sponsor offers available — <a href="#" onclick="showScreen('club');return false" style="color:#bef264;text-decoration:underline">visit Club</a></div>` : ''}
 
       <div class="hub-body">
         <div class="hub-left">
@@ -521,6 +523,7 @@ function renderHub(app) {
         <button onclick="showScreen('transfers')">💰 Transfers</button>
         <button onclick="showScreen('youth')">🌱 Youth</button>
         <button onclick="showScreen('staff')">👔 Staff</button>
+        <button onclick="showScreen('club')">🏟️ Club</button>
         <button onclick="showScreen('stats')">🏆 Stats</button>
         <button onclick="showScreen('career')">📖 Career</button>
         ${gameState.seasonEnded ? `<button onclick="showScreen('end-season')" class="btn-alert">🏁 Season End</button>` : ''}
@@ -1712,6 +1715,231 @@ function staffFireConfirm(roleId) {
       const r = fireStaff(gameState, roleId);
       showToast(r.message, r.success ? 'success' : 'error');
       if (r.success) { saveGame(); showScreen('staff'); }
+    }
+  });
+}
+
+// ─── CLUB SCREEN ─────────────────────────────────────────────────────────────
+function renderClub(app) {
+  const activeTab = window._clubTab || 'infrastructure';
+  app.innerHTML = `
+    <div class="staff-screen">
+      <div class="screen-header">
+        <button class="btn-back" onclick="showScreen('hub')">← Back</button>
+        <h2>🏟️ CLUB DEVELOPMENT</h2>
+        <span class="muted">Season ${gameState.season}</span>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn ${activeTab==='infrastructure'?'active':''}" onclick="window._clubTab='infrastructure';renderClub(document.getElementById('app'))">🏗️ Infrastructure</button>
+        <button class="tab-btn ${activeTab==='sponsorships'?'active':''}" onclick="window._clubTab='sponsorships';renderClub(document.getElementById('app'))">💼 Sponsorships</button>
+        <button class="tab-btn ${activeTab==='marketing'?'active':''}" onclick="window._clubTab='marketing';renderClub(document.getElementById('app'))">📣 Marketing</button>
+      </div>
+      ${activeTab === 'infrastructure' ? renderClubInfraTab() : ''}
+      ${activeTab === 'sponsorships' ? renderClubSponsorsTab() : ''}
+      ${activeTab === 'marketing' ? renderClubMarketingTab() : ''}
+    </div>
+  `;
+}
+
+function renderClubInfraTab() {
+  const infra = gameState.infrastructure || {};
+  const building = infra.building;
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+
+  const cards = ['stadium', 'trainingGround', 'youthAcademy'].map(type => {
+    const data = INFRA_DATA[type];
+    const current = infra[type] || 0;
+    const currentTier = data.tiers[current];
+    const nextTier = data.tiers[current + 1];
+    const isBuilding = building?.type === type;
+    const otherBuilding = building && building.type !== type;
+
+    return `
+      <div class="infra-card ${isBuilding ? 'infra-building' : ''}">
+        <div class="infra-card-header">
+          <span class="infra-icon">${data.icon}</span>
+          <div>
+            <div class="infra-name">${data.name}</div>
+            <div class="infra-tier-label">${currentTier.label}</div>
+          </div>
+          <div class="infra-tier-dots">
+            ${[0,1,2,3].map(i => `<span class="tier-dot ${i <= current ? 'filled' : ''}"></span>`).join('')}
+          </div>
+        </div>
+        <div class="infra-desc muted">${data.desc}</div>
+        ${current > 0 ? `<div class="infra-effect">
+          ${type === 'stadium' ? `Capacity +${data.tiers[current].capacityBonus.toLocaleString()}` : ''}
+          ${type === 'trainingGround' ? `Drills +${data.tiers[current].ovrBonus} OVR/player` : ''}
+          ${type === 'youthAcademy' ? `Youth +${data.tiers[current].ovrBonus} OVR, +${data.tiers[current].potBonus} POT` : ''}
+        </div>` : ''}
+        ${isBuilding ? `<div class="infra-building-notice">🏗️ Under construction — completes Season ${building.completeSeason}</div>` : ''}
+        ${!isBuilding && nextTier ? `
+          <div class="infra-upgrade-row">
+            <div>
+              <div class="infra-next-label">→ ${nextTier.label}</div>
+              <div class="muted" style="font-size:11px">
+                ${type === 'stadium' ? `Capacity +${nextTier.capacityBonus.toLocaleString()}` : ''}
+                ${type === 'trainingGround' ? `+${nextTier.ovrBonus} OVR/player per drill` : ''}
+                ${type === 'youthAcademy' ? `+${nextTier.ovrBonus} OVR, +${nextTier.potBonus} POT on prospects` : ''}
+                · ${nextTier.time} season${nextTier.time > 1 ? 's' : ''}
+              </div>
+            </div>
+            <button class="btn btn-primary" style="font-size:12px;white-space:nowrap"
+              onclick="infraUpgradeConfirm('${type}')"
+              ${otherBuilding || budget < nextTier.cost ? 'disabled' : ''}>
+              ${formatMoney(nextTier.cost)}
+            </button>
+          </div>` : ''}
+        ${current >= 3 ? `<div class="infra-maxed">✅ MAX LEVEL</div>` : ''}
+      </div>
+    `;
+  });
+
+  return `<div class="infra-grid">${cards.join('')}</div>`;
+}
+
+function renderClubSponsorsTab() {
+  const slots = { main: '👕 Main Shirt', kit: '🧢 Kit Manufacturer', regional: '🏷️ Regional Partner' };
+  const sponsorships = gameState.sponsorships || {};
+  const offers = gameState.sponsorOffers || {};
+
+  return Object.entries(slots).map(([slot, label]) => {
+    const active = sponsorships[slot];
+    const slotOffers = offers[slot] || [];
+
+    return `
+      <div class="sponsor-section">
+        <h4 class="sponsor-slot-title">${label}</h4>
+        ${active ? `
+          <div class="sponsor-active-card">
+            <div class="sponsor-active-name">${active.name}</div>
+            <div class="sponsor-active-meta">
+              <span class="green">${formatMoney(active.weeklyIncome)}/wk</span>
+              <span class="muted">${active.seasonsLeft} season${active.seasonsLeft !== 1 ? 's' : ''} remaining</span>
+            </div>
+          </div>` : `<div class="muted sponsor-empty-label">No sponsor — sign one below</div>`}
+        ${slotOffers.length ? `
+          <div class="sponsor-offers-list">
+            ${slotOffers.map(o => `
+              <div class="sponsor-offer-row">
+                <div class="sponsor-offer-info">
+                  <span class="sponsor-offer-name">${o.name}</span>
+                  <span class="muted">${o.duration}yr deal</span>
+                </div>
+                <span class="sponsor-offer-income green">${formatMoney(o.weeklyIncome)}/wk</span>
+                <button class="btn-sm btn-primary" onclick="signSponsorConfirm('${o.id}','${slot}')">Sign</button>
+              </div>
+            `).join('')}
+          </div>` : active ? `<div class="muted" style="font-size:12px;margin-top:8px">New offers available when this deal expires.</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderClubMarketingTab() {
+  const marketing = gameState.marketing || {};
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  const active = marketing.activeCampaign;
+  const done = marketing.campaignsThisSeason >= 1;
+
+  return `
+    <div style="padding:12px 0">
+      ${active ? `
+        <div class="hub-card" style="border-color:var(--accent);margin-bottom:16px">
+          <h4>${active.icon} ${active.name} — ACTIVE</h4>
+          <div class="muted" style="font-size:12px">${active.weeksLeft} week${active.weeksLeft !== 1 ? 's' : ''} remaining</div>
+          <div style="margin-top:8px;background:#111;border-radius:4px;height:6px">
+            <div style="background:var(--accent);height:6px;border-radius:4px;width:${Math.round((1 - active.weeksLeft / active.weeksActive) * 100)}%"></div>
+          </div>
+        </div>` : ''}
+      ${done && !active ? `<div class="notification" style="margin-bottom:16px">📣 Campaign used this season — new campaign available next season.</div>` : ''}
+      <div class="marketing-grid">
+        ${MARKETING_CAMPAIGNS.map(c => {
+          const cost = getCampaignCost(c.id, gameState);
+          const canAfford = budget >= cost;
+          const disabled = active || done || !canAfford;
+          return `
+            <div class="marketing-card ${disabled ? 'mkt-disabled' : ''}">
+              <div class="mkt-icon">${c.icon}</div>
+              <div class="mkt-name">${c.name}</div>
+              <div class="mkt-desc muted">${c.desc}</div>
+              <div class="mkt-footer">
+                <span class="mkt-cost ${canAfford ? '' : 'danger'}">${formatMoney(cost)}</span>
+                <button class="btn btn-primary" style="font-size:12px" onclick="launchMarketingConfirm('${c.id}')" ${disabled ? 'disabled' : ''}>Launch</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function infraUpgradeConfirm(type) {
+  const data = INFRA_DATA[type];
+  const current = gameState.infrastructure?.[type] || 0;
+  const nextTier = data.tiers[current + 1];
+  showModal({
+    title: `🏗️ Upgrade ${data.name}`,
+    body: `
+      <p>Upgrade to <strong>${nextTier.label}</strong>?</p>
+      <div class="modal-stats-row">
+        <div><span class="muted">Cost</span><br><strong style="color:var(--warn)">${formatMoney(nextTier.cost)}</strong></div>
+        <div><span class="muted">Time</span><br><strong>${nextTier.time} season${nextTier.time > 1 ? 's' : ''}</strong></div>
+        <div><span class="muted">Budget after</span><br><strong style="color:${(gameState.budgets[gameState.playerTeam]||0) >= nextTier.cost ? 'var(--green)' : 'var(--danger)'}">${formatMoney((gameState.budgets[gameState.playerTeam]||0) - nextTier.cost)}</strong></div>
+      </div>
+    `,
+    confirm: 'Start Construction',
+    onConfirm: () => {
+      const r = upgradeInfrastructure(gameState, type);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('club');
+    }
+  });
+}
+
+function signSponsorConfirm(offerId, slot) {
+  const offer = (gameState.sponsorOffers?.[slot] || []).find(o => o.id === offerId);
+  if (!offer) return;
+  const slotLabel = { main: 'Main Shirt', kit: 'Kit Manufacturer', regional: 'Regional Partner' }[slot];
+  showModal({
+    title: `💼 Sign ${offer.name}`,
+    body: `
+      <div class="modal-stats-row">
+        <div><span class="muted">Sponsor</span><br><strong>${offer.name}</strong></div>
+        <div><span class="muted">Weekly</span><br><strong class="green">${formatMoney(offer.weeklyIncome)}/wk</strong></div>
+        <div><span class="muted">Duration</span><br><strong>${offer.duration} seasons</strong></div>
+        <div><span class="muted">Slot</span><br><strong>${slotLabel}</strong></div>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:10px">Income paid weekly. Other offers for this slot will be removed.</p>
+    `,
+    confirm: 'Sign Deal',
+    onConfirm: () => {
+      const r = signSponsor(gameState, offerId, slot);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('club');
+    }
+  });
+}
+
+function launchMarketingConfirm(campaignId) {
+  const c = MARKETING_CAMPAIGNS.find(m => m.id === campaignId);
+  if (!c) return;
+  const cost = getCampaignCost(campaignId, gameState);
+  showModal({
+    title: `${c.icon} ${c.name}`,
+    body: `
+      <p>${c.desc}</p>
+      <div class="modal-stats-row" style="margin-top:12px">
+        <div><span class="muted">Cost</span><br><strong style="color:var(--warn)">${formatMoney(cost)}</strong></div>
+        <div><span class="muted">Duration</span><br><strong>${c.weeksActive} weeks</strong></div>
+      </div>
+    `,
+    confirm: 'Launch',
+    onConfirm: () => {
+      const r = launchMarketing(gameState, campaignId);
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) showScreen('club');
     }
   });
 }

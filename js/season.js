@@ -75,6 +75,12 @@ function initSeason(gameState) {
   // Init contract demands
   if (!gameState.contractDemands) gameState.contractDemands = [];
 
+  // Init infrastructure, sponsorships, marketing
+  if (!gameState.infrastructure) gameState.infrastructure = { stadium: 0, trainingGround: 0, youthAcademy: 0, building: null };
+  if (!gameState.sponsorships) gameState.sponsorships = { main: null, kit: null, regional: null };
+  if (!gameState.marketing) gameState.marketing = { activeCampaign: null, campaignsThisSeason: 0 };
+  if (!gameState.sponsorOffers) generateSponsorOffers(gameState);
+
   // One-time trait migration: assign traits to any player that doesn't have them yet
   getAllTeams().forEach(t => t.squad.forEach(p => { if (!p.traits) assignRandomTraits(p); }));
   if (gameState.youthSquad) gameState.youthSquad.forEach(p => { if (!p.traits) assignRandomTraits(p); });
@@ -258,6 +264,26 @@ function advanceMatchweek(gameState) {
 
   generateAIBids(gameState);
   generateContractDemands(gameState);
+
+  // Pay sponsor income
+  if (gameState.sponsorships && gameState.playerTeam) {
+    let sponsorIncome = 0;
+    Object.values(gameState.sponsorships).forEach(s => { if (s) sponsorIncome += s.weeklyIncome; });
+    if (sponsorIncome > 0) gameState.budgets[gameState.playerTeam] = (gameState.budgets[gameState.playerTeam] || 0) + sponsorIncome;
+  }
+  // Marketing campaign tick
+  if (gameState.marketing?.activeCampaign) {
+    const c = gameState.marketing.activeCampaign;
+    if (c.effect.type === 'income' || c.effect.type === 'rep_and_income') {
+      const bonus = c.effect.value || c.effect.incomeBonus || 0;
+      gameState.budgets[gameState.playerTeam] = (gameState.budgets[gameState.playerTeam] || 0) + bonus;
+    }
+    c.weeksLeft--;
+    if (c.weeksLeft <= 0) {
+      gameState.marketing.activeCampaign = null;
+      if (!gameState.notification) gameState.notification = '📣 Marketing campaign has ended.';
+    }
+  }
 }
 
 // ─── AI TRANSFER BIDS ────────────────────────────────────────────────────────
@@ -727,6 +753,11 @@ function generateYouthMarket(gameState) {
     else if (rPot < 0.95) potential = 87 + Math.floor(Math.random() * 4); // 87-90
     else potential = 91 + Math.floor(Math.random() * 3);                   // 91-93
 
+    // Apply youth academy infrastructure bonus
+    const yBonuses = getYouthInfraBonus(gameState);
+    ovr = Math.min(72, ovr + yBonuses.ovrBonus);
+    potential = Math.min(95, potential + yBonuses.potBonus);
+
     const p = makePlayer(gameState._nextPid++, regenName(), pos, age, ovr, regenNation());
     p.potential = potential;
     p.isYouth = true;
@@ -901,6 +932,31 @@ function startNewSeason(gameState) {
 
   // Refresh staff market each new season
   generateStaffMarket(gameState);
+
+  // Check infrastructure construction completion
+  if (gameState.infrastructure?.building) {
+    const b = gameState.infrastructure.building;
+    if (gameState.season >= b.completeSeason) {
+      gameState.infrastructure[b.type]++;
+      gameState.infrastructure.building = null;
+      const infraName = INFRA_DATA[b.type]?.name || b.type;
+      const newLabel = INFRA_DATA[b.type]?.tiers[gameState.infrastructure[b.type]]?.label || '';
+      gameState.notification = `🏗️ ${infraName} upgrade complete! Now: ${newLabel}`;
+    }
+  }
+  // Decrement sponsor contract seasons, clear expired
+  if (gameState.sponsorships) {
+    ['main', 'kit', 'regional'].forEach(slot => {
+      const s = gameState.sponsorships[slot];
+      if (!s) return;
+      s.seasonsLeft--;
+      if (s.seasonsLeft <= 0) gameState.sponsorships[slot] = null;
+    });
+  }
+  // Generate new sponsor offers for empty/expired slots
+  generateSponsorOffers(gameState);
+  // Reset marketing campaigns counter for new season
+  if (gameState.marketing) gameState.marketing.campaignsThisSeason = 0;
 
   // Release expired contracts
   if (gameState.playerTeam) {
