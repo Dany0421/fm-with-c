@@ -1889,7 +1889,7 @@ function renderStaff(app) {
         </div>`;
     }
     return `
-      <div class="staff-role-card staff-filled">
+      <div class="staff-role-card staff-filled" style="cursor:pointer" onclick="showHiredStaffModal('${role.id}')">
         <div class="staff-role-icon">${role.icon}</div>
         <div class="staff-role-info">
           <div class="staff-role-name">${role.name}</div>
@@ -1899,7 +1899,7 @@ function renderStaff(app) {
         </div>
         <div class="staff-card-actions">
           <span class="staff-wage muted">${formatMoney(member.wage)}/wk</span>
-          <button class="btn-sm btn-danger" onclick="staffFireConfirm('${role.id}')">Fire</button>
+          <span class="muted" style="font-size:11px">tap for more</span>
         </div>
       </div>`;
   }
@@ -1907,23 +1907,14 @@ function renderStaff(app) {
   const candidates = market.map(s => {
     const role = STAFF_ROLES.find(r => r.id === s.role);
     if (!role) return '';
-    const canAffordIt = budget >= s.hireCost;
     const roleFilledAlready = !!staff[s.role];
-    const disabled = !canAffordIt || roleFilledAlready;
     return `
-      <tr>
+      <tr style="cursor:pointer" onclick="showStaffCandidateModal('${s.id}')">
         <td>${role.icon} <span class="muted">${role.name}</span></td>
         <td><strong>${s.name}</strong></td>
         <td>${qualityStars(s.quality)} <span class="muted">${s.quality}</span></td>
         <td class="muted">${formatMoney(s.wage)}/wk</td>
-        <td class="${canAffordIt ? 'green' : 'danger'}">${formatMoney(s.hireCost)}</td>
-        <td style="font-size:11px;color:var(--muted);max-width:200px">${role.effectFn(s.quality)}</td>
-        <td>
-          <button class="btn-sm ${disabled ? 'btn-disabled' : 'btn-primary'}"
-            ${disabled ? '' : `onclick="staffHireConfirm('${s.id}')"`}>
-            ${roleFilledAlready ? 'Role Filled' : canAffordIt ? 'Hire' : 'No Budget'}
-          </button>
-        </td>
+        <td class="muted" style="font-size:11px">${roleFilledAlready ? '✓ Filled' : '→'}</td>
       </tr>`;
   }).join('');
 
@@ -1948,7 +1939,7 @@ function renderStaff(app) {
       <h3 style="margin:24px 0 10px;font-size:14px;letter-spacing:1px;color:var(--muted)">AVAILABLE CANDIDATES</h3>
       ${market.length ? `
         <table class="squad-table">
-          <tr><th>Role</th><th>Name</th><th>Quality</th><th>Wage</th><th>Hire Cost</th><th>Effect</th><th></th></tr>
+          <tr><th>Role</th><th>Name</th><th>Quality</th><th>Wage</th><th></th></tr>
           ${candidates}
         </table>
       ` : '<p class="muted" style="padding:16px">Market refreshes each season.</p>'}
@@ -1956,29 +1947,70 @@ function renderStaff(app) {
   `;
 }
 
-function staffHireConfirm(staffId) {
+function showStaffCandidateModal(staffId) {
   const candidate = (gameState.staffMarket || []).find(s => s.id === staffId);
   if (!candidate) return;
   const role = STAFF_ROLES.find(r => r.id === candidate.role);
   function qualityStars(q) { const s = Math.round(q/20); return '★'.repeat(s)+'☆'.repeat(5-s); }
+  const budget = gameState.budgets[gameState.playerTeam] || 0;
+  const canAffordIt = budget >= candidate.hireCost;
+  const roleFilledAlready = !!(gameState.staff?.[candidate.role]);
+  const disabled = !canAffordIt || roleFilledAlready;
   showModal({
-    title: `Hire ${candidate.name}`,
+    title: `${role?.icon} ${candidate.name}`,
     body: `
-      <div class="modal-stats-row">
-        <div><span class="muted">Role</span><br><strong>${role?.icon} ${role?.name}</strong></div>
+      <div class="modal-stats-row" style="margin-bottom:14px">
+        <div><span class="muted">Role</span><br><strong>${role?.name}</strong></div>
         <div><span class="muted">Quality</span><br><strong>${qualityStars(candidate.quality)} (${candidate.quality})</strong></div>
-        <div><span class="muted">Hire Fee</span><br><strong class="green">${formatMoney(candidate.hireCost)}</strong></div>
-        <div><span class="muted">Weekly Wage</span><br><strong class="danger">${formatMoney(candidate.wage)}/wk</strong></div>
+        <div><span class="muted">Hire Fee</span><br><strong class="${canAffordIt?'green':'danger'}">${formatMoney(candidate.hireCost)}</strong></div>
+        <div><span class="muted">Weekly Wage</span><br><strong>${formatMoney(candidate.wage)}/wk</strong></div>
       </div>
-      <p class="muted" style="font-size:12px;margin-top:10px">${role?.effectFn(candidate.quality)}</p>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5">
+        ${role?.effectFn(candidate.quality)}
+      </div>
+      ${roleFilledAlready ? '<p style="color:var(--warn);font-size:12px;margin-top:10px">⚠️ Role already filled — fire current staff first.</p>' : ''}
+      ${!canAffordIt && !roleFilledAlready ? '<p style="color:var(--danger);font-size:12px;margin-top:10px">⚠️ Not enough budget.</p>' : ''}
+      <div style="margin-top:12px">
+        <button class="btn ${disabled ? 'btn-disabled' : 'btn-primary'}" style="width:100%" ${disabled ? 'disabled' : `onclick="document.getElementById('fm-modal').remove();hireStaffDirect('${staffId}')"`}>
+          Hire — ${formatMoney(candidate.hireCost)}
+        </button>
+      </div>
     `,
-    confirm: 'Hire',
-    cancel: 'Cancel',
-    onConfirm: () => {
-      const r = hireStaff(gameState, staffId);
-      showToast(r.message, r.success ? 'success' : 'error');
-      if (r.success) { saveGame(); showScreen('staff'); }
-    }
+    cancel: 'Close',
+    confirm: false,
+  });
+}
+
+function hireStaffDirect(staffId) {
+  const r = hireStaff(gameState, staffId);
+  showToast(r.message, r.success ? 'success' : 'error');
+  if (r.success) { saveGame(); showScreen('staff'); }
+}
+
+function showHiredStaffModal(roleId) {
+  const member = gameState.staff?.[roleId];
+  if (!member) return;
+  const role = STAFF_ROLES.find(r => r.id === roleId);
+  function qualityStars(q) { const s = Math.round(q/20); return '★'.repeat(s)+'☆'.repeat(5-s); }
+  showModal({
+    title: `${role?.icon} ${member.name}`,
+    body: `
+      <div class="modal-stats-row" style="margin-bottom:14px">
+        <div><span class="muted">Role</span><br><strong>${role?.name}</strong></div>
+        <div><span class="muted">Quality</span><br><strong>${qualityStars(member.quality)} (${member.quality})</strong></div>
+        <div><span class="muted">Weekly Wage</span><br><strong class="danger">${formatMoney(member.wage)}/wk</strong></div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5">
+        ${role?.effectFn(member.quality)}
+      </div>
+      <div style="margin-top:12px">
+        <button class="btn btn-danger" style="width:100%" onclick="document.getElementById('fm-modal').remove();staffFireConfirm('${roleId}')">
+          🔥 Release ${member.name}
+        </button>
+      </div>
+    `,
+    cancel: 'Close',
+    confirm: false,
   });
 }
 

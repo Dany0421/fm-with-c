@@ -1,6 +1,6 @@
 # MEMORY.md — Project State
 
-*Last updated: 2026-03-18 (Sessão 11 — completa)*
+*Last updated: 2026-03-19 (Sessão 12 — completa)*
 
 -----
 
@@ -8,13 +8,13 @@
 
 Football Manager no browser — Premier League + Championship com promoção/relegação, squad management, simulação de jogos, transferências, tudo. Experimento de vibe coding entre Dany e Claude Code.
 
-**12,291 linhas de código. Vanilla JS puro. Zero frameworks.**
+**~13,000 linhas de código. Vanilla JS puro. Zero frameworks.**
 
 -----
 
 ## Current state
 
-Sessão 11 completa. Contracts system, Recall from Loan, Infraestrutura, Patrocínios e Marketing implementados.
+Sessão 12 completa. Player Training System, GK stats próprios, OVR recalculado de stats, Manual Starting XI, Player Instructions, Mobile CSS.
 
 -----
 
@@ -22,8 +22,61 @@ Sessão 11 completa. Contracts system, Recall from Loan, Infraestrutura, Patroc�
 
 ### Core Engine
 - [x] `dataEPL.js` — 44 equipas EPL/Championship com ~900 jogadores hand-crafted, stats por posição, potential, valores realistas. Define `makePlayer`, `pid()`, `LEAGUES`, `TEAM_MAP`, `ALL_TEAMS`, `COUNTRY_CONFIG`, `makeTeamSquad`, `makeNameFor`.
-- [x] `engine.js` — simulação minuto a minuto, stats individuais, traits como multiplicadores, staff effects, upset factor 0.88–1.12, stadium capacity dinâmica para gate receipts
-- [x] `season.js` — fixtures, tabelas, promoção/relegação, seasons infinitas, career, retirements, regens, cup, Europa, CL, AI bids, loans, contracts, infra timers, sponsor income, marketing ticks
+- [x] `engine.js` — simulação minuto a minuto, stats individuais por posição, traits como multiplicadores, staff effects, upset factor 0.88–1.12, stadium capacity dinâmica para gate receipts
+- [x] `season.js` — fixtures, tabelas, promoção/relegação, seasons infinitas, career, retirements, regens, cup, Europa, CL, AI bids, loans, contracts, infra timers, sponsor income, marketing ticks, per-player training tick
+
+### Sessão 12 — Player Training + GK Stats + OVR Formula
+
+#### calculateOverall (manager.js)
+- `calculateOverall(p)` — fórmula weighted por posição, muta `p.overall` in-place
+- GK: `han*0.26 + ref*0.23 + pos*0.22 + div*0.19 + kic*0.10`
+- CB: `defending*0.45 + physical*0.28 + pace*0.14 + passing*0.08 + dribbling*0.05`
+- LB/RB: `pace*0.28 + defending*0.28 + passing*0.20 + physical*0.15 + dribbling*0.09`
+- CDM: `defending*0.35 + physical*0.27 + passing*0.23 + pace*0.08 + dribbling*0.07`
+- CM: `passing*0.35 + physical*0.20 + dribbling*0.20 + defending*0.15 + pace*0.10`
+- CAM: `passing*0.28 + dribbling*0.28 + shooting*0.24 + pace*0.12 + physical*0.08`
+- LW/RW/LM/RM: `pace*0.30 + dribbling*0.28 + shooting*0.22 + passing*0.12 + physical*0.08`
+- ST/CF: `shooting*0.36 + pace*0.20 + dribbling*0.18 + physical*0.16 + passing*0.10`
+- Chamado em: `makePlayer`, `completePlayerTraining`, `trainYouthPlayer`, natural growth em `startNewSeason`
+
+#### GK Stats (dataEPL.js)
+- GKs têm 5 stats próprios gerados em `makePlayer`: `gkDiving, gkHandling, gkReflexes, gkKicking, gkPositioning`
+- Multipliers: HAN×1.04, DIV×1.02, REF×1.00, POS×0.98, KIC×0.68
+- Squad table ainda mostra os 6 stats genéricos (para consistência da tabela)
+- Player modal e Training page mostram os 5 GK stats
+- Engine: `playerDefenseContrib` para GK usa `gkHandling*0.28 + gkReflexes*0.25 + gkPositioning*0.25 + gkDiving*0.15 + gkKicking*0.07` (fallback para `p.overall` se GK antigo sem gk stats)
+
+#### Player Training System (manager.js + season.js + ui.js)
+- `PLAYER_TRAINING_PROGRAMS` — 23 programas distribuídos por posição:
+  - **GK** (3): Shot Stopper, Goalkeeper, Sweeper Keeper
+  - **CB** (3): Stopper, Ball-Playing CB, Pace Defender
+  - **LB/RB** (2): Attacking FB, Defensive FB
+  - **CDM** (3): Anchor, Deep Playmaker, Box-to-Box
+  - **CM** (3): Playmaker, Engine, Complete CM
+  - **CAM** (3): Free Role, Shadow Striker, Trequartista
+  - **LW/RW/LM/RM** (3): Speedster, Inside Forward, Wide Playmaker
+  - **ST/CF** (4): Poacher, Advanced Fwd, False 9, Target Man
+- Cada programa: `{ id, name, icon, desc, stats[], duration (weeks), cost }`
+- Stats melhoram +2 cada na conclusão → `calculateOverall` recalcula OVR
+- `p.trainingProgram = { programId, weeksLeft, totalWeeks }` no player object
+- `startPlayerTraining(gameState, playerId, programId)` — valida, debita budget, inicia
+- `completePlayerTraining(p, gameState)` — aplica boosts, recalcula OVR, respeita potential cap
+- `advanceMatchweek` faz tick por-player: `weeksLeft--`, completa quando chega a 0
+- Substituiu o antigo TRAINING_DRILLS / completeTraining / startTeamTraining (removidos)
+
+#### Training Screen (ui.js)
+- `🏋️ Training` adicionado ao nav, `case 'training': renderTraining(app)` no showScreen
+- `renderTraining(app)` — lista de todos os players (excl. outOnLoan), ordenados por active first
+  - Cada row: pos badge, nome, OVR, status (progress bar se a treinar, "Available", "Injured")
+- `showPlayerTrainingModal(playerId)` — modal com stats bars + program cards
+  - GK: mostra DIV/HAN/REF/KIC/POS; Outfield: PAC/SHO/PAS/DEF/PHY/DRI
+  - Se a treinar: mostra progress bar + semanas restantes, sem program list
+  - Program cards: disabled se sem budget ou near potential cap (OVR ≥ POT-2)
+- `startTrainingConfirm(playerId, programId)` — chama startPlayerTraining, fecha modal
+
+#### Stat multipliers atualizados (dataEPL.js)
+- Todos os primários subidos para 1.02–1.06 para stats refletirem melhor o OVR
+- ST shooting×1.06, LW/RW pace+drib×1.04, CAM pass+drib×1.02, etc.
 
 ### Sessão 11 — Contracts + Recall + Infraestrutura + Patrocínios + Marketing
 
@@ -33,108 +86,45 @@ Sessão 11 completa. Contracts system, Recall from Loan, Infraestrutura, Patroc�
 - `generateContractDemands(gameState)` em season.js — chamado em `advanceMatchweek`:
   - Morale < 45 + 5 jogos no banco → wage demand
   - Morale < 30 + 8 jogos no banco + OVR ≥ 72 → escalado para transfer request
-- `gameState.contractDemands = [{ id, playerId, playerName, playerPos, playerOvr, type, wageIncrease }]`
+- `gameState.contractDemands = [{ id, playerId, playerName, playerPos, playerOvr, type, wageIncrease, newWage }]`
 - Hub: card `📋 PLAYER DEMANDS` (amber) com Accept/Reject/Sell buttons
 - Squad: coluna CTR com badge (verde=3yr+, amarelo=1yr, vermelho=EXP)
 - Player modal: barra com contract years + wage + morale + botão Renew (≤2yr)
 - `renewContract`, `acceptWageDemand`, `rejectWageDemand`, `sellUnhappyPlayer` em manager.js
 
 #### Recall from Loan
-- `sendPlayerOnLoan` agora guarda `p.loanWeek = currentRound`
-- `calculateRecallFee(player, gameState)`:
-  - Base por OVR: OVR 68-: £25k | 68-72: £70k | 73-77: £160k | 78-82: £350k | 83-87: £700k | 88+: £1.2m
-  - Multiplicado por `remainingRatio` (quanto do loan falta) → menos tempo = fee menor
-  - Mínimo sempre £5k
-- Player modal `outOnLoan` agora tem botão ↩️ Recall inline
-- Modal mostra: weeks left, fee, budget, aviso de sem +1 OVR
-- Confirm desativado se budget insuficiente
+- `sendPlayerOnLoan` guarda `p.loanWeek = currentRound`
+- `calculateRecallFee(player, gameState)`: base por OVR tier × remainingRatio, mínimo £5k
+- Player modal `outOnLoan` tem botão ↩️ Recall inline
 
 #### Infraestrutura (3 edifícios, 4 tiers)
 - `INFRA_DATA` em manager.js — stadium / trainingGround / youthAcademy
-- `gameState.infrastructure = { stadium: 0, trainingGround: 0, youthAcademy: 0, building: null }`
-- `building = { type, completeSeason }` — um upgrade de cada vez
-- **Stadium**: capacity bonus +8k/+20k/+40k → mais gate receipts. `getStadiumCapacity(gameState)` usado em engine.js
-- **Training Ground**: +1/+2/+3 OVR extra por player em `completeTraining`
-- **Youth Academy**: +2/+4/+6 OVR e +3/+5/+8 POT nos prospects em `generateYouthMarket`
-- Custos: Stadium £6M/£18M/£45M | Training £3M/£9M/£22M | Youth £2.5M/£7M/£16M
-- `upgradeInfrastructure(gameState, type)` → debita budget, inicia timer
-- `startNewSeason` completa construção se `gameState.season >= building.completeSeason`
+- `gameState.infrastructure = { stadium: 0-3, trainingGround: 0-3, youthAcademy: 0-3, building: null }`
+- **Training Ground**: `getTrainingOvrBonus` — já não afeta OVR diretamente (training system mudou), mas infra ainda existe
 
-#### Patrocínios (3 slots, contratos 2-3 seasons)
-- `SPONSOR_POOL` em manager.js — 3 slots × 3 tiers × ~20 sponsors cada = ~80+ sponsors únicos
-  - **Main Shirt**: Bet365/William Hill (low rep) → AIA/EA Sports/Standard Chartered (mid) → Emirates/Qatar Airways/Mastercard (high)
-  - **Kit Manufacturer**: Hummel/Kappa/Umbro (low) → Puma/New Balance/Under Armour (mid) → Nike/Adidas (high)
-  - **Regional Partner**: City Motors/Regional Bank (low) → Specsavers/Carabao/eToro (mid) → Amazon/Barclays/Samsung (high)
-- `generateSponsorOffers(gameState)` — 3 ofertas por slot, pool baseado em rep (rep<57→tier1, rep<72→tier1+2, rep≥72→tier2+3)
-- `signSponsor(gameState, offerId, slot)` — assina e guarda em `gameState.sponsorships`
-- `gameState.sponsorships = { main: {...}, kit: {...}, regional: {...} }` — null = slot vazio
-- Income pago semanalmente em `advanceMatchweek`
-- `startNewSeason`: decrementa `seasonsLeft`, liberta expirados, gera novas ofertas
-- Hub: banner verde `💼 New sponsor offers available` quando há slots sem sponsor
-- Offers renovadas apenas quando slot fica vazio
-
-#### Marketing (1 campanha por season)
-- `MARKETING_CAMPAIGNS` em manager.js — 3 tipos, custo por tier de rep:
-  - **Fan Engagement** (£350k-600k): +25% attendance por 10 semanas
-  - **Social Media Blitz** (£500k-850k): +6 rep imediato + £20k/wk extra por 8 semanas
-  - **Commercial Push** (£700k-1.2M): +£40k/wk extra por 12 semanas
-- `launchMarketing(gameState, campaignId)` — máx 1/season, debita budget
-- `getCampaignCost(campaignId, gameState)` — preço baseado em rep tier
-- Fan Engagement: `getStadiumCapacity` usa `attBoost` multiplicador em engine.js
-- Ticked semanalmente em `advanceMatchweek`, notifica quando acaba
+#### Patrocínios (3 slots) + Marketing (1 campanha/season)
+- Ver sessão anterior — sem mudanças
 
 #### Screen Club (🏟️ Club no nav)
 - 3 tabs: 🏗️ Infrastructure | 💼 Sponsorships | 📣 Marketing
-- `renderClub`, `renderClubInfraTab`, `renderClubSponsorsTab`, `renderClubMarketingTab` em ui.js
-- `infraUpgradeConfirm`, `signSponsorConfirm`, `launchMarketingConfirm` com modais de confirmação
+
+### Sessão 11b — Manual Starting XI + Player Instructions
+- `gameState.tactics[teamId].startingXI` — array 11 IDs em ordem de slot
+- `gameState.tactics[teamId].playerInstructions` — `{ [playerId]: instructionId }`
+- `setManualLineup`, `clearManualLineup`, `setPlayerInstruction` em manager.js
+- `getBestEleven(teamId, formation, gameState)` aceita 3º param, usa manual XI se definido
+- `PLAYER_INSTRUCTIONS` — 25 instruções em manager.js com `atkMod`/`defMod` aplicados em engine
+- Pitch interativo: click → `openPlayerMenu` → context menu com "Change Player" ou "Instructions"
+- `openSlotPicker`, `openInstructionPicker` para selecção
 
 ### Sessão 10 — Staff Técnico + Player Traits
+- **18 traits** em `TRAITS` (manager.js): 3 categorias, efeitos no engine
+- **6 roles de staff**: Assistant Manager, Fitness Coach, Physio, Youth Coach, Scout, Set Piece Coach
 
-#### Player Traits
-- **18 traits** em `TRAITS` (manager.js): clinical, poacher, longshot, speedster, header, playmaker, btb, engine, rock, pkstopper, aerial, clutch, biggame, consistent, form, captain_mat, injury_prone, hotheaded, temperamental
-- 3 categorias: verde (ataque), azul (meio/defesa), dourado (mental), vermelho (negativos)
-- `assignRandomTraits(player)` — 53% nada, 32% 1, 12% 2, 3% 3. Negativos 3-8%.
-- `TRAIT_POOLS` por posição
-- Efeitos no engine: multiplicadores em `playerAttackContrib` / `playerDefenseContrib`
-- injury_prone: +1w lesão. engine trait: reduz fatiga. Trait earning via `checkTraitEarning` (endSeason)
-- UI: trait pills em todos os player modals, icons `trait-xs` nas tables
-
-#### Staff Técnico
-- **6 roles**: Assistant Manager 🧠, Fitness Coach 💪, Physio 🏥, Youth Coach 🌱, Scout 🔭, Set Piece Coach 🎯
-- Quality 40-95, wages £5k-65k/wk, hire cost £50k-650k
-- Efeitos: morale/training/injuries/youth ticks/scout visibility/penalties+FK
-- `gameState.staff`, `gameState.staffMarket` (18-24 candidatos, regenerados por season)
-- Staff wages debitados em `advanceMatchweek`
-- Screen "👔 Staff" no nav
-
-### Sessão 9 — Youth + Training + Loans
-- [x] Youth Market (30-49 prospects/season, ages 14-17, OVR/POT realistas)
-- [x] Youth Academy page (sign, train, promote) — 5 ticks/matchweek cap
-- [x] Team Training — 6 drills assíncronos (5-7 semanas)
-- [x] Loan out own players (outOnLoan, +1 OVR on return)
-- [x] Bugfix: skip replay, youth IDs NaN
-
-### Sessão 8 — Match Engine Rewrite
-- [x] Simulação minuto a minuto, stats individuais por posição, chance tiers, goal types
-- [x] Penaltis (22%/18%, 75% conv), Free Kicks (14%/11%, 15% conv)
-- [x] Upset factor 0.88–1.12 por equipa por jogo
-- [x] Match stats bars (Possession/Shots/xG/Big Chances), replay ao vivo
-
-### Sessões 5-7 — Multi-league + CL + EL + UI
-- [x] 5 países, 9 ligas, real players em todas
-- [x] Champions League (20 teams, groups + knockout), Europa League (expandida com CL dropdowns)
-- [x] European result tracking na career history
-- [x] Free Agents tab, Loans OVR cap, Max Price filter
-- [x] Mobile responsive (2 breakpoints)
-- [x] Player modal (stats bars, traits, contract, morale)
-- [x] Save/Load, Manager Reputation, Player Happiness
-
-### Sessões 2-4 — Core Features
-- [x] Injuries, Form streak, Pre/Post match press conference
-- [x] Finanças (salários, gate receipts, FFP), Domestic Cup, Europa League base
-- [x] Loan system (in), AI bidding, Sim to Last Matchweek
-- [x] Match Replay (14s, eventos, skip), Scouting report
-- [x] Manager Reputation (0-100), Player Happiness (matchesWithoutPlay)
+### Sessões anteriores (2-9) — Core completo
+- Match engine minuto a minuto, upset factor, penaltis, FKs
+- 5 países, 9 ligas, CL, EL
+- Youth academy, loans, transfers, finances, career
 
 -----
 
@@ -145,26 +135,29 @@ gameState = {
   playerTeam, playerLeague, playerCountry,
   season, currentRound{}, budgets{}, morale{}, fixtures{},
   // Staff
-  staff: { assistantManager, fitnessCoach, physio, youthCoach, scout, setPieceCoach }, // null = vazio
+  staff: { assistantManager, fitnessCoach, physio, youthCoach, scout, setPieceCoach },
   staffMarket: [...],
   // Contracts & Demands
   contractDemands: [{ id, playerId, playerName, playerPos, playerOvr, type, wageIncrease, newWage }],
   // Infrastructure
   infrastructure: { stadium: 0-3, trainingGround: 0-3, youthAcademy: 0-3, building: { type, completeSeason } | null },
   // Sponsorships
-  sponsorships: { main: { name, weeklyIncome, seasonsLeft }, kit: {...}, regional: {...} },  // null = vazio
+  sponsorships: { main: { name, weeklyIncome, seasonsLeft }, kit: {...}, regional: {...} },
   sponsorOffers: { main: [...], kit: [...], regional: [...] },
   // Marketing
   marketing: { activeCampaign: { ...campaign, weeksLeft, weeksActive }, campaignsThisSeason: 0 },
   // Youth
   youthSquad: [...], youthMarket: [...], youthTrainingTicks: 0,
+  // Tactics
+  tactics: { [teamId]: { formation, mentality, pressing, tempo, startingXI: [...11 ids] | null, playerInstructions: { [pid]: instrId } } },
   // Transfers
   aiBids: [...], transferWindowOpen: bool,
   // Career
   career: { hallOfFame: {...}, history: [...] },
   managerReputation: 0-100,
-  // Notifications
-  notification, newInjuries, unhappyNotifications,
+  // Player fields relevantes
+  // p.trainingProgram = { programId, weeksLeft, totalWeeks } | null
+  // p.gkDiving, p.gkHandling, p.gkReflexes, p.gkKicking, p.gkPositioning (só GK novos)
 }
 ```
 
@@ -176,45 +169,42 @@ gameState = {
 dataEPL → dataLaLiga → dataSerieA → dataBundesliga → dataLigaPortugal → engine → season → manager → ui → script
 ```
 
-TRAITS, STAFF_ROLES, INFRA_DATA, SPONSOR_POOL, MARKETING_CAMPAIGNS definidos em manager.js — chamados de season.js/engine.js em runtime (ok, global scope).
+`calculateOverall` definido em manager.js — chamado em dataEPL.js em runtime (global scope, ok).
+`PLAYER_TRAINING_PROGRAMS`, `PLAYER_INSTRUCTIONS`, `TRAITS`, `STAFF_ROLES`, `INFRA_DATA`, `SPONSOR_POOL`, `MARKETING_CAMPAIGNS` definidos em manager.js — acessíveis globalmente.
 
 -----
 
 ## Key decisions
 
+- `calculateOverall(p)` é a fonte de verdade para OVR — qualquer mudança de stats deve chamar isto
+- GK: 5 stats próprios apenas em saves novos/regens. Old saves fazem fallback para generic stats — sem crash
+- `p.trainingProgram` undefined em old saves → sem tick, sem crash
+- Training Ground infra ainda existe mas o seu bonus (getTrainingOvrBonus) já não tem efeito direto — pode ser removido ou reconvertido futuramente
 - `getStadiumCapacity(gameState)` usado em engine.js — retorna `team.capacity + infraBonus`
-- Stadium infra só afeta jogos em casa do player (AI não beneficia)
 - Marketing `attBoost` aplicado em engine.js como multiplicador de capacity
-- Sponsor offers geradas em `initSeason` (first load) e `startNewSeason` (cada nova season)
-- Uma construção de cada vez — `infra.building` bloqueia novas upgrades
-- Construction timer em seasons, não semanas — completa em `startNewSeason` quando `season >= completeSeason`
-- Recall fee: `baseFee × remainingRatio × 1.1`, mínimo £5k, sem +1 OVR se recall antecipado
-- Contract demand: só jogadores OVR ≥ 65, não lesionados, não em loan
-- Wage demand threshold: morale < 45 + 5 matchesWithoutPlay
-- Transfer request threshold: morale < 30 + 8 matchesWithoutPlay + OVR ≥ 72
 - Sponsor pool baseado em rep: <57 → tier1, <72 → tier1+2, ≥72 → tier2+3
-- Sponsor income pago semanalmente em advanceMatchweek (positivo, ao contrário de wages)
-- Max 1 campanha de marketing por season, reseta em startNewSeason
+- Construction timer em seasons, não semanas
 - `formatMoney` definido em ui.js mas acessível em manager.js (global scope)
 
 -----
 
 ## Known issues / tech debt
 
+- Training Ground infra bonus (getTrainingOvrBonus) não tem efeito agora que team training foi removido — infra ainda existe no UI mas o bónus não é aplicado. Pode ser reconvertido para bónus no player training (ex: +1 stat extra por completion)
+- Old GK saves sem gk stats mostram stats genéricos no modal — correto, mas idealmente no futuro migrar ao carregar save
 - Europa League: se player não qualifica, botão não aparece (correto por design)
 - Replays só para jogos de liga (correto)
-- `renderFullTable` usa fallback zones se liga não carregada
 
 -----
 
 ## Next session ideas
 
-1. Transfer negotiation — contra-oferta, múltiplas rondas
-2. Pre-season friendlies — 2-3 jogos antes da season
-3. News feed — ticker no hub: "X signed by Y", "Z injured"
-4. Moody/temperamental trait — benching threshold 3 jogos, efeito no morale
-5. Clutch/biggame trait — efeito em cup matches (detectar via gameState flag)
-6. Hot-headed trait — maior risco de cartão em simulateMatch
+1. Reconverter Training Ground infra para dar bónus no player training (ex: +1 stat extra na conclusão de programas)
+2. Transfer negotiation — contra-oferta, múltiplas rondas
+3. Pre-season friendlies — 2-3 jogos antes da season
+4. News feed — ticker no hub: "X signed by Y", "Z injured"
+5. Moody/temperamental trait — benching threshold 3 jogos, efeito no morale
+6. Clutch/biggame trait — efeito em cup matches
 
 -----
 
@@ -223,17 +213,17 @@ TRAITS, STAFF_ROLES, INFRA_DATA, SPONSOR_POOL, MARKETING_CAMPAIGNS definidos em 
 ```
 test2/
 ├── index.html                  (23 linhas)
-├── style.css                   (1536 linhas)
+├── style.css                   (1740 linhas)
 ├── MEMORY.md
 ├── js/
 │   ├── script.js               (5 linhas — entry point)
-│   ├── dataEPL.js              (1010 linhas — EPL/Championship + globals)
+│   ├── dataEPL.js              (1023 linhas — EPL/Championship + globals + makePlayer)
 │   ├── dataLaLiga.js           (831 linhas)
 │   ├── dataSerieA.js           (815 linhas)
 │   ├── dataBundesliga.js       (737 linhas)
 │   ├── dataLigaPortugal.js     (491 linhas)
-│   ├── engine.js               (571 linhas — simulação)
-│   ├── season.js               (~1800 linhas — progressão, contratos, infra, sponsors)
-│   ├── manager.js              (~850 linhas — táticas, transfers, traits, staff, infra, sponsors)
-│   └── ui.js                   (~4000 linhas — todos os ecrãs)
+│   ├── engine.js               (590 linhas — simulação, stats individuais, GK stats)
+│   ├── season.js               (1866 linhas — progressão, contratos, infra, sponsors, per-player training tick)
+│   ├── manager.js              (1154 linhas — táticas, transfers, traits, staff, calculateOverall, PLAYER_TRAINING_PROGRAMS)
+│   └── ui.js                   (4321 linhas — todos os ecrãs, training screen, GK modal)
 ```
