@@ -35,20 +35,3 @@ A fully playable, browser‑based Football Manager game built with **vanilla Jav
 3. **Simulate matches** – Watch the engine calculate results based on stats, form, morale, and traits.
 4. **Follow the season** – League tables, cup draws, European qualification – all update automatically.
 5. **Build a legacy** – Win titles, develop youth, climb the Hall of Fame.
-
----
-
-/
-├── index.html          # Main entry point
-├── style.css           # Global styles
-├── js/
-│   ├── engine.js       # Match simulation & game logic
-│   ├── manager.js      # Transfers, tactics, squad management
-│   ├── season.js       # League tables, schedule, promotions
-│   ├── ui.js           # Rendering and UI updates
-│   ├── dataEPL.js      # Premier League data
-│   ├── dataLaLiga.js   # LaLiga data
-│   ├── dataSerieA.js   # Serie A data
-│   ├── dataBundesliga.js# Bundesliga data
-│   └── dataLigaPortugal.js # Liga Portugal data
-└── ...
